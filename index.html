@@ -352,6 +352,59 @@
         }, 1000);
 
         refreshDashboard();
+        // 4. 增强版：单局高频推演算法 (每一局结合：马尔可夫转移 + 冷热奇偶 + 均值拉回)
+function predictNextNumber(draws) {
+    if (!draws || draws.length < 5) return 5;
+
+    // 提取最近开奖数字
+    const nums = draws.map(d => d.number);
+    const lastNum = nums[0]; // 上一期数字
+
+    // A. 统计上一期数字 (lastNum) 开出后，历史上紧跟的下一个数字（马尔可夫链简易版）
+    const transitionCounts = {};
+    for (let i = 0; i < 10; i++) transitionCounts[i] = 0;
+    
+    for (let i = 0; i < nums.length - 1; i++) {
+        if (nums[i + 1] === lastNum) {
+            transitionCounts[nums[i]]++; // 统计紧跟在 lastNum 后面的数字
+        }
+    }
+
+    // B. 计算冷热度（最近 15 期出现最少的号码）
+    const recent15 = nums.slice(0, 15);
+    const freq = {};
+    for (let i = 0; i < 10; i++) freq[i] = 0;
+    recent15.forEach(n => freq[n]++);
+
+    // C. 奇偶与大小交替趋势判断
+    const lastSize = draws[0].size;
+    const isBigOverdue = nums.slice(0, 5).filter(n => n < 5).length >= 4; // 近5期严重偏小
+    const isSmallOverdue = nums.slice(0, 5).filter(n => n >= 5).length >= 4; // 近5期严重偏大
+
+    // 综合加权评分 (0-9 号码打分)
+    const scores = Array(10).fill(0);
+    for (let i = 0; i < 10; i++) {
+        // 1. 马尔可夫转移权重
+        scores[i] += (transitionCounts[i] || 0) * 3;
+        // 2. 补冷门/回温权重 (出现次数越少，给予微弱回拉加权)
+        scores[i] += (5 - freq[i]);
+        // 3. 均值修正加权
+        if (isBigOverdue && i >= 5) scores[i] += 2;
+        if (isSmallOverdue && i < 5) scores[i] += 2;
+    }
+
+    // 选出综合得分最高的数字作为当期推荐
+    let bestNum = 0;
+    let maxScore = -999;
+    for (let i = 0; i < 10; i++) {
+        if (scores[i] > maxScore) {
+            maxScore = scores[i];
+            bestNum = i;
+        }
+    }
+
+    return bestNum;
+}
     </script>
 </body>
 </html>
