@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo 实时数据监控 & 预测 Dashboard</title>
+    <title>WinGo 实时监控 & 预测 Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -74,7 +74,7 @@
 
         .grid-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             margin-bottom: 25px;
         }
@@ -99,17 +99,33 @@
             .content-grid { grid-template-columns: 1fr; }
         }
 
+        /* 100期滚动表格支持 */
+        .table-container {
+            max-height: 520px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border-radius: 6px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
         }
+        
+        th {
+            position: sticky;
+            top: 0;
+            background: #1e293b;
+            color: #94a3b8;
+            font-weight: 500;
+            z-index: 2;
+        }
+
         th, td {
-            padding: 12px;
+            padding: 10px;
             text-align: center;
             border-bottom: 1px solid #334155;
         }
-        th { color: #94a3b8; font-weight: 500; }
 
         .tag-big { background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
         .tag-small { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
@@ -142,7 +158,7 @@
         <header>
             <div>
                 <h1>🎯 WinGo 实时监控 & 预测 Dashboard</h1>
-                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">无延迟追号 | 每 30 秒固定开奖周期</div>
+                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">无缓存实时追号 | 每 30 秒自动跟新</div>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <div class="time-badge">🇲🇾 <span id="myt-clock">--:--:--</span> MYT</div>
@@ -170,28 +186,34 @@
                 <div class="card-title">当前大小长龙</div>
                 <div class="card-value" style="color: #f59e0b;" id="streak-info">--</div>
             </div>
+            <div class="card">
+                <div class="card-title">大 / 小 比例(前100期)</div>
+                <div class="card-value" style="color: #10b981;" id="ratio-info">-- : --</div>
+            </div>
         </div>
 
         <div class="content-grid">
             <div class="card">
-                <h3>📜 近期开奖记录</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>期号</th>
-                            <th>号码 Icon</th>
-                            <th>大小</th>
-                            <th>属性</th>
-                        </tr>
-                    </thead>
-                    <tbody id="draw-table">
-                        <tr><td colspan="4">正在同步最新开奖数据...</td></tr>
-                    </tbody>
-                </table>
+                <h3>📜 近期开奖记录 (100期)</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>期号</th>
+                                <th>号码 Icon</th>
+                                <th>大小</th>
+                                <th>属性</th>
+                            </tr>
+                        </thead>
+                        <tbody id="draw-table">
+                            <tr><td colspan="4">正在同步最新 100 期开奖数据...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="card">
-                <h3>📈 走势分析</h3>
+                <h3>📈 走势分析 (近15期)</h3>
                 <canvas id="chart-numbers" style="max-height: 250px;"></canvas>
             </div>
         </div>
@@ -199,10 +221,10 @@
 
     <script>
         let myChart = null;
-        let lastFetchedIssue = ""; // 记录最后获取到的期号
-        let isFetchingNextIssue = false; // 是否处于开奖高频追号阶段
+        let lastFetchedIssue = ""; // 记录当前掌握的最新期号
+        let isFetchingNextIssue = false; // 是否处于开奖刷新状态
 
-        // 1. 生成 Icon 样式 (13579绿, 2468红, 0红紫, 5绿紫)
+        // 1. 生成 Icon 样式
         function getNumberIconHtml(num) {
             num = parseInt(num);
             let colorClass = '';
@@ -213,7 +235,7 @@
             return `<span class="icon-num ${colorClass}">${num}</span>`;
         }
 
-        // 2. MD5 签名算法
+        // 2. MD5 算法
         function md5(string) {
             function RotateLeft(lValue, iShiftBits) { return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits)); }
             function AddUnsigned(lX, lY) {
@@ -288,11 +310,11 @@
             return (WordToHex(a) + WordToHex(b) + WordToHex(c) + WordToHex(d)).toUpperCase();
         }
 
-        // 3. 高速无缓存 API 拉取
+        // 3. 抓取 100 期数据 API
         async function fetchDrawsDirect() {
             const random = Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
-            const payload = { "pageSize": 50, "pageNo": 1, "typeId": 30, "language": 0, "random": random };
-            const jsonStr = JSON.stringify({ "language": 0, "pageNo": 1, "pageSize": 50, "random": random, "typeId": 30 });
+            const payload = { "pageSize": 100, "pageNo": 1, "typeId": 30, "language": 0, "random": random };
+            const jsonStr = JSON.stringify({ "language": 0, "pageNo": 1, "pageSize": 100, "random": random, "typeId": 30 });
             payload.signature = md5(jsonStr);
             payload.timestamp = Math.floor(Date.now() / 1000);
 
@@ -318,12 +340,12 @@
                     });
                 }
             } catch (e) {
-                console.warn("API 请求异常", e);
+                console.warn("API 抓取中...", e);
             }
             return [];
         }
 
-        // 4. 号码预测
+        // 4. 下期预测
         function predictNextNumber(draws) {
             if (!draws || draws.length < 5) return 5;
             const recentNumbers = draws.slice(0, 10).map(d => d.number);
@@ -335,7 +357,7 @@
             return (avg + (9 - Math.max(...Object.values(counts)))) % 10;
         }
 
-        // 5. 刷新 Dashboard UI 渲染
+        // 5. 渲染页面
         async function refreshData() {
             const draws = await fetchDrawsDirect();
             if (!draws || draws.length === 0) return false;
@@ -343,13 +365,14 @@
             const latest = draws[0];
             const currentIssue = latest.issueNumber;
 
-            // 渲染数据
+            // 渲染头部数据
             document.getElementById('latest-issue').innerText = currentIssue.slice(-4);
             document.getElementById('latest-result').innerHTML = `
                 ${getNumberIconHtml(latest.number)} 
                 <span class="${latest.size === '大' ? 'tag-big' : 'tag-small'}">${latest.size}</span>
             `;
 
+            // 预测
             const predictedNum = predictNextNumber(draws);
             const predictedSize = predictedNum >= 5 ? '大' : '小';
             document.getElementById('predicted-result').innerHTML = `
@@ -357,6 +380,7 @@
                 <span class="${predictedSize === '大' ? 'tag-big' : 'tag-small'}">${predictedSize}</span>
             `;
 
+            // 长龙
             const streakVal = latest.size;
             let streakCnt = 0;
             for (let d of draws) {
@@ -365,8 +389,18 @@
             }
             document.getElementById('streak-info').innerText = `${streakVal} × ${streakCnt}`;
 
+            // 100期 大/小 比例统计
+            let bigCount = 0;
+            let smallCount = 0;
+            draws.forEach(d => {
+                if (d.size === '大') bigCount++;
+                else smallCount++;
+            });
+            document.getElementById('ratio-info').innerText = `${bigCount} : ${smallCount}`;
+
+            // 渲染 100 期表格
             const tbody = document.getElementById('draw-table');
-            tbody.innerHTML = draws.slice(0, 10).map(d => `
+            tbody.innerHTML = draws.map(d => `
                 <tr>
                     <td>${d.issueNumber}</td>
                     <td>${getNumberIconHtml(d.number)}</td>
@@ -375,7 +409,8 @@
                 </tr>
             `).join('');
 
-            const recentDraws = [...draws.slice(0, 10)].reverse();
+            // 走势图：近 15 期
+            const recentDraws = [...draws.slice(0, 15)].reverse();
             const labels = recentDraws.map(d => d.issueNumber.slice(-3));
             const values = recentDraws.map(d => d.number);
 
@@ -404,17 +439,16 @@
                 }
             });
 
-            // 检查期号是否有更新
+            // 判断期号是否最新更新
             const isNew = (currentIssue !== lastFetchedIssue);
             lastFetchedIssue = currentIssue;
             return isNew;
         }
 
-        // 6. 精准 30 秒开奖周期时钟 & 智能追号逻辑
+        // 6. 30秒精准同步时钟 + 抓号逻辑
         function runMainLoop() {
             const now = new Date();
             
-            // 格式化展示 MYT 时间
             const options = {
                 timeZone: 'Asia/Kuala_Lumpur',
                 hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -422,17 +456,16 @@
             };
             document.getElementById('myt-clock').innerText = new Intl.DateTimeFormat('en-GB', options).format(now);
 
-            // 计算当前秒数与毫秒，计算距离 00秒 或 30秒 还有多久
             const seconds = now.getSeconds();
             const milliseconds = now.getMilliseconds();
             
-            // 30 秒开奖盘：计算剩余倒计时 (30 - seconds % 30)
+            // 算倒计时 (每30s一个循环)
             let remSeconds = 30 - (seconds % 30);
             if (remSeconds === 30 && milliseconds < 100) remSeconds = 0;
 
             const statusBox = document.getElementById('status-box');
 
-            // 当处于 0 秒（即刚刚到达开奖点）且尚未抓到新期号时，开启高频追号
+            // 当秒数达到开奖点，或者处在追号阶段
             if (remSeconds === 30 || remSeconds === 0) {
                 isFetchingNextIssue = true;
             }
@@ -446,15 +479,14 @@
             }
         }
 
-        // 1 秒心跳循环（精准倒计时）
+        // 1秒刷新倒计时
         setInterval(runMainLoop, 1000);
         runMainLoop();
 
-        // 高频追号定时器：每 1.5 秒尝试请求一次 API，直到抓到最新期号
+        // 智能轮询：1.5秒不停尝试抓取最新期号，成功抓到新期号后切回常规状态
         setInterval(async () => {
             const isNewIssue = await refreshData();
             if (isNewIssue) {
-                // 成功抢到最新一期的期号！停止高频追号
                 isFetchingNextIssue = false;
             }
         }, 1500);
