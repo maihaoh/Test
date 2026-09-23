@@ -2,9 +2,9 @@ name: Auto Fetch WinGo Data
 
 on:
   schedule:
-    # 每 5 分钟自动运行一次（GitHub Actions 允许的最高频率）
+    # 每 5 分钟自动运行一次
     - cron: '*/5 * * * *'
-  workflow_dispatch: # 支持在 GitHub 页面手动点击触发
+  workflow_dispatch: # 支持手动点击触发
 
 permissions:
   contents: write
@@ -27,14 +27,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: 4. 运行单次抓取脚本
-        run: |
-          python run_once.py
-
-      - name: 5. 自动提交 data.json 到仓库
+      - name: 4. 同步最新远程代码
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
           git pull --rebase origin main
+
+      - name: 5. 运行单次抓取脚本
+        run: |
+          python run_once.py
+
+      - name: 6. 自动提交 data.json 到仓库
+        run: |
           git add data.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update data.json [skip ci]" && git push)
