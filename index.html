@@ -157,7 +157,7 @@
         <header>
             <div>
                 <h1>🎯 WinGo 实时监控 & 预测 Dashboard</h1>
-                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">多线路自动防封通道 | 30 秒倒计时同步</div>
+                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">独立 Worker 代理支持 | 每 100 期监控</div>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <div class="time-badge">🇲🇾 <span id="myt-clock">--:--:--</span> MYT</div>
@@ -186,14 +186,14 @@
                 <div class="card-value" style="color: #f59e0b;" id="streak-info">--</div>
             </div>
             <div class="card">
-                <div class="card-title">大 / 小 比例</div>
+                <div class="card-title">大 / 小 比例 (100期)</div>
                 <div class="card-value" style="color: #10b981;" id="ratio-info">-- : --</div>
             </div>
         </div>
 
         <div class="content-grid">
             <div class="card">
-                <h3>📜 开奖记录</h3>
+                <h3>📜 近期开奖记录 (100期)</h3>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -205,7 +205,7 @@
                             </tr>
                         </thead>
                         <tbody id="draw-table">
-                            <tr><td colspan="4" id="loading-tip">正在通过备用线路连接官方 API...</td></tr>
+                            <tr><td colspan="4">正在读取最新 100 期开奖数据...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -219,6 +219,9 @@
     </div>
 
     <script>
+        // 🚨【请将这里的 URL 替换为你刚才部署的 Cloudflare Worker 网址】
+        const PROXY_URL = "https://wingo-proxy.xxxx.workers.dev";
+
         let myChart = null;
         let lastFetchedIssue = "";
         let isFetchingNextIssue = false;
@@ -307,45 +310,33 @@
             return (WordToHex(a) + WordToHex(b) + WordToHex(c) + WordToHex(d)).toUpperCase();
         }
 
-        // 多隧道代理拉取 (抓 20 期轻量化，防 Blocking)
         async function fetchDrawsDirect() {
             const random = Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
-            const payload = { "pageSize": 20, "pageNo": 1, "typeId": 30, "language": 0, "random": random };
-            const jsonStr = JSON.stringify({ "language": 0, "pageNo": 1, "pageSize": 20, "random": random, "typeId": 30 });
+            const payload = { "pageSize": 100, "pageNo": 1, "typeId": 30, "language": 0, "random": random };
+            const jsonStr = JSON.stringify({ "language": 0, "pageNo": 1, "pageSize": 100, "random": random, "typeId": 30 });
             payload.signature = md5(jsonStr);
             payload.timestamp = Math.floor(Date.now() / 1000);
 
-            const targetUrl = 'https://mzplayapi.com/api/webapi/GetNoaverageEmerdList?_t=' + Date.now();
-            
-            // 三重隧道路线
-            const routes = [
-                { url: 'https://corsproxy.io/?' + encodeURIComponent(targetUrl), type: 'direct' },
-                { url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl), type: 'direct' },
-                { url: targetUrl, type: 'direct' }
-            ];
-
-            for (let route of routes) {
-                try {
-                    const res = await fetch(route.url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+            try {
+                const res = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data && data.code === 0 && data.data && data.data.list) {
+                    return data.data.list.map(item => {
+                        const num = parseInt(item.number);
+                        return {
+                            issueNumber: String(item.issueNumber),
+                            number: num,
+                            colour: String(item.colour),
+                            size: num >= 5 ? '大' : '小'
+                        };
                     });
-                    const data = await res.json();
-                    if (data && data.code === 0 && data.data && data.data.list && data.data.list.length > 0) {
-                        return data.data.list.map(item => {
-                            const num = parseInt(item.number);
-                            return {
-                                issueNumber: String(item.issueNumber),
-                                number: num,
-                                colour: String(item.colour),
-                                size: num >= 5 ? '大' : '小'
-                            };
-                        });
-                    }
-                } catch (e) {
-                    console.log("代理线路测试下一个...");
                 }
+            } catch (e) {
+                console.error("Worker 数据接收失败", e);
             }
             return [];
         }
@@ -466,10 +457,8 @@
         setInterval(runMainLoop, 1000);
         runMainLoop();
 
-        // 首次加载立即请求
         refreshData();
 
-        // 智能轮询：2秒自动尝试跟新最新数据
         setInterval(async () => {
             const isNewIssue = await refreshData();
             if (isNewIssue) {
