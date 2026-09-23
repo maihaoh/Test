@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo 实时数据监控 Dashboard</title>
-    <!-- Chart.js 图表库 -->
+    <title>WinGo 预测胜率验证 Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --text-color: #f8fafc;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-blue: #3b82f6;
-            --accent-purple: #8b5cf6;
+            --green-color: #10b981;
+            --red-color: #ef4444;
+            --purple-color: #8b5cf6;
         }
 
         body {
@@ -39,7 +37,18 @@
             margin-bottom: 20px;
         }
 
-        h1 { margin: 0; font-size: 1.8rem; }
+        h1 { margin: 0; font-size: 1.6rem; }
+
+        .time-badge {
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
         .status-badge {
             background: #065f46;
             color: #34d399;
@@ -50,6 +59,7 @@
             align-items: center;
             gap: 6px;
         }
+
         .pulse-dot {
             width: 8px; height: 8px;
             background-color: #34d399;
@@ -57,10 +67,9 @@
             box-shadow: 0 0 8px #34d399;
         }
 
-        /* 统计卡片布局 */
         .grid-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 25px;
         }
@@ -70,13 +79,11 @@
             padding: 20px;
             border-radius: 12px;
             border: 1px solid #334155;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .card-title { color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px; }
-        .card-value { font-size: 1.8rem; font-weight: bold; }
+        .card-value { font-size: 1.6rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
 
-        /* 内容双列布局 */
         .content-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -87,193 +94,254 @@
             .content-grid { grid-template-columns: 1fr; }
         }
 
-        /* 表格样式 */
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
         th, td {
-            padding: 12px;
+            padding: 10px;
             text-align: center;
             border-bottom: 1px solid #334155;
+            font-size: 0.9rem;
         }
-        th { color: #94a3b8; font-weight: 500; font-size: 0.9rem; }
+        th { color: #94a3b8; font-weight: 500; }
 
-        .tag-big { background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
-        .tag-small { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
-        .num-circle {
-            display: inline-block;
-            width: 28px; height: 28px;
-            line-height: 28px;
+        .tag-big { background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .tag-small { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+
+        /* 输赢标签 */
+        .tag-win { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+        .tag-loss { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+
+        /* 彩色 Icon 圆圈样式 */
+        .icon-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
+            color: #ffffff;
             font-weight: bold;
-            background: #334155;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
+        .bg-green { background-color: var(--green-color); }
+        .bg-red { background-color: var(--red-color); }
+        .bg-red-purple { background: linear-gradient(135deg, var(--red-color) 50%, var(--purple-color) 50%); }
+        .bg-green-purple { background: linear-gradient(135deg, var(--green-color) 50%, var(--purple-color) 50%); }
 
-        /* 颜色标签 */
-        .color-green { color: #10b981; font-weight: bold; }
-        .color-red { color: #ef4444; font-weight: bold; }
-        .color-violet { color: #8b5cf6; font-weight: bold; }
+        .predict-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .win-rate-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎯 WinGo 实时数据分析 Dashboard</h1>
-            <div class="status-badge">
-                <div class="pulse-dot"></div>
-                实时接入成功
+            <div>
+                <h1>🎯 WinGo 预测胜率对比 Dashboard</h1>
+                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">自动回测验证输赢 | 每 10 秒刷新</div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="time-badge">🇲🇾 <span id="myt-clock">--:--:--</span> MYT</div>
+                <div class="status-badge">
+                    <div class="pulse-dot"></div>
+                    <span id="countdown">10s</span>
+                </div>
             </div>
         </header>
 
-        <!-- 顶部指标卡片 -->
         <div class="grid-cards">
             <div class="card">
                 <div class="card-title">最新期号</div>
                 <div class="card-value" id="latest-issue">----</div>
             </div>
             <div class="card">
-                <div class="card-title">最新结果</div>
+                <div class="card-title">最新开奖</div>
                 <div class="card-value" id="latest-result">--</div>
             </div>
-            <div class="card">
-                <div class="card-title">当前大小长龙</div>
-                <div class="card-value" style="color: #f59e0b;" id="streak-info">--</div>
+            <div class="card predict-box">
+                <div class="card-title" style="color: #60a5fa;">🔮 下期预测</div>
+                <div class="card-value" id="predicted-result">--</div>
             </div>
-            <div class="card">
-                <div class="card-title">大 / 小 比例</div>
-                <div class="card-value" style="color: #10b981;" id="ratio-info">-- / --</div>
+            <div class="card win-rate-box">
+                <div class="card-title" style="color: #34d399;">📊 近 20 期预测胜率</div>
+                <div class="card-value" style="color: #34d399;" id="win-rate">-- %</div>
             </div>
         </div>
 
         <div class="content-grid">
-            <!-- 左侧开奖列表 -->
             <div class="card">
-                <h3>📜 近期开奖历史记录</h3>
+                <h3>📜 近期预测 VS 实际开奖对账表</h3>
                 <table>
                     <thead>
                         <tr>
                             <th>期号</th>
-                            <th>开奖数字</th>
-                            <th>大小</th>
-                            <th>颜色</th>
+                            <th>实际开奖</th>
+                            <th>系统预测</th>
+                            <th>对比结果</th>
                         </tr>
                     </thead>
                     <tbody id="draw-table">
-                        <tr><td colspan="4">正在读取最新开奖...</td></tr>
+                        <tr><td colspan="4">正在计算胜率数据...</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- 右侧图表分析 -->
             <div class="card">
-                <h3>📈 数字走势图表</h3>
+                <h3>📈 走势图表</h3>
                 <canvas id="chart-numbers" style="max-height: 250px;"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        // 设置你的 Cloudflare Worker 代理地址
         const PROXY_URL = "https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev/";
         let myChart = null;
+        let countdownVal = 10;
 
-        function getBgColor(colorName) {
-            if (colorName.includes("green")) return "color-green";
-            if (colorName.includes("red")) return "color-red";
-            if (colorName.includes("violet")) return "color-violet";
-            return "";
+        // 马来西亚时钟
+        function updateMYTClock() {
+            const now = new Date();
+            const options = { timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            document.getElementById('myt-clock').innerText = new Intl.DateTimeFormat('en-GB', options).format(now);
+        }
+        setInterval(updateMYTClock, 1000);
+
+        // 获取 Icon
+        function getNumberIconHtml(num) {
+            num = parseInt(num);
+            let colorClass = '';
+            if (num === 0) colorClass = 'bg-red-purple';
+            else if (num === 5) colorClass = 'bg-green-purple';
+            else if ([1, 3, 7, 9].includes(num)) colorClass = 'bg-green';
+            else if ([2, 4, 6, 8].includes(num)) colorClass = 'bg-red';
+
+            return `<span class="icon-num ${colorClass}">${num}</span>`;
         }
 
-        async function fetchRealtimeData() {
+        // 模拟/计算算法预测（根据历史走势预测大小及数字）
+        function getPredictionForDraw(historyDraws) {
+            if (!historyDraws || historyDraws.length < 3) return { num: 5, size: '大' };
+            
+            // 取近 5 期算均值和冷热
+            const recent = historyDraws.slice(0, 5).map(d => d.number);
+            const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+            
+            // 预测大小：如果近期偏小则看好大（反弹算法），反之亦然
+            const predictedSize = avg < 4.5 ? '大' : '小';
+            const predictedNum = predictedSize === '大' ? Math.floor(avg + 2) % 10 : Math.floor(avg) % 5;
+
+            return {
+                num: predictedNum,
+                size: predictedSize
+            };
+        }
+
+        // 获取最新开奖
+        async function fetchDraws() {
             try {
                 const response = await fetch(PROXY_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        pageSize: 20,
-                        pageNo: 1,
-                        typeId: 30,
-                        language: 0,
-                        random: "3a928422e6"
-                    })
+                    body: JSON.stringify({ pageSize: 30, pageNo: 1, typeId: 30, language: 0, random: "3a928422e6" })
                 });
-
                 const json = await response.json();
-                if (json.code !== 0 || !json.data || !json.data.list) return;
-
-                const rawList = json.data.list;
-                const draws = rawList.map(item => {
-                    const num = intVal(item.number);
-                    return {
-                        issueNumber: String(item.issueNumber),
-                        number: num,
-                        size: num >= 5 ? "大" : "小",
-                        colour: item.colour
-                    };
-                });
-
-                updateUI(draws);
+                if (json.code === 0 && json.data && json.data.list) {
+                    return json.data.list.map(item => {
+                        const num = parseInt(item.number);
+                        return {
+                            issueNumber: String(item.issueNumber),
+                            number: num,
+                            size: num >= 5 ? '大' : '小',
+                            colour: item.colour
+                        };
+                    });
+                }
             } catch (e) {
-                console.error("数据加载失败: ", e);
+                console.error("请求失败", e);
             }
+            return [];
         }
 
-        function intVal(val) {
-            return parseInt(val, 10) || 0;
-        }
-
-        function updateUI(draws) {
+        // 渲染与对账
+        async function refreshDashboard() {
+            const draws = await fetchDraws();
             if (!draws || draws.length === 0) return;
 
-            // 1. 最新开奖卡片
+            // 1. 最新一期
             const latest = draws[0];
             document.getElementById('latest-issue').innerText = latest.issueNumber.slice(-4);
             document.getElementById('latest-result').innerHTML = `
-                <span class="num-circle">${latest.number}</span> 
+                ${getNumberIconHtml(latest.number)} 
                 <span class="${latest.size === '大' ? 'tag-big' : 'tag-small'}">${latest.size}</span>
             `;
 
-            // 2. 长龙计算
-            let streakVal = draws[0].size;
-            let streakCnt = 0;
-            for (let d of draws) {
-                if (d.size === streakVal) streakCnt++;
-                else break;
+            // 2. 预测下一期
+            const nextPrediction = getPredictionForDraw(draws);
+            document.getElementById('predicted-result').innerHTML = `
+                ${getNumberIconHtml(nextPrediction.num)}
+                <span class="${nextPrediction.size === '大' ? 'tag-big' : 'tag-small'}">${nextPrediction.size}</span>
+            `;
+
+            // 3. 历史对账与计算胜率
+            let winCount = 0;
+            let totalChecked = 0;
+            let tableHtml = '';
+
+            for (let i = 0; i < draws.length - 1; i++) {
+                const currentDraw = draws[i]; // 当期实际开奖
+                const historySlice = draws.slice(i + 1); // 当期之前的历史数据
+                const prediction = getPredictionForDraw(historySlice); // 算出系统在当时的预测
+
+                // 判断大小是否预测正确 (Win / Loss)
+                const isWin = currentDraw.size === prediction.size;
+                if (i < 20) { // 统计近 20 期
+                    totalChecked++;
+                    if (isWin) winCount++;
+                }
+
+                tableHtml += `
+                    <tr>
+                        <td>${currentDraw.issueNumber.slice(-4)}期</td>
+                        <td>
+                            ${getNumberIconHtml(currentDraw.number)}
+                            <span class="${currentDraw.size === '大' ? 'tag-big' : 'tag-small'}">${currentDraw.size}</span>
+                        </td>
+                        <td>
+                            ${getNumberIconHtml(prediction.num)}
+                            <span class="${prediction.size === '大' ? 'tag-big' : 'tag-small'}">${prediction.size}</span>
+                        </td>
+                        <td>
+                            ${isWin ? '<span class="tag-win">✅ 赢 (WIN)</span>' : '<span class="tag-loss">❌ 输 (LOSS)</span>'}
+                        </td>
+                    </tr>
+                `;
             }
-            document.getElementById('streak-info').innerText = `${streakVal} × ${streakCnt}`;
 
-            // 3. 比例计算
-            let bigCnt = draws.filter(d => d.size === '大').length;
-            let smallCnt = draws.length - bigCnt;
-            document.getElementById('ratio-info').innerText = `${bigCnt} : ${smallCnt}`;
+            // 更新胜率卡片
+            const winRate = totalChecked > 0 ? Math.round((winCount / totalChecked) * 100) : 0;
+            document.getElementById('win-rate').innerText = `${winRate}% (${winCount}赢 / ${totalChecked - winCount}输)`;
+            document.getElementById('draw-table').innerHTML = tableHtml;
 
-            // 4. 表格更新
-            const tbody = document.getElementById('draw-table');
-            tbody.innerHTML = draws.map(d => `
-                <tr>
-                    <td>${d.issueNumber}</td>
-                    <td><span class="num-circle">${d.number}</span></td>
-                    <td><span class="${d.size === '大' ? 'tag-big' : 'tag-small'}">${d.size}</span></td>
-                    <td class="${getBgColor(d.colour)}">${d.colour}</td>
-                </tr>
-            `).join('');
-
-            // 5. 折线走势图
-            const recentDraws = [...draws].reverse();
-            const labels = recentDraws.map(d => d.issueNumber.slice(-3));
-            const values = recentDraws.map(d => d.number);
-
+            // 折线图
+            const recentDraws = [...draws.slice(0, 10)].reverse();
             if (myChart) myChart.destroy();
             const ctx = document.getElementById('chart-numbers').getContext('2d');
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: recentDraws.map(d => d.issueNumber.slice(-3)),
                     datasets: [{
-                        label: '开奖数字',
-                        data: values,
+                        label: '开奖号码',
+                        data: recentDraws.map(d => d.number),
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         fill: true,
@@ -282,18 +350,23 @@
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: { min: 0, max: 9, grid: { color: '#334155' } },
-                        x: { grid: { color: '#334155' } }
-                    },
+                    scales: { y: { min: 0, max: 9, grid: { color: '#334155' } }, x: { grid: { color: '#334155' } } },
                     plugins: { legend: { display: false } }
                 }
             });
         }
 
-        // 初始化并每 5 秒自动更新一次
-        fetchRealtimeData();
-        setInterval(fetchRealtimeData, 5000);
+        // 倒计时
+        setInterval(() => {
+            countdownVal--;
+            if (countdownVal <= 0) {
+                countdownVal = 10;
+                refreshDashboard();
+            }
+            document.getElementById('countdown').innerText = `${countdownVal}s`;
+        }, 1000);
+
+        refreshDashboard();
     </script>
 </body>
 </html>
