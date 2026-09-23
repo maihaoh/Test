@@ -218,10 +218,17 @@
         async function fetchDraws() {
             const random = Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
             const timestamp = Math.floor(Date.now() / 1000);
-            
-            // 拼接标准的参数串计算 CryptoJS MD5 签名
-            const rawString = `language=0&pageNo=1&pageSize=30&random=${random}&typeId=30`;
-            const signature = CryptoJS.MD5(rawString).toString().toUpperCase();
+
+            // 严格对齐官方签名对象结构 (按 Key 升序排版序列化 JSON)
+            const signObj = {
+                "language": 0,
+                "pageNo": 1,
+                "pageSize": 30,
+                "random": random,
+                "typeId": 30
+            };
+            const jsonSignStr = JSON.stringify(signObj);
+            const signature = CryptoJS.MD5(jsonSignStr).toString().toUpperCase();
 
             const payload = {
                 "typeId": 30,
