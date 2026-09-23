@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinGo 实时数据监控 Dashboard</title>
+    <!-- Chart.js 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+            margin-bottom: 20px;
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; }
+        .status-badge {
+            background: #065f46;
+            color: #34d399;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pulse-dot {
+            width: 8px; height: 8px;
+            background-color: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #34d399;
+        }
+
+        /* 统计卡片布局 */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title { color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px; }
+        .card-value { font-size: 1.8rem; font-weight: bold; }
+
+        /* 内容双列布局 */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+        }
+        th { color: #94a3b8; font-weight: 500; font-size: 0.9rem; }
+
+        .tag-big { background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .tag-small { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .num-circle {
+            display: inline-block;
+            width: 28px; height: 28px;
+            line-height: 28px;
+            border-radius: 50%;
+            font-weight: bold;
+            background: #334155;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 WinGo 实时数据分析 Dashboard</h1>
+            <div class="status-badge">
+                <div class="pulse-dot"></div>
+                系统实时监控中
+            </div>
+        </header>
+
+        <!-- 顶部指标卡片 -->
+        <div class="grid-cards">
+            <div class="card">
+                <div class="card-title">最新期号</div>
+                <div class="card-value" id="latest-issue">----</div>
+            </div>
+            <div class="card">
+                <div class="card-title">最新结果</div>
+                <div class="card-value" id="latest-result">--</div>
+            </div>
+            <div class="card">
+                <div class="card-title">当前大小长龙</div>
+                <div class="card-value" style="color: #f59e0b;" id="streak-info">--</div>
+            </div>
+            <div class="card">
+                <div class="card-title">大 / 小 比例</div>
+                <div class="card-value" style="color: #10b981;" id="ratio-info">-- / --</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <!-- 左侧开奖列表 -->
+            <div class="card">
+                <h3>📜 近期开奖历史记录</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>期号</th>
+                            <th>开奖数字</th>
+                            <th>大小</th>
+                            <th>颜色</th>
+                        </tr>
+                    </thead>
+                    <tbody id="draw-table">
+                        <tr><td colspan="4">正在加载数据...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 右侧图表分析 -->
+            <div class="card">
+                <h3>📈 走势与热号分析</h3>
+                <canvas id="chart-numbers" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        async function updateDashboard() {
+            try {
+                // 读取同目录下的 data.json 数据
+                const response = await fetch('data.json?t=' + new Date().getTime());
+                if (!response.ok) return;
+                const data = await response.json();
+
+                const draws = data.draws || [];
+                if (draws.length === 0) return;
+
+                // 1. 更新顶部卡片
+                const latest = draws[0];
+                document.getElementById('latest-issue').innerText = latest.issueNumber.slice(-4);
+                document.getElementById('latest-result').innerHTML = `
+                    <span class="num-circle">${latest.number}</span> 
+                    <span class="${latest.size === '大' ? 'tag-big' : 'tag-small'}">${latest.size}</span>
+                `;
+                document.getElementById('streak-info').innerText = `${data.stats.streak_val} × ${data.stats.streak_cnt}`;
+                document.getElementById('ratio-info').innerText = `${data.stats.big_cnt} : ${data.stats.small_cnt}`;
+
+                // 2. 更新表格
+                const tbody = document.getElementById('draw-table');
+                tbody.innerHTML = draws.slice(0, 15).map(d => `
+                    <tr>
+                        <td>${d.issueNumber}</td>
+                        <td><span class="num-circle">${d.number}</span></td>
+                        <td><span class="${d.size === '大' ? 'tag-big' : 'tag-small'}">${d.size}</span></td>
+                        <td>${d.colour}</td>
+                    </tr>
+                `).join('');
+
+                // 3. 更新折线图
+                const recentDraws = [...draws.slice(0, 20)].reverse();
+                const labels = recentDraws.map(d => d.issueNumber.slice(-3));
+                const values = recentDraws.map(d => d.number);
+
+                if (myChart) myChart.destroy();
+                const ctx = document.getElementById('chart-numbers').getContext('2d');
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '开奖数字走势',
+                            data: values,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { min: 0, max: 9, grid: { color: '#334155' } },
+                            x: { grid: { color: '#334155' } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+
+            } catch (e) {
+                console.error("加载数据失败:", e);
+            }
+        }
+
+        // 初始化并开启 5 秒自动刷页面图表
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
+    </script>
+</body>
+</html>
