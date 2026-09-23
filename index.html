@@ -110,11 +110,9 @@
         .tag-big { background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .tag-small { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
 
-        /* 输赢标签 */
         .tag-win { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
         .tag-loss { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
 
-        /* 彩色 Icon 圆圈样式 */
         .icon-num {
             display: inline-flex;
             align-items: center;
@@ -207,7 +205,6 @@
         let myChart = null;
         let countdownVal = 10;
 
-        // 马来西亚时钟
         function updateMYTClock() {
             const now = new Date();
             const options = { timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
@@ -215,7 +212,6 @@
         }
         setInterval(updateMYTClock, 1000);
 
-        // 获取 Icon
         function getNumberIconHtml(num) {
             num = parseInt(num);
             let colorClass = '';
@@ -227,25 +223,16 @@
             return `<span class="icon-num ${colorClass}">${num}</span>`;
         }
 
-        // 模拟/计算算法预测（根据历史走势预测大小及数字）
         function getPredictionForDraw(historyDraws) {
             if (!historyDraws || historyDraws.length < 3) return { num: 5, size: '大' };
-            
-            // 取近 5 期算均值和冷热
             const recent = historyDraws.slice(0, 5).map(d => d.number);
             const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
-            
-            // 预测大小：如果近期偏小则看好大（反弹算法），反之亦然
             const predictedSize = avg < 4.5 ? '大' : '小';
             const predictedNum = predictedSize === '大' ? Math.floor(avg + 2) % 10 : Math.floor(avg) % 5;
 
-            return {
-                num: predictedNum,
-                size: predictedSize
-            };
+            return { num: predictedNum, size: predictedSize };
         }
 
-        // 获取最新开奖
         async function fetchDraws() {
             try {
                 const response = await fetch(PROXY_URL, {
@@ -271,12 +258,10 @@
             return [];
         }
 
-        // 渲染与对账
         async function refreshDashboard() {
             const draws = await fetchDraws();
             if (!draws || draws.length === 0) return;
 
-            // 1. 最新一期
             const latest = draws[0];
             document.getElementById('latest-issue').innerText = latest.issueNumber.slice(-4);
             document.getElementById('latest-result').innerHTML = `
@@ -284,26 +269,23 @@
                 <span class="${latest.size === '大' ? 'tag-big' : 'tag-small'}">${latest.size}</span>
             `;
 
-            // 2. 预测下一期
             const nextPrediction = getPredictionForDraw(draws);
             document.getElementById('predicted-result').innerHTML = `
                 ${getNumberIconHtml(nextPrediction.num)}
                 <span class="${nextPrediction.size === '大' ? 'tag-big' : 'tag-small'}">${nextPrediction.size}</span>
             `;
 
-            // 3. 历史对账与计算胜率
             let winCount = 0;
             let totalChecked = 0;
             let tableHtml = '';
 
             for (let i = 0; i < draws.length - 1; i++) {
-                const currentDraw = draws[i]; // 当期实际开奖
-                const historySlice = draws.slice(i + 1); // 当期之前的历史数据
-                const prediction = getPredictionForDraw(historySlice); // 算出系统在当时的预测
-
-                // 判断大小是否预测正确 (Win / Loss)
+                const currentDraw = draws[i];
+                const historySlice = draws.slice(i + 1);
+                const prediction = getPredictionForDraw(historySlice);
                 const isWin = currentDraw.size === prediction.size;
-                if (i < 20) { // 统计近 20 期
+
+                if (i < 20) {
                     totalChecked++;
                     if (isWin) winCount++;
                 }
@@ -326,12 +308,10 @@
                 `;
             }
 
-            // 更新胜率卡片
             const winRate = totalChecked > 0 ? Math.round((winCount / totalChecked) * 100) : 0;
             document.getElementById('win-rate').innerText = `${winRate}% (${winCount}赢 / ${totalChecked - winCount}输)`;
             document.getElementById('draw-table').innerHTML = tableHtml;
 
-            // 折线图
             const recentDraws = [...draws.slice(0, 10)].reverse();
             if (myChart) myChart.destroy();
             const ctx = document.getElementById('chart-numbers').getContext('2d');
@@ -356,7 +336,6 @@
             });
         }
 
-        // 倒计时
         setInterval(() => {
             countdownVal--;
             if (countdownVal <= 0) {
