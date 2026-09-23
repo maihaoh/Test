@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo 预测胜率验证 Dashboard</title>
+    <title>WinGo 实时预测 & 胜率监控</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -23,10 +23,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
 
         header {
             display: flex;
@@ -94,22 +91,12 @@
             .content-grid { grid-template-columns: 1fr; }
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border-bottom: 1px solid #334155;
-            font-size: 0.9rem;
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #334155; font-size: 0.9rem; }
         th { color: #94a3b8; font-weight: 500; }
 
         .tag-big { background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .tag-small { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-
         .tag-win { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
         .tag-loss { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
 
@@ -123,35 +110,28 @@
             color: #ffffff;
             font-weight: bold;
             font-size: 0.9rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .bg-green { background-color: var(--green-color); }
         .bg-red { background-color: var(--red-color); }
         .bg-red-purple { background: linear-gradient(135deg, var(--red-color) 50%, var(--purple-color) 50%); }
         .bg-green-purple { background: linear-gradient(135deg, var(--green-color) 50%, var(--purple-color) 50%); }
 
-        .predict-box {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-        .win-rate-box {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
+        .predict-box { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .win-rate-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <div>
-                <h1>🎯 WinGo 预测胜率对比 Dashboard</h1>
-                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">自动回测验证输赢 | 每 10 秒刷新</div>
+                <h1>🎯 WinGo 预测胜率 Dashboard</h1>
+                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Cloudflare 节点加密直连 | 每 5 秒自动更新</div>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <div class="time-badge">🇲🇾 <span id="myt-clock">--:--:--</span> MYT</div>
                 <div class="status-badge">
                     <div class="pulse-dot"></div>
-                    <span id="countdown">10s</span>
+                    <span id="countdown">5s</span>
                 </div>
             </div>
         </header>
@@ -170,14 +150,14 @@
                 <div class="card-value" id="predicted-result">--</div>
             </div>
             <div class="card win-rate-box">
-                <div class="card-title" style="color: #34d399;">📊 近 20 期预测胜率</div>
+                <div class="card-title" style="color: #34d399;">📊 近 20 期胜率</div>
                 <div class="card-value" style="color: #34d399;" id="win-rate">-- %</div>
             </div>
         </div>
 
         <div class="content-grid">
             <div class="card">
-                <h3>📜 近期预测 VS 实际开奖对账表</h3>
+                <h3>📜 近期预测 VS 实际开奖 (自动对账)</h3>
                 <div style="max-height: 400px; overflow-y: auto;">
                     <table>
                         <thead>
@@ -185,26 +165,29 @@
                                 <th>期号</th>
                                 <th>实际开奖</th>
                                 <th>系统预测</th>
-                                <th>对比结果</th>
+                                <th>结果</th>
                             </tr>
                         </thead>
                         <tbody id="draw-table">
-                            <tr><td colspan="4">正在抓取数据并计算胜率...</td></tr>
+                            <tr><td colspan="4">数据加载中...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <div class="card">
-                <h3>📈 走势图表</h3>
+                <h3>📈 走势图</h3>
                 <canvas id="chart-numbers" style="max-height: 250px;"></canvas>
             </div>
         </div>
     </div>
 
     <script>
+        // 已自动将你的专属 Cloudflare Worker 域名接入
+        const WORKER_URL = "https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev";
+
         let myChart = null;
-        let countdownVal = 10;
+        let countdownVal = 5;
 
         function updateMYTClock() {
             const now = new Date();
@@ -313,11 +296,8 @@
             payload.signature = md5(jsonStr);
             payload.timestamp = Math.floor(Date.now() / 1000);
 
-            const realApi = 'https://mzplayapi.com/api/webapi/GetNoaverageEmerdList?_t=' + Date.now();
-            const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(realApi);
-
             try {
-                const response = await fetch(proxyUrl, {
+                const response = await fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -335,7 +315,7 @@
                     });
                 }
             } catch (e) {
-                console.error("数据请求中...", e);
+                console.error("Worker 数据接收失败", e);
             }
             return [];
         }
@@ -384,7 +364,7 @@
                             <span class="${prediction.size === '大' ? 'tag-big' : 'tag-small'}">${prediction.size}</span>
                         </td>
                         <td>
-                            ${isWin ? '<span class="tag-win">✅ 赢 (WIN)</span>' : '<span class="tag-loss">❌ 输 (LOSS)</span>'}
+                            ${isWin ? '<span class="tag-win">✅ 赢</span>' : '<span class="tag-loss">❌ 输</span>'}
                         </td>
                     </tr>
                 `;
@@ -421,7 +401,7 @@
         setInterval(() => {
             countdownVal--;
             if (countdownVal <= 0) {
-                countdownVal = 10;
+                countdownVal = 5;
                 refreshDashboard();
             }
             document.getElementById('countdown').innerText = `${countdownVal}s`;
