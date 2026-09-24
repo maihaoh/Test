@@ -4,6 +4,7 @@ import hashlib
 import json
 import random
 import threading
+import zlib
 from collections import Counter
 import websocket  # 请确保安装: pip install websocket-client
 
@@ -16,10 +17,10 @@ LANGUAGE = 0
 POLL_INTERVAL = 10      # 每 10 秒轮询一次
 INIT_SCAN_PAGES = 5     # 初始化扫描页数
 
-# ==================== 百家乐 配置 ====================
-BACCARAT_WS_URL = "wss://et165.mdvuz.com:5030/"
+# ==================== Choice 百家乐 WebSocket 配置 ====================
+BACCARAT_WS_URL = "wss://et165.mdvuz.com:5030/"  # 选择 Choice/AG 房间节点的 WebSocket 地址
 
-# 全局内存数据仓库
+# 全局内存数据仓库（打通前端 index.html 渲染）
 global_data = {
     "updated_at": 0,
     "wingo": {
@@ -27,12 +28,22 @@ global_data = {
         "draws": []
     },
     "baccarat": {
-        "shoe_no": "--",
-        "game_no": "--",
-        "latest_result": "--",    # 庄 / 闲 / 和
+        "current_room": "D51",
+        "shoe_no": "01",
+        "game_no": "01",
+        "latest_result": "庄",    # 庄 / 闲 / 和
         "predicted_result": "闲", # 预测推荐
         "stats": {"banker_cnt": 0, "player_cnt": 0, "tie_cnt": 0, "win_rate": 0},
-        "history": []
+        "rooms": {
+            "D51": [],
+            "D52": [],
+            "D53": [],
+            "D54": [],
+            "D55": [],
+            "D56": [],
+            "D57": [],
+            "D58": []
+        }
     }
 }
 
@@ -58,7 +69,7 @@ def get_wingo_size(number):
     return "小" if 0 <= int(number) <= 4 else "大"
 
 def save_data_json():
-    """写出全局数据到 data.json"""
+    """写出全局数据到 data.json，供前端 index.html 读取"""
     with data_lock:
         global_data["updated_at"] = int(time.time())
         with open("data.json", "w", encoding="utf-8") as f:
@@ -156,66 +167,110 @@ def wingo_loop():
             memory_draws = new_items + memory_draws
             update_wingo_data(memory_draws)
 
-# ==================== 百家乐 核心逻辑 ====================
-def parse_baccarat_result(raw_msg):
-    """解析 WebSocket 传回的百家乐开奖包"""
+# ==================== Choice 百家乐 核心解析逻辑 ====================
+def predict_baccarat_next(history):
+    """基于长龙与历史频率的智能预测（庄/闲）"""
+    if not history:
+        return "庄"
+    recent = history[:10]
+    banker_cnt = sum(1 for h in recent if h.get("result") == "庄")
+    player_cnt = sum(1 for h in recent if h.get("result") == "闲")
+    # 斩龙/跟龙反弹策略
+    return "闲" if banker_cnt >= 6 else "庄"
+
+def parse_choice_baccarat_packet(raw_msg):
+    """解压并解析 Choice 百家乐的数据包"""
+    # 针对 zlib 二进制推送的自动解压机制
+    if isinstance(raw_msg, bytes):
+        try:
+            raw_msg = zlib.decompress(raw_msg, 16 + zlib.MAX_WBITS).decode('utf-8')
+        except Exception:
+            try:
+                raw_msg = zlib.decompress(raw_msg).decode('utf-8')
+            except Exception:
+                return None
+
     try:
         data = json.loads(raw_msg)
-        shoe_no = data.get("shoeNo", "01")
-        game_no = data.get("gameNo", "01")
+        # 支持 Game ID 结构例: GD051269240S1
+        game_id = str(data.get("gameId", data.get("game_id", "")))
+        if not game_id or "GD" not in game_id:
+            return None
+
+        room_id = "D" + game_id[2:4] # 提取 D51 到 D58
+        shoe_no = str(data.get("shoeNo", data.get("shoe_no", "01")))
+        game_no = str(data.get("roundNo", data.get("game_no", "01")))
         
-        # 结果映射示例：1-庄, 2-闲, 3-和
-        res_code = data.get("result", 1)
-        result_map = {1: "庄", 2: "闲", 3: "和"}
-        winner = result_map.get(res_code, "庄")
+        # 提取胜负（庄 Banker / 闲 Player / 和 Tie）
+        winner_raw = str(data.get("winner", data.get("result", "Banker"))).lower()
+        if "banker" in winner_raw or "1" in winner_raw:
+            winner = "庄"
+        elif "player" in winner_raw or "2" in winner_raw:
+            winner = "闲"
+        else:
+            winner = "和"
 
         return {
-            "shoe_no": str(shoe_no),
-            "game_no": str(game_no),
-            "result": winner
+            "room": room_id if room_id in global_data["baccarat"]["rooms"] else "D51",
+            "shoe": shoe_no,
+            "game": game_no,
+            "result": winner,
+            "game_id": game_id
         }
     except Exception:
         return None
 
 def on_baccarat_message(ws, message):
-    parsed = parse_baccarat_result(message)
+    parsed = parse_choice_baccarat_packet(message)
     if not parsed:
         return
 
+    room = parsed["room"]
     with data_lock:
         bacc = global_data["baccarat"]
-        bacc["shoe_no"] = parsed["shoe_no"]
-        bacc["game_no"] = parsed["game_no"]
-        bacc["latest_result"] = parsed["result"]
-        
-        # 更新历史列表与统计
-        bacc["history"].insert(0, parsed)
-        bacc["history"] = bacc["history"][:50]  # 保留最近 50 局
+        room_history = bacc["rooms"][room]
 
-        results = [h["result"] for h in bacc["history"]]
-        counts = Counter(results)
-        
-        bacc["stats"]["banker_cnt"] = counts.get("庄", 0)
-        bacc["stats"]["player_cnt"] = counts.get("闲", 0)
-        bacc["stats"]["tie_cnt"] = counts.get("和", 0)
+        # 预测当前局（对账）
+        prediction = predict_baccarat_next(room_history)
+        parsed["predict"] = prediction
 
-        # 动态智能推荐逻辑 (示例: 顺势跟庄闲)
-        bacc["predicted_result"] = "庄" if counts.get("庄", 0) >= counts.get("闲", 0) else "闲"
+        # 查重后推入历史列表
+        if not any(item.get("game_id") == parsed["game_id"] for item in room_history):
+            room_history.insert(0, parsed)
+            bacc["rooms"][room] = room_history[:50] # 保留最近 50 局
+
+        # 如果是主房间 (D51) 则同步全局状态
+        if room == "D51":
+            bacc["shoe_no"] = parsed["shoe"]
+            bacc["game_no"] = parsed["game"]
+            bacc["latest_result"] = parsed["result"]
+            bacc["predicted_result"] = predict_baccarat_next(room_history)
+
+            results = [h["result"] for h in room_history]
+            counts = Counter(results)
+            bacc["stats"]["banker_cnt"] = counts.get("庄", 0)
+            bacc["stats"]["player_cnt"] = counts.get("闲", 0)
+            bacc["stats"]["tie_cnt"] = counts.get("和", 0)
 
     save_data_json()
-    print(f"🃏 [百家乐] 开奖: 靴号{parsed['shoe_no']}-局号{parsed['game_no']} -> 结果: {parsed['result']}")
+    print(f"🃏 [Choice 百家乐 {room}] 靴:{parsed['shoe']}-局:{parsed['game']} | 结果: {parsed['result']} | 预测: {parsed['predict']}")
 
 def on_baccarat_error(ws, error):
     print(f"⚠️ [百家乐 WS 错误]: {error}")
 
 def on_baccarat_close(ws, close_status_code, close_msg):
-    print("🔌 [百家乐 WS 断开连接]，准备重连...")
+    print("🔌 [Choice 百家乐 WS 断开]，5秒后自动重连...")
     time.sleep(5)
     start_baccarat_ws()
 
 def start_baccarat_ws():
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Origin": "https://gc.ckrkg.com"
+    }
     ws = websocket.WebSocketApp(
         BACCARAT_WS_URL,
+        header=headers,
         on_message=on_baccarat_message,
         on_error=on_baccarat_error,
         on_close=on_baccarat_close
@@ -225,14 +280,14 @@ def start_baccarat_ws():
 # ==================== 主入口 ====================
 def main():
     print("=" * 60)
-    print("🚀 WinGo & 百家乐 双模数据采集与 Dashboard 同步服务已启动")
+    print("🚀 WinGo & Choice 百家乐 (D51-D58) 双模数据采集已成功对接！")
     print("=" * 60)
 
     # 启动 WinGo 轮询线程
     wingo_thread = threading.Thread(target=wingo_loop, daemon=True)
     wingo_thread.start()
 
-    # 启动 百家乐 WebSocket 线程
+    # 启动 Choice 百家乐 WebSocket 监听线程
     baccarat_thread = threading.Thread(target=start_baccarat_ws, daemon=True)
     baccarat_thread.start()
 
@@ -240,7 +295,7 @@ def main():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n👋 收到退出信号，服务已安全终止。")
+        print("\n👋 收到退出信号，程序已安全终止。")
 
 if __name__ == "__main__":
     main()
