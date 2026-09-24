@@ -352,58 +352,84 @@
         }, 1000);
 
         refreshDashboard();
-        // 4. 增强版：单局高频推演算法 (每一局结合：马尔可夫转移 + 冷热奇偶 + 均值拉回)
+        // 4. 极致加强版：多指标共振与动态过滤算法
 function predictNextNumber(draws) {
-    if (!draws || draws.length < 5) return 5;
+    if (!draws || draws.length < 10) return { num: 5, signal: '观望', confidence: '低' };
 
-    // 提取最近开奖数字
     const nums = draws.map(d => d.number);
-    const lastNum = nums[0]; // 上一期数字
+    const sizes = draws.map(d => d.size);
+    const lastNum = nums[0];
+    const lastSize = sizes[0];
 
-    // A. 统计上一期数字 (lastNum) 开出后，历史上紧跟的下一个数字（马尔可夫链简易版）
-    const transitionCounts = {};
-    for (let i = 0; i < 10; i++) transitionCounts[i] = 0;
-    
+    // --- 指标 1：长龙监测 (检测当前是否处于长龙) ---
+    let streakCnt = 0;
+    for (let s of sizes) {
+        if (s === lastSize) streakCnt++;
+        else break;
+    }
+
+    // --- 指标 2：马尔可夫转移概率 (历史跟号) ---
+    const transitionCounts = Array(10).fill(0);
     for (let i = 0; i < nums.length - 1; i++) {
         if (nums[i + 1] === lastNum) {
-            transitionCounts[nums[i]]++; // 统计紧跟在 lastNum 后面的数字
+            transitionCounts[nums[i]]++;
+        }
+    }
+    const markovBestNum = transitionCounts.indexOf(Math.max(...transitionCounts));
+    const markovSize = markovBestNum >= 5 ? '大' : '小';
+
+    // --- 指标 3：近10期均值回归 (极值纠偏) ---
+    const recent10 = nums.slice(0, 10);
+    const bigCount = recent10.filter(n => n >= 5).length;
+    let meanSize = '平';
+    if (bigCount >= 7) meanSize = '小';      // 近10期大太频繁，拉回看小
+    else if (bigCount <= 3) meanSize = '大';  // 近10期小太频繁，拉回看大
+
+    // --- 指标 4：0与5特殊号反转因子 ---
+    const isSpecialNum = (lastNum === 0 || lastNum === 5);
+
+    // --- 综合共振打分 ---
+    let bigScore = 0;
+    let smallScore = 0;
+
+    if (markovSize === '大') bigScore += 1.5; else smallScore += 1.5;
+    if (meanSize === '大') bigScore += 1; else if (meanSize === '小') smallScore += 1;
+
+    // 顺应长龙加分（长龙不盲目断龙）
+    if (streakCnt >= 3) {
+        if (lastSize === '大') bigScore += 1.2;
+        else smallScore += 1.2;
+    }
+
+    // 确定最终预测方向与确信度
+    let finalSize = '大';
+    let confidence = '普通';
+    
+    if (Math.abs(bigScore - smallScore) < 0.8 || isSpecialNum) {
+        confidence = '避险观望'; // 指标冲突或遇到0/5特殊号，建议不出手
+    } else if (bigScore > smallScore) {
+        finalSize = '大';
+        confidence = bigScore >= 2.5 ? '🔥高确信' : '普通';
+    } else {
+        finalSize = '小';
+        confidence = smallScore >= 2.5 ? '🔥高确信' : '普通';
+    }
+
+    // 根据最终大小选出评分最高的具体数字
+    let targetNum = finalSize === '大' ? 7 : 2; // 默认中位数
+    let maxNumScore = -1;
+    for (let i = (finalSize === '大' ? 5 : 0); i < (finalSize === '大' ? 10 : 5); i++) {
+        if (transitionCounts[i] > maxNumScore) {
+            maxNumScore = transitionCounts[i];
+            targetNum = i;
         }
     }
 
-    // B. 计算冷热度（最近 15 期出现最少的号码）
-    const recent15 = nums.slice(0, 15);
-    const freq = {};
-    for (let i = 0; i < 10; i++) freq[i] = 0;
-    recent15.forEach(n => freq[n]++);
-
-    // C. 奇偶与大小交替趋势判断
-    const lastSize = draws[0].size;
-    const isBigOverdue = nums.slice(0, 5).filter(n => n < 5).length >= 4; // 近5期严重偏小
-    const isSmallOverdue = nums.slice(0, 5).filter(n => n >= 5).length >= 4; // 近5期严重偏大
-
-    // 综合加权评分 (0-9 号码打分)
-    const scores = Array(10).fill(0);
-    for (let i = 0; i < 10; i++) {
-        // 1. 马尔可夫转移权重
-        scores[i] += (transitionCounts[i] || 0) * 3;
-        // 2. 补冷门/回温权重 (出现次数越少，给予微弱回拉加权)
-        scores[i] += (5 - freq[i]);
-        // 3. 均值修正加权
-        if (isBigOverdue && i >= 5) scores[i] += 2;
-        if (isSmallOverdue && i < 5) scores[i] += 2;
-    }
-
-    // 选出综合得分最高的数字作为当期推荐
-    let bestNum = 0;
-    let maxScore = -999;
-    for (let i = 0; i < 10; i++) {
-        if (scores[i] > maxScore) {
-            maxScore = scores[i];
-            bestNum = i;
-        }
-    }
-
-    return bestNum;
+    return {
+        num: targetNum,
+        size: finalSize,
+        confidence: confidence
+    };
 }
     </script>
 </body>
