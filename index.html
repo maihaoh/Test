@@ -64,6 +64,30 @@
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
         }
 
+        /* D51 - D58 房间选择器样式 */
+        .room-bar {
+            display: none;
+            background: var(--card-bg);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 20px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .room-select {
+            background: #0f172a;
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            outline: none;
+            cursor: pointer;
+        }
+
         .time-badge {
             background: #1e293b;
             border: 1px solid #334155;
@@ -123,13 +147,12 @@
         th, td { padding: 10px; text-align: center; border-bottom: 1px solid #334155; font-size: 0.9rem; }
         th { color: #94a3b8; font-weight: 500; }
 
-        /* WinGo 专属标签 */
         .tag-big { background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
         .tag-small { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
         .tag-win { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
         .tag-loss { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
 
-        /* 百家乐 专属标签 */
+        /* 百家乐 专属样式 */
         .tag-zhuang { background: #dc2626; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; }
         .tag-xian { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; }
         .tag-he { background: #16a34a; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; }
@@ -175,6 +198,22 @@
             <button class="mode-btn" id="btn-baccarat" onclick="switchGameMode('baccarat')">🃏 百家乐 Choice</button>
         </div>
 
+        <!-- D51 到 D58 房间选择框 -->
+        <div class="room-bar" id="baccarat-room-bar">
+            <span>🏠 <b>选择房间：</b></span>
+            <select class="room-select" id="room-select" onchange="changeBaccaratRoom()">
+                <option value="D51">D51 房间</option>
+                <option value="D52">D52 房间</option>
+                <option value="D53">D53 房间</option>
+                <option value="D54">D54 房间</option>
+                <option value="D55">D55 房间</option>
+                <option value="D56">D56 房间</option>
+                <option value="D57">D57 房间</option>
+                <option value="D58">D58 房间</option>
+            </select>
+            <span style="font-size: 0.85rem; color: #94a3b8; margin-left: 10px;">当前正在实时监控此房间</span>
+        </div>
+
         <div class="grid-cards">
             <div class="card">
                 <div class="card-title" id="card-label-issue">最新期号</div>
@@ -200,7 +239,7 @@
                 <div style="max-height: 400px; overflow-y: auto;">
                     <table>
                         <thead>
-                            <tr id="table-head-row">
+                            <tr>
                                 <th id="th-issue">期号</th>
                                 <th>实际开奖</th>
                                 <th>系统预测</th>
@@ -224,22 +263,52 @@
     <script>
         const WORKER_URL = "https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev";
         let currentMode = 'wingo';
+        let currentRoom = 'D51';
         let myChart = null;
         let countdownVal = 5;
 
-        // 模拟/WS 获取的百家乐历史数据
-        let baccaratMockData = [
-            { shoe: "14", game: "89", result: "庄", predict: "闲" },
-            { shoe: "14", game: "88", result: "闲", predict: "闲" },
-            { shoe: "14", game: "87", result: "庄", predict: "庄" },
-            { shoe: "14", game: "86", result: "闲", predict: "庄" },
-            { shoe: "14", game: "85", result: "和", predict: "闲" },
-            { shoe: "14", game: "84", result: "庄", predict: "庄" },
-            { shoe: "14", game: "83", result: "庄", predict: "庄" },
-            { shoe: "14", game: "82", result: "闲", predict: "闲" },
-            { shoe: "14", game: "81", result: "庄", predict: "闲" },
-            { shoe: "14", game: "80", result: "闲", predict: "闲" }
-        ];
+        // D51 - D58 房间模拟数据 (支持接入底层实时接口)
+        const baccaratRoomsData = {
+            "D51": [
+                { shoe: "14", game: "89", result: "庄", predict: "闲" },
+                { shoe: "14", game: "88", result: "闲", predict: "闲" },
+                { shoe: "14", game: "87", result: "庄", predict: "庄" },
+                { shoe: "14", game: "86", result: "闲", predict: "庄" },
+                { shoe: "14", game: "85", result: "和", predict: "闲" },
+                { shoe: "14", game: "84", result: "庄", predict: "庄" }
+            ],
+            "D52": [
+                { shoe: "08", game: "32", result: "闲", predict: "闲" },
+                { shoe: "08", game: "31", result: "闲", predict: "闲" },
+                { shoe: "08", game: "30", result: "庄", predict: "闲" },
+                { shoe: "08", game: "29", result: "庄", predict: "庄" }
+            ],
+            "D53": [
+                { shoe: "21", game: "15", result: "庄", predict: "庄" },
+                { shoe: "21", game: "14", result: "和", predict: "闲" },
+                { shoe: "21", game: "13", result: "闲", predict: "闲" }
+            ],
+            "D54": [
+                { shoe: "03", game: "45", result: "闲", predict: "庄" },
+                { shoe: "03", game: "44", result: "庄", predict: "庄" }
+            ],
+            "D55": [
+                { shoe: "12", game: "09", result: "庄", predict: "庄" },
+                { shoe: "12", game: "08", result: "庄", predict: "庄" }
+            ],
+            "D56": [
+                { shoe: "05", game: "22", result: "闲", predict: "闲" },
+                { shoe: "05", game: "21", result: "和", predict: "庄" }
+            ],
+            "D57": [
+                { shoe: "19", game: "61", result: "庄", predict: "闲" },
+                { shoe: "19", game: "60", result: "庄", predict: "庄" }
+            ],
+            "D58": [
+                { shoe: "01", game: "10", result: "闲", predict: "闲" },
+                { shoe: "01", game: "09", result: "闲", predict: "闲" }
+            ]
+        };
 
         function updateMYTClock() {
             const now = new Date();
@@ -270,13 +339,17 @@
             document.getElementById('btn-wingo').classList.toggle('active', mode === 'wingo');
             document.getElementById('btn-baccarat').classList.toggle('active', mode === 'baccarat');
 
+            const roomBar = document.getElementById('baccarat-room-bar');
+
             if (mode === 'wingo') {
+                roomBar.style.display = "none";
                 document.getElementById('page-title').innerText = "🎯 WinGo 预测胜率 Dashboard";
                 document.getElementById('card-label-issue').innerText = "最新期号";
                 document.getElementById('th-issue').innerText = "期号";
                 document.getElementById('chart-title').innerText = "📈 走势图";
                 refreshDashboard();
             } else {
+                roomBar.style.display = "flex";
                 document.getElementById('page-title').innerText = "🃏 百家乐 Choice 实时监控";
                 document.getElementById('card-label-issue').innerText = "靴号-局号";
                 document.getElementById('th-issue').innerText = "靴-局";
@@ -285,13 +358,15 @@
             }
         }
 
-        // WinGo 动态预测算法
+        function changeBaccaratRoom() {
+            currentRoom = document.getElementById('room-select').value;
+            refreshBaccaratDashboard();
+        }
+
         function predictNextNumber(draws) {
             if (!draws || draws.length < 10) return { num: 5, size: '大', confidence: '低' };
-
             const nums = draws.map(d => d.number);
             const sizes = draws.map(d => d.size);
-            const lastNum = nums[0];
             const lastSize = sizes[0];
 
             let streakCnt = 0;
@@ -300,23 +375,12 @@
                 else break;
             }
 
-            const transitionCounts = Array(10).fill(0);
-            for (let i = 0; i < nums.length - 1; i++) {
-                if (nums[i + 1] === lastNum) {
-                    transitionCounts[nums[i]]++;
-                }
-            }
-
             const recent10 = nums.slice(0, 10);
             const bigCount = recent10.filter(n => n >= 5).length;
-            let meanSize = '平';
-            if (bigCount >= 7) meanSize = '小';
-            else if (bigCount <= 3) meanSize = '大';
+            let meanSize = bigCount >= 7 ? '小' : (bigCount <= 3 ? '大' : '平');
 
-            let bigScore = 0;
-            let smallScore = 0;
-
-            if (meanSize === '大') bigScore += 1; else if (meanSize === '小') smallScore += 1;
+            let bigScore = meanSize === '大' ? 1 : 0;
+            let smallScore = meanSize === '小' ? 1 : 0;
 
             if (streakCnt >= 3) {
                 if (lastSize === '大') bigScore += 1.2;
@@ -325,16 +389,12 @@
 
             let finalSize = bigScore >= smallScore ? '大' : '小';
             let confidence = Math.abs(bigScore - smallScore) >= 1 ? '🔥高确信' : '避险观望';
-
-            let targetNum = finalSize === '大' ? 7 : 2;
-
-            return { num: targetNum, size: finalSize, confidence: confidence };
+            return { num: finalSize === '大' ? 7 : 2, size: finalSize, confidence: confidence };
         }
 
         async function fetchDraws() {
             const random = Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
             const timestamp = Math.floor(Date.now() / 1000);
-
             const signObj = { "language": 0, "pageNo": 1, "pageSize": 30, "random": random, "typeId": 30 };
             const jsonSignStr = JSON.stringify(signObj);
             const signature = CryptoJS.MD5(jsonSignStr).toString().toUpperCase();
@@ -403,15 +463,21 @@
             renderWingoChart([...draws.slice(0, 10)].reverse());
         }
 
-        // 百家乐 界面刷新逻辑
         function refreshBaccaratDashboard() {
             if (currentMode !== 'baccarat') return;
 
-            const latest = baccaratMockData[0];
+            const roomData = baccaratRoomsData[currentRoom] || [];
+            if (roomData.length === 0) {
+                document.getElementById('latest-issue').innerText = "--";
+                document.getElementById('latest-result').innerHTML = "--";
+                document.getElementById('draw-table').innerHTML = '<tr><td colspan="4">该房间暂无数据</td></tr>';
+                return;
+            }
+
+            const latest = roomData[0];
             document.getElementById('latest-issue').innerText = `${latest.shoe}-${latest.game}`;
             document.getElementById('latest-result').innerHTML = getBaccaratTag(latest.result);
             
-            // 预测下期：智能算法推算
             const nextPredict = "庄";
             document.getElementById('predicted-result').innerHTML = `
                 ${getBaccaratTag(nextPredict)}
@@ -420,7 +486,7 @@
 
             let winCount = 0, totalChecked = 0, tableHtml = '';
 
-            for (let item of baccaratMockData) {
+            for (let item of roomData) {
                 const isWin = item.result === item.predict;
                 totalChecked++;
                 if (isWin) winCount++;
@@ -439,7 +505,7 @@
             document.getElementById('win-rate').innerText = `${winRate}% (${winCount}赢 / ${totalChecked - winCount}输)`;
             document.getElementById('draw-table').innerHTML = tableHtml;
 
-            renderBaccaratChart();
+            renderBaccaratChart(roomData);
         }
 
         function renderWingoChart(recentDraws) {
@@ -455,12 +521,12 @@
             });
         }
 
-        function renderBaccaratChart() {
+        function renderBaccaratChart(roomData) {
             if (myChart) myChart.destroy();
             
-            let bankerCnt = baccaratMockData.filter(d => d.result === '庄').length;
-            let playerCnt = baccaratMockData.filter(d => d.result === '闲').length;
-            let tieCnt = baccaratMockData.filter(d => d.result === '和').length;
+            let bankerCnt = roomData.filter(d => d.result === '庄').length;
+            let playerCnt = roomData.filter(d => d.result === '闲').length;
+            let tieCnt = roomData.filter(d => d.result === '和').length;
 
             const ctx = document.getElementById('chart-numbers').getContext('2d');
             myChart = new Chart(ctx, {
