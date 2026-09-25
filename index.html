@@ -261,299 +261,1761 @@
     </div>
 
     <script>
-        const WORKER_URL = "https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev";
-        let currentMode = 'wingo';
-        let currentRoom = 'D51';
-        let myChart = null;
-        let countdownVal = 5;
+        <script>
 
-        // D51 - D58 房间模拟数据 (支持接入底层实时接口)
-        const baccaratRoomsData = {
-            "D51": [
-                { shoe: "14", game: "89", result: "庄", predict: "闲" },
-                { shoe: "14", game: "88", result: "闲", predict: "闲" },
-                { shoe: "14", game: "87", result: "庄", predict: "庄" },
-                { shoe: "14", game: "86", result: "闲", predict: "庄" },
-                { shoe: "14", game: "85", result: "和", predict: "闲" },
-                { shoe: "14", game: "84", result: "庄", predict: "庄" }
-            ],
-            "D52": [
-                { shoe: "08", game: "32", result: "闲", predict: "闲" },
-                { shoe: "08", game: "31", result: "闲", predict: "闲" },
-                { shoe: "08", game: "30", result: "庄", predict: "闲" },
-                { shoe: "08", game: "29", result: "庄", predict: "庄" }
-            ],
-            "D53": [
-                { shoe: "21", game: "15", result: "庄", predict: "庄" },
-                { shoe: "21", game: "14", result: "和", predict: "闲" },
-                { shoe: "21", game: "13", result: "闲", predict: "闲" }
-            ],
-            "D54": [
-                { shoe: "03", game: "45", result: "闲", predict: "庄" },
-                { shoe: "03", game: "44", result: "庄", predict: "庄" }
-            ],
-            "D55": [
-                { shoe: "12", game: "09", result: "庄", predict: "庄" },
-                { shoe: "12", game: "08", result: "庄", predict: "庄" }
-            ],
-            "D56": [
-                { shoe: "05", game: "22", result: "闲", predict: "闲" },
-                { shoe: "05", game: "21", result: "和", predict: "庄" }
-            ],
-            "D57": [
-                { shoe: "19", game: "61", result: "庄", predict: "闲" },
-                { shoe: "19", game: "60", result: "庄", predict: "庄" }
-            ],
-            "D58": [
-                { shoe: "01", game: "10", result: "闲", predict: "闲" },
-                { shoe: "01", game: "09", result: "闲", predict: "闲" }
-            ]
+const DATA_URL = "./data.json";
+
+let currentMode = "wingo";
+let currentRoom = "D51";
+
+let myChart = null;
+
+let countdownVal = 5;
+
+
+// ============================================================
+// MYT CLOCK
+// ============================================================
+
+function updateMYTClock() {
+
+    const now = new Date();
+
+    const options = {
+
+        timeZone:
+            "Asia/Kuala_Lumpur",
+
+        hour:
+            "2-digit",
+
+        minute:
+            "2-digit",
+
+        second:
+            "2-digit",
+
+        hour12:
+            false
+    };
+
+    document.getElementById(
+        "myt-clock"
+    ).innerText =
+        new Intl.DateTimeFormat(
+            "en-GB",
+            options
+        ).format(now);
+}
+
+setInterval(
+    updateMYTClock,
+    1000
+);
+
+updateMYTClock();
+
+
+// ============================================================
+// TAG
+// ============================================================
+
+function getBaccaratTag(type) {
+
+    if (type === "庄") {
+
+        return `
+            <span class="tag-zhuang">
+                庄
+            </span>
+        `;
+    }
+
+    if (type === "闲") {
+
+        return `
+            <span class="tag-xian">
+                闲
+            </span>
+        `;
+    }
+
+    if (type === "和") {
+
+        return `
+            <span class="tag-he">
+                和
+            </span>
+        `;
+    }
+
+    return `<span>${type}</span>`;
+}
+
+
+// ============================================================
+// WinGo 数字
+// ============================================================
+
+function getNumberIconHtml(num) {
+
+    num = parseInt(num);
+
+    let colorClass = "";
+
+    if (num === 0) {
+
+        colorClass =
+            "bg-red-purple";
+
+    } else if (num === 5) {
+
+        colorClass =
+            "bg-green-purple";
+
+    } else if (
+        [1, 3, 7, 9].includes(num)
+    ) {
+
+        colorClass =
+            "bg-green";
+
+    } else if (
+        [2, 4, 6, 8].includes(num)
+    ) {
+
+        colorClass =
+            "bg-red";
+    }
+
+    return `
+        <span class="icon-num ${colorClass}">
+            ${num}
+        </span>
+    `;
+}
+
+
+// ============================================================
+// ============================================================
+// 4指标 WinGo 预测算法
+// ============================================================
+// ============================================================
+
+function predictNextNumber(draws) {
+
+    if (
+        !draws ||
+        draws.length < 10
+    ) {
+
+        return {
+
+            num: 5,
+
+            size: "大",
+
+            signal: "观望",
+
+            confidence: "低",
+
+            bigScore: 0,
+
+            smallScore: 0,
+
+            difference: 0,
+
+            markovNum: 5,
+
+            markovSize: "大",
+
+            meanSize: "平",
+
+            streak: 0,
+
+            special: false
         };
+    }
 
-        function updateMYTClock() {
-            const now = new Date();
-            const options = { timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-            document.getElementById('myt-clock').innerText = new Intl.DateTimeFormat('en-GB', options).format(now);
+
+    const nums =
+        draws.map(
+            d => Number(d.number)
+        );
+
+
+    const sizes =
+        draws.map(
+            d => d.size
+        );
+
+
+    const lastNum =
+        nums[0];
+
+
+    const lastSize =
+        sizes[0];
+
+
+    // ========================================================
+    // 1. 长龙
+    // ========================================================
+
+    let streakCnt = 0;
+
+    for (
+        let s of sizes
+    ) {
+
+        if (
+            s === lastSize
+        ) {
+
+            streakCnt++;
+
+        } else {
+
+            break;
         }
-        setInterval(updateMYTClock, 1000);
+    }
 
-        function getBaccaratTag(type) {
-            if (type === '庄') return `<span class="tag-zhuang">庄</span>`;
-            if (type === '闲') return `<span class="tag-xian">闲</span>`;
-            if (type === '和') return `<span class="tag-he">和</span>`;
-            return `<span>${type}</span>`;
-        }
 
-        function getNumberIconHtml(num) {
-            num = parseInt(num);
-            let colorClass = '';
-            if (num === 0) colorClass = 'bg-red-purple';
-            else if (num === 5) colorClass = 'bg-green-purple';
-            else if ([1, 3, 7, 9].includes(num)) colorClass = 'bg-green';
-            else if ([2, 4, 6, 8].includes(num)) colorClass = 'bg-red';
-            return `<span class="icon-num ${colorClass}">${num}</span>`;
-        }
+    // ========================================================
+    // 2. 马尔可夫转移
+    // ========================================================
 
-        function switchGameMode(mode) {
-            currentMode = mode;
-            document.getElementById('btn-wingo').classList.toggle('active', mode === 'wingo');
-            document.getElementById('btn-baccarat').classList.toggle('active', mode === 'baccarat');
+    const transitionCounts =
+        Array(10).fill(0);
 
-            const roomBar = document.getElementById('baccarat-room-bar');
 
-            if (mode === 'wingo') {
-                roomBar.style.display = "none";
-                document.getElementById('page-title').innerText = "🎯 WinGo 预测胜率 Dashboard";
-                document.getElementById('card-label-issue').innerText = "最新期号";
-                document.getElementById('th-issue').innerText = "期号";
-                document.getElementById('chart-title').innerText = "📈 走势图";
-                refreshDashboard();
-            } else {
-                roomBar.style.display = "flex";
-                document.getElementById('page-title').innerText = "🃏 百家乐 Choice 实时监控";
-                document.getElementById('card-label-issue').innerText = "靴号-局号";
-                document.getElementById('th-issue').innerText = "靴-局";
-                document.getElementById('chart-title').innerText = "📈 庄闲和分布图";
-                refreshBaccaratDashboard();
+    for (
+        let i = 0;
+        i < nums.length - 1;
+        i++
+    ) {
+
+        const currentNum =
+            nums[i];
+
+
+        const previousNum =
+            nums[i + 1];
+
+
+        if (
+            previousNum === lastNum
+        ) {
+
+            if (
+                Number.isInteger(
+                    currentNum
+                ) &&
+                currentNum >= 0 &&
+                currentNum <= 9
+            ) {
+
+                transitionCounts[
+                    currentNum
+                ]++;
             }
         }
+    }
 
-        function changeBaccaratRoom() {
-            currentRoom = document.getElementById('room-select').value;
-            refreshBaccaratDashboard();
+
+    const maxTransition =
+        Math.max(
+            ...transitionCounts
+        );
+
+
+    let markovBestNum = 5;
+
+
+    if (
+        maxTransition > 0
+    ) {
+
+        markovBestNum =
+            transitionCounts.indexOf(
+                maxTransition
+            );
+    }
+
+
+    const markovSize =
+        markovBestNum >= 5
+            ? "大"
+            : "小";
+
+
+    // ========================================================
+    // 3. 近10期均值回归
+    // ========================================================
+
+    const recent10 =
+        nums.slice(
+            0,
+            10
+        );
+
+
+    const bigCount =
+        recent10.filter(
+            n => n >= 5
+        ).length;
+
+
+    let meanSize = "平";
+
+
+    if (
+        bigCount >= 7
+    ) {
+
+        meanSize = "小";
+
+    } else if (
+        bigCount <= 3
+    ) {
+
+        meanSize = "大";
+    }
+
+
+    // ========================================================
+    // 4. 0 / 5 特殊号
+    // ========================================================
+
+    const isSpecialNum =
+        lastNum === 0 ||
+        lastNum === 5;
+
+
+    // ========================================================
+    // 综合评分
+    // ========================================================
+
+    let bigScore = 0;
+
+    let smallScore = 0;
+
+
+    // 马尔可夫
+    if (
+        markovSize === "大"
+    ) {
+
+        bigScore += 1.5;
+
+    } else {
+
+        smallScore += 1.5;
+    }
+
+
+    // 均值回归
+    if (
+        meanSize === "大"
+    ) {
+
+        bigScore += 1;
+
+    } else if (
+        meanSize === "小"
+    ) {
+
+        smallScore += 1;
+    }
+
+
+    // 长龙
+    if (
+        streakCnt >= 3
+    ) {
+
+        if (
+            lastSize === "大"
+        ) {
+
+            bigScore += 1.2;
+
+        } else {
+
+            smallScore += 1.2;
         }
+    }
 
-        function predictNextNumber(draws) {
-            if (!draws || draws.length < 10) return { num: 5, size: '大', confidence: '低' };
-            const nums = draws.map(d => d.number);
-            const sizes = draws.map(d => d.size);
-            const lastSize = sizes[0];
 
-            let streakCnt = 0;
-            for (let s of sizes) {
-                if (s === lastSize) streakCnt++;
-                else break;
-            }
+    const difference =
+        Math.abs(
+            bigScore -
+            smallScore
+        );
 
-            const recent10 = nums.slice(0, 10);
-            const bigCount = recent10.filter(n => n >= 5).length;
-            let meanSize = bigCount >= 7 ? '小' : (bigCount <= 3 ? '大' : '平');
 
-            let bigScore = meanSize === '大' ? 1 : 0;
-            let smallScore = meanSize === '小' ? 1 : 0;
+    // ========================================================
+    // 最终方向
+    // ========================================================
 
-            if (streakCnt >= 3) {
-                if (lastSize === '大') bigScore += 1.2;
-                else smallScore += 1.2;
-            }
+    let finalSize =
+        bigScore >= smallScore
+            ? "大"
+            : "小";
 
-            let finalSize = bigScore >= smallScore ? '大' : '小';
-            let confidence = Math.abs(bigScore - smallScore) >= 1 ? '🔥高确信' : '避险观望';
-            return { num: finalSize === '大' ? 7 : 2, size: finalSize, confidence: confidence };
+
+    let signal = "观望";
+
+    let confidence = "普通";
+
+
+    // 指标冲突
+    if (
+        difference < 0.8
+    ) {
+
+        signal =
+            "观望";
+
+        confidence =
+            "避险观望";
+
+
+    // 0 / 5
+    } else if (
+        isSpecialNum
+    ) {
+
+        signal =
+            "观望";
+
+        confidence =
+            "避险观望";
+
+
+    // 大
+    } else if (
+        bigScore > smallScore
+    ) {
+
+        finalSize =
+            "大";
+
+        signal =
+            "BUY";
+
+        confidence =
+            bigScore >= 2.5
+                ? "🔥高确信"
+                : "普通";
+
+
+    // 小
+    } else {
+
+        finalSize =
+            "小";
+
+        signal =
+            "SELL";
+
+        confidence =
+            smallScore >= 2.5
+                ? "🔥高确信"
+                : "普通";
+    }
+
+
+    // ========================================================
+    // 具体数字
+    // ========================================================
+
+    let targetNum =
+        finalSize === "大"
+            ? 7
+            : 2;
+
+
+    let maxNumScore = -1;
+
+
+    const startNum =
+        finalSize === "大"
+            ? 5
+            : 0;
+
+
+    const endNum =
+        finalSize === "大"
+            ? 10
+            : 5;
+
+
+    for (
+        let i = startNum;
+        i < endNum;
+        i++
+    ) {
+
+        if (
+            transitionCounts[i]
+            > maxNumScore
+        ) {
+
+            maxNumScore =
+                transitionCounts[i];
+
+            targetNum =
+                i;
         }
+    }
 
-        async function fetchDraws() {
-            const random = Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
-            const timestamp = Math.floor(Date.now() / 1000);
-            const signObj = { "language": 0, "pageNo": 1, "pageSize": 30, "random": random, "typeId": 30 };
-            const jsonSignStr = JSON.stringify(signObj);
-            const signature = CryptoJS.MD5(jsonSignStr).toString().toUpperCase();
 
-            const payload = { "typeId": 30, "pageNo": 1, "pageSize": 30, "language": 0, "random": random, "signature": signature, "timestamp": timestamp };
+    // 没有历史转移
+    if (
+        maxTransition === 0
+    ) {
 
-            try {
-                const response = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                const json = await response.json();
-                if (json.code === 0 && json.data && json.data.list) {
-                    return json.data.list.map(item => {
-                        const num = parseInt(item.number);
-                        return { issueNumber: String(item.issueNumber), number: num, size: num >= 5 ? '大' : '小' };
-                    });
+        targetNum =
+            finalSize === "大"
+                ? 7
+                : 2;
+    }
+
+
+    return {
+
+        num:
+            targetNum,
+
+        size:
+            finalSize,
+
+        signal:
+            signal,
+
+        confidence:
+            confidence,
+
+        bigScore:
+            Number(
+                bigScore.toFixed(2)
+            ),
+
+        smallScore:
+            Number(
+                smallScore.toFixed(2)
+            ),
+
+        difference:
+            Number(
+                difference.toFixed(2)
+            ),
+
+        markovNum:
+            markovBestNum,
+
+        markovSize:
+            markovSize,
+
+        meanSize:
+            meanSize,
+
+        streak:
+            streakCnt,
+
+        special:
+            isSpecialNum
+    };
+}
+
+
+// ============================================================
+// 从 data.json 读取
+// ============================================================
+
+async function loadData() {
+
+    try {
+
+        const response =
+            await fetch(
+                DATA_URL +
+                "?t=" +
+                Date.now(),
+                {
+                    cache:
+                        "no-store"
                 }
-            } catch (e) {
-                console.error("Worker 请求错误", e);
-            }
-            return [];
+            );
+
+
+        if (
+            !response.ok
+        ) {
+
+            throw new Error(
+                "data.json HTTP " +
+                response.status
+            );
         }
 
-        async function refreshDashboard() {
-            if (currentMode !== 'wingo') return;
 
-            const draws = await fetchDraws();
-            if (!draws || draws.length === 0) return;
+        return await response.json();
 
-            const latest = draws[0];
-            document.getElementById('latest-issue').innerText = latest.issueNumber.slice(-4);
-            document.getElementById('latest-result').innerHTML = `
-                ${getNumberIconHtml(latest.number)} 
-                <span class="${latest.size === '大' ? 'tag-big' : 'tag-small'}">${latest.size}</span>
-            `;
+    } catch (error) {
 
-            const nextPrediction = predictNextNumber(draws);
-            document.getElementById('predicted-result').innerHTML = `
-                ${getNumberIconHtml(nextPrediction.num)}
-                <span class="${nextPrediction.size === '大' ? 'tag-big' : 'tag-small'}">${nextPrediction.size}</span>
-                <span style="font-size:0.75rem; color:#94a3b8; margin-left:4px;">${nextPrediction.confidence}</span>
-            `;
+        console.error(
+            "读取 data.json 失败:",
+            error
+        );
 
-            let winCount = 0, totalChecked = 0, tableHtml = '';
+        return null;
+    }
+}
 
-            for (let i = 0; i < draws.length - 1; i++) {
-                const currentDraw = draws[i];
-                const historySlice = draws.slice(i + 1);
-                const prediction = predictNextNumber(historySlice);
-                const isWin = currentDraw.size === prediction.size;
 
-                if (i < 20) { totalChecked++; if (isWin) winCount++; }
+// ============================================================
+// WinGo Dashboard
+// ============================================================
 
-                tableHtml += `
-                    <tr>
-                        <td>${currentDraw.issueNumber.slice(-4)}期</td>
-                        <td>${getNumberIconHtml(currentDraw.number)} <span class="${currentDraw.size === '大' ? 'tag-big' : 'tag-small'}">${currentDraw.size}</span></td>
-                        <td>${getNumberIconHtml(prediction.num)} <span class="${prediction.size === '大' ? 'tag-big' : 'tag-small'}">${prediction.size}</span></td>
-                        <td>${isWin ? '<span class="tag-win">✅ 赢</span>' : '<span class="tag-loss">❌ 输</span>'}</td>
-                    </tr>
-                `;
+async function refreshDashboard() {
+
+    if (
+        currentMode !==
+        "wingo"
+    ) {
+
+        return;
+    }
+
+
+    const data =
+        await loadData();
+
+
+    if (
+        !data ||
+        !data.wingo
+    ) {
+
+        return;
+    }
+
+
+    const draws =
+        data.wingo.draws ||
+        [];
+
+
+    if (
+        draws.length === 0
+    ) {
+
+        return;
+    }
+
+
+    const latest =
+        draws[0];
+
+
+    // ========================================================
+    // 最新期号
+    // ========================================================
+
+    document.getElementById(
+        "latest-issue"
+    ).innerText =
+        String(
+            latest.issueNumber
+        ).slice(-4);
+
+
+    // ========================================================
+    // 最新开奖
+    // ========================================================
+
+    document.getElementById(
+        "latest-result"
+    ).innerHTML = `
+
+        ${getNumberIconHtml(
+            latest.number
+        )}
+
+        <span class="${
+            latest.size === "大"
+                ? "tag-big"
+                : "tag-small"
+        }">
+
+            ${latest.size}
+
+        </span>
+    `;
+
+
+    // ========================================================
+    // 预测
+    // ========================================================
+
+    const prediction =
+        predictNextNumber(
+            draws
+        );
+
+
+    const serverPrediction =
+        data.wingo.prediction;
+
+
+    // 优先采用 bot.py
+    const finalPrediction =
+        serverPrediction &&
+        serverPrediction.size
+            ? serverPrediction
+            : prediction;
+
+
+    // ========================================================
+    // 预测颜色
+    // ========================================================
+
+    let confidenceHtml =
+        "";
+
+
+    if (
+        finalPrediction.confidence ===
+        "🔥高确信"
+    ) {
+
+        confidenceHtml = `
+            <span style="
+                font-size:0.75rem;
+                color:#34d399;
+                margin-left:4px;
+            ">
+                🔥高确信
+            </span>
+        `;
+
+    } else if (
+        finalPrediction.confidence ===
+        "避险观望"
+    ) {
+
+        confidenceHtml = `
+            <span style="
+                font-size:0.75rem;
+                color:#fbbf24;
+                margin-left:4px;
+            ">
+                ⚠️避险观望
+            </span>
+        `;
+
+    } else {
+
+        confidenceHtml = `
+            <span style="
+                font-size:0.75rem;
+                color:#94a3b8;
+                margin-left:4px;
+            ">
+                普通
+            </span>
+        `;
+    }
+
+
+    document.getElementById(
+        "predicted-result"
+    ).innerHTML = `
+
+        ${getNumberIconHtml(
+            finalPrediction.num
+        )}
+
+        <span class="${
+            finalPrediction.size === "大"
+                ? "tag-big"
+                : "tag-small"
+        }">
+
+            ${finalPrediction.size}
+
+        </span>
+
+        ${confidenceHtml}
+
+        <span style="
+            width:100%;
+            font-size:0.72rem;
+            color:#64748b;
+            margin-top:4px;
+        ">
+
+            ${finalPrediction.signal}
+
+            |
+
+            大 ${
+                finalPrediction.bigScore
+                ?? prediction.bigScore
+                ?? 0
             }
 
-            const winRate = totalChecked > 0 ? Math.round((winCount / totalChecked) * 100) : 0;
-            document.getElementById('win-rate').innerText = `${winRate}% (${winCount}赢 / ${totalChecked - winCount}输)`;
-            document.getElementById('draw-table').innerHTML = tableHtml;
+            :
 
-            renderWingoChart([...draws.slice(0, 10)].reverse());
+            小 ${
+                finalPrediction.smallScore
+                ?? prediction.smallScore
+                ?? 0
+            }
+
+        </span>
+    `;
+
+
+    // ========================================================
+    // 历史回测
+    // ========================================================
+
+    let winCount = 0;
+
+    let totalChecked = 0;
+
+    let tableHtml = "";
+
+
+    for (
+        let i = 0;
+        i < draws.length - 1;
+        i++
+    ) {
+
+        const currentDraw =
+            draws[i];
+
+
+        const historySlice =
+            draws.slice(
+                i + 1
+            );
+
+
+        // 历史不足10期
+        if (
+            historySlice.length < 10
+        ) {
+
+            continue;
         }
 
-        function refreshBaccaratDashboard() {
-            if (currentMode !== 'baccarat') return;
 
-            const roomData = baccaratRoomsData[currentRoom] || [];
-            if (roomData.length === 0) {
-                document.getElementById('latest-issue').innerText = "--";
-                document.getElementById('latest-result').innerHTML = "--";
-                document.getElementById('draw-table').innerHTML = '<tr><td colspan="4">该房间暂无数据</td></tr>';
-                return;
+        const prediction =
+            predictNextNumber(
+                historySlice
+            );
+
+
+        const isAvoid =
+            prediction.signal ===
+            "观望";
+
+
+        const isWin =
+            currentDraw.size ===
+            prediction.size;
+
+
+        // 只统计有实际方向的预测
+        if (
+            !isAvoid &&
+            totalChecked < 20
+        ) {
+
+            totalChecked++;
+
+            if (
+                isWin
+            ) {
+
+                winCount++;
             }
-
-            const latest = roomData[0];
-            document.getElementById('latest-issue').innerText = `${latest.shoe}-${latest.game}`;
-            document.getElementById('latest-result').innerHTML = getBaccaratTag(latest.result);
-            
-            const nextPredict = "庄";
-            document.getElementById('predicted-result').innerHTML = `
-                ${getBaccaratTag(nextPredict)}
-                <span style="font-size:0.75rem; color:#94a3b8; margin-left:4px;">🔥高确信</span>
-            `;
-
-            let winCount = 0, totalChecked = 0, tableHtml = '';
-
-            for (let item of roomData) {
-                const isWin = item.result === item.predict;
-                totalChecked++;
-                if (isWin) winCount++;
-
-                tableHtml += `
-                    <tr>
-                        <td>${item.shoe}-${item.game}</td>
-                        <td>${getBaccaratTag(item.result)}</td>
-                        <td>${getBaccaratTag(item.predict)}</td>
-                        <td>${isWin ? '<span class="tag-win">✅ 赢</span>' : (item.result === '和' ? '<span style="color:#94a3b8;">退款</span>' : '<span class="tag-loss">❌ 输</span>')}</td>
-                    </tr>
-                `;
-            }
-
-            const winRate = totalChecked > 0 ? Math.round((winCount / totalChecked) * 100) : 0;
-            document.getElementById('win-rate').innerText = `${winRate}% (${winCount}赢 / ${totalChecked - winCount}输)`;
-            document.getElementById('draw-table').innerHTML = tableHtml;
-
-            renderBaccaratChart(roomData);
         }
 
-        function renderWingoChart(recentDraws) {
-            if (myChart) myChart.destroy();
-            const ctx = document.getElementById('chart-numbers').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'line',
+
+        let resultHtml = "";
+
+
+        if (
+            isAvoid
+        ) {
+
+            resultHtml = `
+                <span style="
+                    color:#fbbf24;
+                    font-weight:bold;
+                ">
+                    ⚠️ 观望
+                </span>
+            `;
+
+        } else if (
+            isWin
+        ) {
+
+            resultHtml = `
+                <span class="tag-win">
+                    ✅ 赢
+                </span>
+            `;
+
+        } else {
+
+            resultHtml = `
+                <span class="tag-loss">
+                    ❌ 输
+                </span>
+            `;
+        }
+
+
+        tableHtml += `
+
+            <tr>
+
+                <td>
+                    ${String(
+                        currentDraw.issueNumber
+                    ).slice(-4)}期
+                </td>
+
+                <td>
+
+                    ${getNumberIconHtml(
+                        currentDraw.number
+                    )}
+
+                    <span class="${
+                        currentDraw.size === "大"
+                            ? "tag-big"
+                            : "tag-small"
+                    }">
+
+                        ${currentDraw.size}
+
+                    </span>
+
+                </td>
+
+                <td>
+
+                    ${getNumberIconHtml(
+                        prediction.num
+                    )}
+
+                    <span class="${
+                        prediction.size === "大"
+                            ? "tag-big"
+                            : "tag-small"
+                    }">
+
+                        ${prediction.size}
+
+                    </span>
+
+                </td>
+
+                <td>
+                    ${resultHtml}
+                </td>
+
+            </tr>
+        `;
+    }
+
+
+    // ========================================================
+    // 胜率
+    // ========================================================
+
+    const winRate =
+        totalChecked > 0
+            ? Math.round(
+                (
+                    winCount /
+                    totalChecked
+                ) * 100
+            )
+            : 0;
+
+
+    document.getElementById(
+        "win-rate"
+    ).innerText =
+
+        totalChecked > 0
+
+            ? `${winRate}% (${winCount}赢 / ${
+                totalChecked - winCount
+              }输)`
+
+            : "--";
+
+
+    document.getElementById(
+        "draw-table"
+    ).innerHTML =
+        tableHtml ||
+        `
+            <tr>
+                <td colspan="4">
+                    历史数据不足
+                </td>
+            </tr>
+        `;
+
+
+    // ========================================================
+    // 图表
+    // ========================================================
+
+    renderWingoChart(
+        [
+            ...draws.slice(
+                0,
+                10
+            )
+        ].reverse()
+    );
+}
+
+
+// ============================================================
+// Baccarat
+// ============================================================
+
+async function refreshBaccaratDashboard() {
+
+    if (
+        currentMode !==
+        "baccarat"
+    ) {
+
+        return;
+    }
+
+
+    const data =
+        await loadData();
+
+
+    if (
+        !data ||
+        !data.baccarat
+    ) {
+
+        return;
+    }
+
+
+    const baccarat =
+        data.baccarat;
+
+
+    const roomData =
+        baccarat.rooms[
+            currentRoom
+        ] || [];
+
+
+    if (
+        roomData.length === 0
+    ) {
+
+        document.getElementById(
+            "latest-issue"
+        ).innerText =
+            "--";
+
+
+        document.getElementById(
+            "latest-result"
+        ).innerHTML =
+            "--";
+
+
+        document.getElementById(
+            "predicted-result"
+        ).innerHTML =
+            "--";
+
+
+        document.getElementById(
+            "draw-table"
+        ).innerHTML = `
+            <tr>
+                <td colspan="4">
+                    ${currentRoom}
+                    暂无实时数据
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+
+    const latest =
+        roomData[0];
+
+
+    document.getElementById(
+        "latest-issue"
+    ).innerText =
+        `${latest.shoe}-${latest.game}`;
+
+
+    document.getElementById(
+        "latest-result"
+    ).innerHTML =
+        getBaccaratTag(
+            latest.result
+        );
+
+
+    // ========================================================
+    // Baccarat 当前预测
+    // ========================================================
+
+    const history =
+        roomData;
+
+
+    let nextPredict =
+        "庄";
+
+
+    if (
+        history.length >= 5
+    ) {
+
+        const recent =
+            history.slice(
+                0,
+                10
+            );
+
+
+        const banker =
+            recent.filter(
+                x =>
+                    x.result === "庄"
+            ).length;
+
+
+        const player =
+            recent.filter(
+                x =>
+                    x.result === "闲"
+            ).length;
+
+
+        if (
+            banker >= 6
+        ) {
+
+            nextPredict =
+                "闲";
+
+        } else if (
+            player >= 6
+        ) {
+
+            nextPredict =
+                "庄";
+        }
+    }
+
+
+    document.getElementById(
+        "predicted-result"
+    ).innerHTML = `
+
+        ${getBaccaratTag(
+            nextPredict
+        )}
+
+        <span style="
+            font-size:0.75rem;
+            color:#94a3b8;
+            margin-left:4px;
+        ">
+            实时分析
+        </span>
+    `;
+
+
+    // ========================================================
+    // Baccarat 回测
+    // ========================================================
+
+    let winCount = 0;
+
+    let totalChecked = 0;
+
+    let tableHtml = "";
+
+
+    for (
+        let i = 0;
+        i < roomData.length;
+        i++
+    ) {
+
+        const item =
+            roomData[i];
+
+
+        const isWin =
+            item.result ===
+            item.predict;
+
+
+        if (
+            item.predict !==
+            "和"
+        ) {
+
+            totalChecked++;
+
+            if (
+                isWin
+            ) {
+
+                winCount++;
+            }
+        }
+
+
+        let resultHtml;
+
+
+        if (
+            item.result === "和"
+        ) {
+
+            resultHtml = `
+                <span style="
+                    color:#94a3b8;
+                ">
+                    退款
+                </span>
+            `;
+
+        } else if (
+            isWin
+        ) {
+
+            resultHtml = `
+                <span class="tag-win">
+                    ✅ 赢
+                </span>
+            `;
+
+        } else {
+
+            resultHtml = `
+                <span class="tag-loss">
+                    ❌ 输
+                </span>
+            `;
+        }
+
+
+        tableHtml += `
+
+            <tr>
+
+                <td>
+                    ${item.shoe}-${item.game}
+                </td>
+
+                <td>
+                    ${getBaccaratTag(
+                        item.result
+                    )}
+                </td>
+
+                <td>
+                    ${getBaccaratTag(
+                        item.predict
+                    )}
+                </td>
+
+                <td>
+                    ${resultHtml}
+                </td>
+
+            </tr>
+        `;
+    }
+
+
+    const winRate =
+        totalChecked > 0
+            ? Math.round(
+                (
+                    winCount /
+                    totalChecked
+                ) * 100
+            )
+            : 0;
+
+
+    document.getElementById(
+        "win-rate"
+    ).innerText =
+        `${winRate}% (${winCount}赢 / ${
+            totalChecked - winCount
+        }输)`;
+
+
+    document.getElementById(
+        "draw-table"
+    ).innerHTML =
+        tableHtml;
+
+
+    renderBaccaratChart(
+        roomData
+    );
+}
+
+
+// ============================================================
+// Chart
+// ============================================================
+
+function renderWingoChart(
+    recentDraws
+) {
+
+    if (
+        myChart
+    ) {
+
+        myChart.destroy();
+    }
+
+
+    const ctx =
+        document
+            .getElementById(
+                "chart-numbers"
+            )
+            .getContext(
+                "2d"
+            );
+
+
+    myChart =
+        new Chart(
+            ctx,
+            {
+
+                type:
+                    "line",
+
                 data: {
-                    labels: recentDraws.map(d => d.issueNumber.slice(-3)),
-                    datasets: [{ label: '开奖号码', data: recentDraws.map(d => d.number), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3 }]
+
+                    labels:
+                        recentDraws.map(
+                            d =>
+                                String(
+                                    d.issueNumber
+                                ).slice(-3)
+                        ),
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "开奖号码",
+
+                            data:
+                                recentDraws.map(
+                                    d =>
+                                        d.number
+                                ),
+
+                            borderColor:
+                                "#3b82f6",
+
+                            backgroundColor:
+                                "rgba(59,130,246,0.1)",
+
+                            fill:
+                                true,
+
+                            tension:
+                                0.3
+                        }
+                    ]
                 },
-                options: { responsive: true, scales: { y: { min: 0, max: 9, grid: { color: '#334155' } }, x: { grid: { color: '#334155' } } }, plugins: { legend: { display: false } } }
-            });
-        }
 
-        function renderBaccaratChart(roomData) {
-            if (myChart) myChart.destroy();
-            
-            let bankerCnt = roomData.filter(d => d.result === '庄').length;
-            let playerCnt = roomData.filter(d => d.result === '闲').length;
-            let tieCnt = roomData.filter(d => d.result === '和').length;
+                options: {
 
-            const ctx = document.getElementById('chart-numbers').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['庄', '闲', '和'],
-                    datasets: [{
-                        label: '开奖次数',
-                        data: [bankerCnt, playerCnt, tieCnt],
-                        backgroundColor: ['#dc2626', '#2563eb', '#16a34a']
-                    }]
-                },
-                options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: '#334155' } }, x: { grid: { color: '#334155' } } }, plugins: { legend: { display: false } } }
-            });
-        }
+                    responsive:
+                        true,
 
-        setInterval(() => {
-            countdownVal--;
-            if (countdownVal <= 0) {
-                countdownVal = 5;
-                if (currentMode === 'wingo') refreshDashboard();
-                else refreshBaccaratDashboard();
+                    scales: {
+
+                        y: {
+
+                            min:
+                                0,
+
+                            max:
+                                9,
+
+                            grid: {
+
+                                color:
+                                    "#334155"
+                            }
+                        },
+
+                        x: {
+
+                            grid: {
+
+                                color:
+                                    "#334155"
+                            }
+                        }
+                    },
+
+                    plugins: {
+
+                        legend: {
+
+                            display:
+                                false
+                        }
+                    }
+                }
             }
-            document.getElementById('countdown').innerText = `${countdownVal}s`;
-        }, 1000);
+        );
+}
+
+
+// ============================================================
+// Baccarat Chart
+// ============================================================
+
+function renderBaccaratChart(
+    roomData
+) {
+
+    if (
+        myChart
+    ) {
+
+        myChart.destroy();
+    }
+
+
+    const bankerCnt =
+        roomData.filter(
+            d =>
+                d.result === "庄"
+        ).length;
+
+
+    const playerCnt =
+        roomData.filter(
+            d =>
+                d.result === "闲"
+        ).length;
+
+
+    const tieCnt =
+        roomData.filter(
+            d =>
+                d.result === "和"
+        ).length;
+
+
+    const ctx =
+        document
+            .getElementById(
+                "chart-numbers"
+            )
+            .getContext(
+                "2d"
+            );
+
+
+    myChart =
+        new Chart(
+            ctx,
+            {
+
+                type:
+                    "bar",
+
+                data: {
+
+                    labels:
+                        [
+                            "庄",
+                            "闲",
+                            "和"
+                        ],
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "开奖次数",
+
+                            data:
+                                [
+                                    bankerCnt,
+                                    playerCnt,
+                                    tieCnt
+                                ],
+
+                            backgroundColor:
+                                [
+                                    "#dc2626",
+                                    "#2563eb",
+                                    "#16a34a"
+                                ]
+                        }
+                    ]
+                },
+
+                options: {
+
+                    responsive:
+                        true,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero:
+                                true,
+
+                            grid: {
+
+                                color:
+                                    "#334155"
+                            }
+                        },
+
+                        x: {
+
+                            grid: {
+
+                                color:
+                                    "#334155"
+                            }
+                        }
+                    },
+
+                    plugins: {
+
+                        legend: {
+
+                            display:
+                                false
+                        }
+                    }
+                }
+            }
+        );
+}
+
+
+// ============================================================
+// Mode
+// ============================================================
+
+function switchGameMode(
+    mode
+) {
+
+    currentMode =
+        mode;
+
+
+    document
+        .getElementById(
+            "btn-wingo"
+        )
+        .classList.toggle(
+            "active",
+            mode === "wingo"
+        );
+
+
+    document
+        .getElementById(
+            "btn-baccarat"
+        )
+        .classList.toggle(
+            "active",
+            mode === "baccarat"
+        );
+
+
+    const roomBar =
+        document.getElementById(
+            "baccarat-room-bar"
+        );
+
+
+    if (
+        mode === "wingo"
+    ) {
+
+        roomBar.style.display =
+            "none";
+
+
+        document.getElementById(
+            "page-title"
+        ).innerText =
+            "🎯 WinGo 预测胜率 Dashboard";
+
+
+        document.getElementById(
+            "card-label-issue"
+        ).innerText =
+            "最新期号";
+
+
+        document.getElementById(
+            "th-issue"
+        ).innerText =
+            "期号";
+
+
+        document.getElementById(
+            "chart-title"
+        ).innerText =
+            "📈 走势图";
+
 
         refreshDashboard();
+
+
+    } else {
+
+        roomBar.style.display =
+            "flex";
+
+
+        document.getElementById(
+            "page-title"
+        ).innerText =
+            "🃏百家乐 Choice 实时监控";
+
+
+        document.getElementById(
+            "card-label-issue"
+        ).innerText =
+            "靴号-局号";
+
+
+        document.getElementById(
+            "th-issue"
+        ).innerText =
+            "靴-局";
+
+
+        document.getElementById(
+            "chart-title"
+        ).innerText =
+            "📈庄闲和分布图";
+
+
+        refreshBaccaratDashboard();
+    }
+}
+
+
+// ============================================================
+// Room
+// ============================================================
+
+function changeBaccaratRoom() {
+
+    currentRoom =
+        document.getElementById(
+            "room-select"
+        ).value;
+
+
+    refreshBaccaratDashboard();
+}
+
+
+// ============================================================
+// Auto refresh
+// ============================================================
+
+setInterval(
+    async () => {
+
+        countdownVal--;
+
+        if (
+            countdownVal <= 0
+        ) {
+
+            countdownVal = 5;
+
+            if (
+                currentMode ===
+                "wingo"
+            ) {
+
+                await refreshDashboard();
+
+            } else {
+
+                await refreshBaccaratDashboard();
+            }
+        }
+
+
+        document.getElementById(
+            "countdown"
+        ).innerText =
+            `${countdownVal}s`;
+
+    },
+    1000
+);
+
+
+// ============================================================
+// Start
+// ============================================================
+
+refreshDashboard();
+
+</script>
     </script>
 </body>
 </html>
