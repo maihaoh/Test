@@ -2408,7 +2408,7 @@ async function fetchDraws() {
 
             pageNo: 1,
 
-            pageSize: 60,
+            pageSize: 10,
 
             random,
 
