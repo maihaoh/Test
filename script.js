@@ -2424,6 +2424,18 @@ async function fetchDraws() {
             );
 
 
+        /*
+         * IMPORTANT
+         * 签名参数必须保持：
+         * language
+         * pageNo
+         * pageSize
+         * random
+         * typeId
+         *
+         * timestamp 不参与 MD5
+         */
+
         const signObj = {
 
             language: 0,
@@ -2444,12 +2456,42 @@ async function fetchDraws() {
             );
 
 
+        /*
+         * DEBUG
+         */
+
+        console.log(
+            "========== Signature 原始内容 =========="
+        );
+
+        console.log(
+            signRaw
+        );
+
+        console.log(
+            "========================================="
+        );
+
+
         const sign =
             CryptoJS.MD5(
                 signRaw
             )
                 .toString()
                 .toUpperCase();
+
+
+        console.log(
+            "========== Signature =========="
+        );
+
+        console.log(
+            sign
+        );
+
+        console.log(
+            "==============================="
+        );
 
 
         const requestBody = {
@@ -2565,6 +2607,57 @@ async function fetchDraws() {
         console.log(
             "================================="
         );
+
+
+        /*
+         * 如果 API 回传错误
+         */
+
+        if (
+            json?.code !== undefined &&
+            Number(json.code) !== 0
+        ) {
+
+            console.error(
+                "========== Worker API ERROR =========="
+            );
+
+            console.error(
+                "Code:",
+                json?.code
+            );
+
+            console.error(
+                "Message:",
+                json?.msg
+            );
+
+            console.error(
+                "Message Code:",
+                json?.msgCode
+            );
+
+            console.error(
+                "Trace ID:",
+                json?.traceId
+            );
+
+            console.error(
+                "Request Sign:",
+                sign
+            );
+
+            console.error(
+                "Request Sign Raw:",
+                signRaw
+            );
+
+            console.error(
+                "========================================"
+            );
+
+            return [];
+        }
 
 
         /*
