@@ -92,8 +92,9 @@ function loadAILearning() {
 
         if (!saved) {
 
-            return structuredClone
-                ? structuredClone(DEFAULT_AI_LEARNING)
+            const base =
+    structuredClone
+        ? structuredClone(DEFAULT_AI_LEARNING)
                 : JSON.parse(
                     JSON.stringify(DEFAULT_AI_LEARNING)
                 );
@@ -102,11 +103,11 @@ function loadAILearning() {
         const parsed = JSON.parse(saved);
 
         const base =
-            structuredClone
-                ? structuredClone(DEFAULT_AI_LEARNING)
-                : JSON.parse(
-                    JSON.stringify(DEFAULT_AI_LEARNING)
-                );
+    typeof structuredClone === "function"
+        ? structuredClone(DEFAULT_AI_LEARNING)
+        : JSON.parse(
+            JSON.stringify(DEFAULT_AI_LEARNING)
+        );
 
         return deepMerge(base, parsed);
 
@@ -837,7 +838,8 @@ function getPatternExperience(
 
 function getLearnedPrediction(
     draws,
-    learning = aiLearning
+    learning = aiLearning,
+    forceDecision = false
 ) {
 
     if (
@@ -1192,9 +1194,9 @@ function getLearnedPrediction(
         );
 
 
-    let isPass =
-        Math.abs(score) <
-        threshold;
+    let isPass = forceDecision
+    ? false
+    : Math.abs(score) < threshold;
 
 
     /*
@@ -1241,13 +1243,13 @@ function getLearnedPrediction(
      */
 
     if (
-        isSpecial &&
-        Math.abs(score) <
-        threshold * 1.25
-    ) {
-
-        isPass = true;
-    }
+    !forceDecision &&
+    isSpecial &&
+    Math.abs(score) <
+    threshold * 1.25
+) {
+    isPass = true;
+}
 
 
     /*
@@ -1568,10 +1570,11 @@ function getForcedCounterfactual(
             0;
 
         const forced =
-            getLearnedPrediction(
-                draws,
-                fakeLearning
-            );
+    getLearnedPrediction(
+        draws,
+        fakeLearning,
+        true
+    );
 
         return forced;
     }
