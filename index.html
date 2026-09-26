@@ -2213,7 +2213,7 @@ async function fetchDraws() {
 
         "pageNo": 1,
 
-        "pageSize": 50,
+        "pageSize": 60,
 
         "random": random,
 
@@ -2238,7 +2238,7 @@ async function fetchDraws() {
 
         "pageNo": 1,
 
-        "pageSize": 50,
+        "pageSize": 60,
 
         "language": 0,
 
@@ -2863,73 +2863,103 @@ async function refreshDashboard() {
 
 
     /* =========================
-       BACKTEST 50
-    ========================== */
+   BACKTEST 50
+========================= */
 
-    let winCount = 0;
+// ==========================================
+// 固定复盘最近 50 局
+//
+// WIN  = 计入胜率
+// LOSS = 计入胜率
+// PASS = 不计入胜率
+//
+// API 抓 60 期：
+// 10 期作为预测历史
+// 50 期作为实际复盘
+// ==========================================
 
-    let totalChecked = 0;
+let winCount = 0;
+let lossCount = 0;
+let passCount = 0;
 
-    let tableHtml = "";
+let totalReviewed = 0;
+let totalValid = 0;
+
+let tableHtml = "";
 
 
-    const maxRows =
-        Math.min(
-            50,
-            draws.length - 1
+/* ==========================================
+   固定 50 局
+========================================== */
+
+const maxRows = Math.min(
+    50,
+    draws.length - 10
+);
+
+
+/* ==========================================
+   开始复盘
+========================================== */
+
+for (
+    let i = 0;
+    i < maxRows;
+    i++
+) {
+
+    const currentDraw =
+        draws[i];
+
+
+    /*
+       当前这一局之前的数据
+
+       draws[0] = 最新开奖
+       draws[1] = 上一期
+       ...
+
+       draws[i + 1] 开始
+       才是当时预测所能看到的历史数据
+    */
+
+    const historySlice =
+        draws.slice(i + 1);
+
+
+    /*
+       至少需要 10 期历史
+    */
+
+    if (
+        historySlice.length < 10
+    ) {
+
+        continue;
+    }
+
+
+    const prediction =
+        getPredictionForDraw(
+            historySlice
         );
 
 
-    for (
-        let i = 0;
-        i < maxRows;
-        i++
-    ) {
-
-        const currentDraw =
-            draws[i];
+    totalReviewed++;
 
 
-        const historySlice =
-            draws.slice(i + 1);
+    const isValidPrediction =
+        prediction.signal === "BUY" &&
+        prediction.size !== null;
 
 
-        if (
-            historySlice.length < 10
-        ) {
+    /* ======================================
+       PASS
+    ====================================== */
 
-            continue;
-        }
+    if (!isValidPrediction) {
 
-
-        const prediction =
-            getPredictionForDraw(
-                historySlice
-            );
-
-
-        if (
-            prediction.signal !==
-            "BUY"
-        ) {
-
-            continue;
-        }
-
-
-        const isWin =
-            currentDraw.size ===
-            prediction.size;
-
-
-        totalChecked++;
-
-
-        if (isWin) {
-
-            winCount++;
-        }
-
+        passCount++;
 
         tableHtml += `
 
@@ -2955,215 +2985,286 @@ async function refreshDashboard() {
 
                 </td>
 
+                <td>
+
+                    ${
+                        prediction.num !== null
+                            ? getNumberIconHtml(
+                                prediction.num
+                            )
+                            : "-"
+                    }
+
+                    ${
+                        prediction.size
+                            ? `
+                                <span class="${
+                                    prediction.size === "大"
+                                        ? "tag-big"
+                                        : "tag-small"
+                                }">
+                                    ${prediction.size}
+                                </span>
+                            `
+                            : ""
+                    }
+
+                </td>
 
                 <td>
 
-                    ${prediction.num !== null
+                    <span class="tag-wait">
+                        PASS
+                    </span>
+
+                </td>
+
+                <td>
+
+                    <span class="tag-wait">
+                        不计
+                    </span>
+
+                </td>
+
+            </tr>
+        `;
+
+        continue;
+    }
+
+
+    /* ======================================
+       有效预测
+    ====================================== */
+
+    totalValid++;
+
+
+    const isWin =
+        currentDraw.size ===
+        prediction.size;
+
+
+    /* ======================================
+       WIN
+    ====================================== */
+
+    if (isWin) {
+
+        winCount++;
+
+    }
+
+
+    /* ======================================
+       LOSS
+    ====================================== */
+
+    else {
+
+        lossCount++;
+
+    }
+
+
+    /* ======================================
+       表格
+    ====================================== */
+
+    tableHtml += `
+
+        <tr>
+
+            <td>
+                ${currentDraw.issueNumber.slice(-4)}期
+            </td>
+
+
+            <td>
+
+                ${getNumberIconHtml(
+                    currentDraw.number
+                )}
+
+                <span class="${
+                    currentDraw.size === "大"
+                        ? "tag-big"
+                        : "tag-small"
+                }">
+                    ${currentDraw.size}
+                </span>
+
+            </td>
+
+
+            <td>
+
+                ${
+                    prediction.num !== null
                         ? getNumberIconHtml(
                             prediction.num
                         )
                         : "-"
-                    }
-
-                    <span class="${
-                        prediction.size === "大"
-                            ? "tag-big"
-                            : "tag-small"
-                    }">
-                        ${prediction.size}
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    <span class="tag-buy">
-                        BUY
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    ${
-                        isWin
-                            ? '<span class="tag-win">✅ 赢</span>'
-                            : '<span class="tag-loss">❌ 输</span>'
-                    }
-
-                </td>
-
-            </tr>
-        `;
-    }
-
-
-    const winRate =
-        totalChecked > 0
-            ? Math.round(
-                (
-                    winCount /
-                    totalChecked
-                ) * 100
-            )
-            : 0;
-
-
-    document
-        .getElementById(
-            "win-rate"
-        )
-        .innerText =
-        `${winRate}% (${winCount}赢 / ${
-            totalChecked - winCount
-        }输)`;
-
-
-    document
-        .getElementById(
-            "draw-table"
-        )
-        .innerHTML =
-        tableHtml ||
-        `
-            <tr>
-                <td colspan="5">
-                    暂无足够有效预测数据
-                </td>
-            </tr>
-        `;
-
-
-    /* =========================
-       50 NUMBER DISTRIBUTION
-    ========================== */
-
-    const frequency =
-        Array(10).fill(0);
-
-
-    recent50.forEach(
-        d => {
-
-            const n =
-                Number(d.number);
-
-            if (
-                n >= 0 &&
-                n <= 9
-            ) {
-
-                frequency[n]++;
-            }
-        }
-    );
-
-
-    if (myChart) {
-
-        myChart.destroy();
-    }
-
-
-    const ctx =
-        document
-            .getElementById(
-                "chart-numbers"
-            )
-            .getContext("2d");
-
-
-    myChart =
-        new Chart(
-            ctx,
-            {
-
-                type: "bar",
-
-                data: {
-
-                    labels: [
-                        "0","1","2","3","4",
-                        "5","6","7","8","9"
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            label:
-                                "近50期出现次数",
-
-                            data:
-                                frequency,
-
-                            backgroundColor: [
-                                "#8b5cf6",
-                                "#10b981",
-                                "#ef4444",
-                                "#10b981",
-                                "#ef4444",
-                                "#8b5cf6",
-                                "#ef4444",
-                                "#10b981",
-                                "#ef4444",
-                                "#10b981"
-                            ],
-
-                            borderWidth: 0
-
-                        }
-
-                    ]
-                },
-
-
-                options: {
-
-                    responsive: true,
-
-                    scales: {
-
-                        y: {
-
-                            beginAtZero: true,
-
-                            ticks: {
-                                color: "#94a3b8",
-                                stepSize: 1
-                            },
-
-                            grid: {
-                                color:
-                                    "#334155"
-                            }
-                        },
-
-                        x: {
-
-                            ticks: {
-                                color: "#94a3b8"
-                            },
-
-                            grid: {
-                                color:
-                                    "#334155"
-                            }
-                        }
-                    },
-
-                    plugins: {
-
-                        legend: {
-                            display: false
-                        }
-                    }
                 }
-            }
-        );
+
+                <span class="${
+                    prediction.size === "大"
+                        ? "tag-big"
+                        : "tag-small"
+                }">
+                    ${prediction.size}
+                </span>
+
+            </td>
+
+
+            <td>
+
+                <span class="tag-buy">
+                    BUY
+                </span>
+
+            </td>
+
+
+            <td>
+
+                ${
+                    isWin
+
+                        ? `
+                            <span class="tag-win">
+                                ✅ 赢
+                            </span>
+                          `
+
+                        : `
+                            <span class="tag-loss">
+                                ❌ 输
+                            </span>
+                          `
+                }
+
+            </td>
+
+        </tr>
+    `;
 }
+
+
+/* ==========================================
+   有效胜率
+==========================================
+
+   WIN ÷ (WIN + LOSS)
+
+   PASS 完全排除
+========================================== */
+
+const winRate =
+    totalValid > 0
+
+        ? (
+            winCount /
+            totalValid *
+            100
+        ).toFixed(2)
+
+        : "0.00";
+
+
+/* ==========================================
+   更新胜率卡片
+========================================== */
+
+document
+    .getElementById(
+        "win-rate"
+    )
+    .innerHTML = `
+
+        <div style="
+            font-size:2rem;
+            font-weight:800;
+            color:#34d399;
+        ">
+            ${winRate}%
+        </div>
+
+        <div style="
+            font-size:.8rem;
+            color:#94a3b8;
+            margin-top:4px;
+        ">
+            最近 50 局
+        </div>
+
+        <div style="
+            display:flex;
+            justify-content:center;
+            gap:12px;
+            margin-top:9px;
+            font-size:.82rem;
+        ">
+
+            <span style="
+                color:#10b981;
+                font-weight:bold;
+            ">
+                WIN ${winCount}
+            </span>
+
+
+            <span style="
+                color:#ef4444;
+                font-weight:bold;
+            ">
+                LOSS ${lossCount}
+            </span>
+
+
+            <span style="
+                color:#94a3b8;
+                font-weight:bold;
+            ">
+                PASS ${passCount}
+            </span>
+
+        </div>
+
+
+        <div style="
+            margin-top:6px;
+            font-size:.72rem;
+            color:#64748b;
+        ">
+            有效预测 ${totalValid} 局
+        </div>
+    `;
+
+
+/* ==========================================
+   更新复盘表
+========================================== */
+
+document
+    .getElementById(
+        "draw-table"
+    )
+    .innerHTML =
+
+    tableHtml ||
+
+    `
+        <tr>
+
+            <td colspan="5">
+                暂无足够数据
+            </td>
+
+        </tr>
+    `;
 
 
 /* =====================================================
