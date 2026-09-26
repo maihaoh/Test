@@ -9,803 +9,1810 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-    <style>
-
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --green-color: #10b981;
-            --red-color: #ef4444;
-            --blue-color: #3b82f6;
-            --cyan-color: #22d3ee;
-            --purple-color: #8b5cf6;
-            --border-color: #334155;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                "Microsoft YaHei",
-                sans-serif;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.6rem;
-        }
-
-        .sub-title {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin-top: 5px;
-        }
-
-        .time-badge {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: #38bdf8;
-            font-weight: bold;
-        }
-
-        .status-badge {
-            background: #065f46;
-            color: #34d399;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #34d399;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #34d399;
-        }
-
-        .main-tabs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .main-tab {
-            border: 1px solid var(--border-color);
-            background: var(--card-bg);
-            color: #94a3b8;
-            padding: 15px;
-            border-radius: 12px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 1rem;
-            font-weight: bold;
-            transition: .2s;
-        }
-
-        .main-tab:hover {
-            background: #334155;
-            color: white;
-        }
-
-        .main-tab.active {
-            background: #2563eb;
-            border-color: #60a5fa;
-            color: white;
-        }
-
-        .main-section {
-            display: none;
-        }
-
-        .main-section.active {
-            display: block;
-        }
-
-        .grid-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .card-title {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            margin-bottom: 8px;
-        }
-
-        .card-value {
-            font-size: 1.6rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* =========================
-           WINGO
-        ========================= */
-
-        .content-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-
-        .predict-box {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .win-rate-box {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .analysis-box {
-            margin-bottom: 20px;
-        }
-
-        .analysis-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
-
-        .analysis-item {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .analysis-label {
-            color: #94a3b8;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-
-        .analysis-value {
-            font-weight: bold;
-        }
-
-        .score-container {
-            margin-top: 15px;
-        }
-
-        .score-bar {
-            height: 12px;
-            background: #0f172a;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid #334155;
-        }
-
-        .score-fill {
-            height: 100%;
-            width: 50%;
-            background: #3b82f6;
-            transition: width .3s;
-        }
-
-        .score-text {
-            margin-top: 7px;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        /* =========================
-           AI REVIEW
-        ========================= */
-
-        .ai-review-box {
-            margin-bottom: 20px;
-            border: 1px solid #475569;
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(59,130,246,.08),
-                    rgba(139,92,246,.08)
-                );
-        }
-
-        .ai-review-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .ai-review-title {
-            font-size: 1.05rem;
-            font-weight: bold;
-        }
-
-        .review-status {
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .review-win {
-            background: rgba(16,185,129,.15);
-            color: #34d399;
-            border: 1px solid #10b981;
-        }
-
-        .review-loss {
-            background: rgba(239,68,68,.15);
-            color: #f87171;
-            border: 1px solid #ef4444;
-        }
-
-        .review-wait {
-            background: rgba(148,163,184,.12);
-            color: #cbd5e1;
-            border: 1px solid #64748b;
-        }
-
-        .ai-review-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .ai-review-item {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .ai-review-label {
-            color: #94a3b8;
-            font-size: 12px;
-            margin-bottom: 6px;
-        }
-
-        .ai-review-value {
-            font-weight: bold;
-            line-height: 1.5;
-        }
-
-        .ai-review-message {
-            margin-top: 12px;
-            padding: 12px;
-            background: rgba(15,23,42,.8);
-            border-radius: 8px;
-            color: #cbd5e1;
-            line-height: 1.7;
-            font-size: 13px;
-        }
-
-        /* =========================
-           PREDICTION NUMBER
-        ========================= */
-
-        .prediction-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 58px;
-            height: 58px;
-            border-radius: 50%;
-            color: #ffffff;
-            font-size: 1.7rem;
-            font-weight: 900;
-            border: 2px solid rgba(255,255,255,.9);
-            box-shadow: 0 0 15px rgba(255,255,255,.12);
-        }
-
-        .prediction-number.bg-green {
-            background-color: var(--green-color);
-        }
-
-        .prediction-number.bg-red {
-            background-color: var(--red-color);
-        }
-
-        .prediction-number.bg-red-purple {
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--red-color) 50%,
-                    var(--purple-color) 50%
-                );
-        }
-
-        .prediction-number.bg-green-purple {
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--green-color) 50%,
-                    var(--purple-color) 50%
-                );
-        }
-
-        .prediction-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            text-align: center;
-            border-bottom: 1px solid #334155;
-            font-size: 0.9rem;
-        }
-
-        th {
-            color: #94a3b8;
-            font-weight: 500;
-        }
-
-        .tag-big {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .tag-small {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .tag-win {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid #10b981;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-
-        .tag-loss {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-            border: 1px solid #ef4444;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-
-        .tag-wait {
-            background: rgba(148, 163, 184, 0.15);
-            color: #cbd5e1;
-            border: 1px solid #64748b;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-
-        .tag-buy {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid #10b981;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-
-        .icon-num {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .bg-green {
-            background-color: var(--green-color);
-        }
-
-        .bg-red {
-            background-color: var(--red-color);
-        }
-
-        .bg-red-purple {
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--red-color) 50%,
-                    var(--purple-color) 50%
-                );
-        }
-
-        .bg-green-purple {
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--green-color) 50%,
-                    var(--purple-color) 50%
-                );
-        }
-
-        /* =========================
-           BACCARAT
-        ========================= */
-
-        .baccarat-table-selector {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .baccarat-table-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: #94a3b8;
-            padding: 13px 8px;
-            border-radius: 10px;
-            cursor: pointer;
-            text-align: center;
-            font-weight: bold;
-            transition: .2s;
-        }
-
-        .baccarat-table-btn:hover {
-            background: #334155;
-            color: white;
-        }
-
-        .baccarat-table-btn.active {
-            background: #2563eb;
-            border-color: #60a5fa;
-            color: white;
-        }
-
-        .baccarat-top-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .baccarat-result {
-            font-size: 1.7rem;
-            font-weight: bold;
-        }
-
-        .banker-color {
-            color: #ef4444;
-        }
-
-        .player-color {
-            color: #3b82f6;
-        }
-
-        .tie-color {
-            color: #22d3ee;
-        }
-
-        .road-card {
-            margin-bottom: 18px;
-        }
-
-        .road-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .road-title h3 {
-            margin: 0;
-        }
-
-        .road-title span {
-            color: #64748b;
-            font-size: 12px;
-        }
-
-        .big-road-wrapper {
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }
-
-        .big-road {
-            display: grid;
-            grid-template-columns: repeat(18, 34px);
-            grid-template-rows: repeat(6, 34px);
-            gap: 4px;
-            width: max-content;
-        }
-
-        .road-cell {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            border: 2px solid #475569;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .road-banker {
-            border-color: #ef4444;
-            color: #ef4444;
-        }
-
-        .road-player {
-            border-color: #3b82f6;
-            color: #3b82f6;
-        }
-
-        .road-tie {
-            border-color: #22d3ee;
-            color: #22d3ee;
-        }
-
-        .small-road-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-        }
-
-        .small-road {
-            min-height: 170px;
-        }
-
-        .small-road-board {
-            display: grid;
-            grid-template-columns: repeat(12, 22px);
-            grid-template-rows: repeat(6, 22px);
-            gap: 3px;
-            width: max-content;
-        }
-
-        .small-cell {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            border: 2px solid #475569;
-        }
-
-        .small-red {
-            border-color: #ef4444;
-        }
-
-        .small-blue {
-            border-color: #3b82f6;
-        }
-
-        .baccarat-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 18px;
-        }
-
-        .stat-box {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 15px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .stat-row:last-child {
-            border-bottom: none;
-        }
-
-        .history {
-            display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-        }
-
-        .history-ball {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            border: 2px solid;
-        }
-
-        .history-banker {
-            color: #ef4444;
-            border-color: #ef4444;
-        }
-
-        .history-player {
-            color: #3b82f6;
-            border-color: #3b82f6;
-        }
-
-        .history-tie {
-            color: #22d3ee;
-            border-color: #22d3ee;
-        }
-
-        .baccarat-prediction {
-            border: 1px solid #475569;
-            margin-top: 18px;
-        }
-
-        .prediction-main {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .prediction-result {
-            font-size: 38px;
-            font-weight: bold;
-        }
-
-        .bet {
-            background: rgba(16,185,129,.15);
-            border: 1px solid #10b981;
-            color: #34d399;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-
-        .pass {
-            background: rgba(148,163,184,.1);
-            border: 1px solid #64748b;
-            color: #94a3b8;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-
-        .baccarat-reason {
-            margin-top: 15px;
-            color: #cbd5e1;
-            line-height: 1.9;
-        }
-
-        .demo-warning {
-            margin-top: 15px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            background: rgba(245,158,11,.1);
-            border: 1px solid rgba(245,158,11,.4);
-            color: #fbbf24;
-            font-size: 13px;
-        }
-
-        @media (max-width: 900px) {
-
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .analysis-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .ai-review-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .baccarat-top-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .baccarat-stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .small-road-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .baccarat-table-selector {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        @media (max-width: 600px) {
-
-            body {
-                padding: 10px;
-            }
-
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .main-tabs {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .analysis-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .ai-review-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .baccarat-top-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .baccarat-table-selector {
-                grid-template-columns: repeat(4, 1fr);
-            }
-
-            .main-tab {
-                padding: 12px 5px;
-            }
-        }
-
-    </style>
+<style>
+
+:root {
+    --bg: #070b14;
+    --bg2: #0b1120;
+    --card: rgba(15, 23, 42, 0.88);
+    --card-hover: rgba(20, 30, 52, 0.96);
+
+    --border: rgba(148, 163, 184, 0.12);
+    --border-light: rgba(148, 163, 184, 0.20);
+
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --muted2: #64748b;
+
+    --blue: #3b82f6;
+    --blue-light: #60a5fa;
+
+    --green: #10b981;
+    --green-light: #34d399;
+
+    --red: #ef4444;
+    --red-light: #f87171;
+
+    --cyan: #22d3ee;
+    --purple: #8b5cf6;
+    --yellow: #fbbf24;
+
+    --shadow:
+        0 15px 45px rgba(0,0,0,.30);
+
+    --radius: 16px;
+}
+
+
+/* =====================================================
+   RESET
+===================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+
+    background:
+        radial-gradient(
+            circle at 10% 0%,
+            rgba(59,130,246,.10),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 90% 10%,
+            rgba(139,92,246,.08),
+            transparent 25%
+        ),
+        linear-gradient(
+            180deg,
+            #070b14 0%,
+            #0a1020 50%,
+            #070b14 100%
+        );
+
+    color: var(--text);
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        "Microsoft YaHei",
+        sans-serif;
+
+    line-height: 1.5;
+}
+
+
+/* =====================================================
+   SCROLLBAR
+===================================================== */
+
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: #080d18;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #26344d;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3b4d6d;
+}
+
+
+/* =====================================================
+   CONTAINER
+===================================================== */
+
+.container {
+    max-width: 1480px;
+    margin: 0 auto;
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 18px 20px;
+    margin-bottom: 18px;
+
+    border: 1px solid var(--border);
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(15,23,42,.95),
+            rgba(10,17,32,.90)
+        );
+
+    box-shadow: var(--shadow);
+}
+
+header h1 {
+    margin: 0;
+
+    font-size: 1.55rem;
+    font-weight: 900;
+    letter-spacing: .5px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff,
+            #93c5fd
+        );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sub-title {
+    margin-top: 5px;
+
+    color: var(--muted);
+
+    font-size: .78rem;
+    letter-spacing: .2px;
+}
+
+
+/* =====================================================
+   TIME
+===================================================== */
+
+.time-badge {
+    padding: 9px 14px;
+
+    border-radius: 10px;
+
+    background: rgba(15,23,42,.8);
+
+    border: 1px solid rgba(96,165,250,.20);
+
+    color: #7dd3fc;
+
+    font-size: .82rem;
+    font-weight: 800;
+
+    box-shadow:
+        inset 0 0 15px rgba(59,130,246,.05);
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 8px 12px;
+
+    border-radius: 10px;
+
+    background: rgba(16,185,129,.08);
+
+    border: 1px solid rgba(16,185,129,.20);
+
+    color: var(--green-light);
+
+    font-size: .8rem;
+    font-weight: 800;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+
+    background: var(--green-light);
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 0 0 4px rgba(52,211,153,.08),
+        0 0 12px rgba(52,211,153,.8);
+
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .45;
+    }
+}
+
+
+/* =====================================================
+   MAIN TABS
+===================================================== */
+
+.main-tabs {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+
+    margin-bottom: 20px;
+}
+
+.main-tab {
+    position: relative;
+
+    padding: 14px 16px;
+
+    border-radius: 13px;
+
+    border: 1px solid var(--border);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15,23,42,.92),
+            rgba(11,18,32,.92)
+        );
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    text-align: center;
+
+    font-size: .95rem;
+    font-weight: 800;
+
+    transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease,
+        color .2s ease;
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.18);
+}
+
+.main-tab:hover {
+    transform: translateY(-2px);
+
+    color: #fff;
+
+    border-color:
+        rgba(96,165,250,.35);
+
+    background:
+        rgba(30,41,59,.95);
+}
+
+.main-tab.active {
+    color: #fff;
+
+    border-color:
+        rgba(96,165,250,.65);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(37,99,235,.90),
+            rgba(29,78,216,.72)
+        );
+
+    box-shadow:
+        0 8px 30px rgba(37,99,235,.25),
+        inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+
+/* =====================================================
+   SECTION
+===================================================== */
+
+.main-section {
+    display: none;
+}
+
+.main-section.active {
+    display: block;
+    animation: sectionFade .25s ease;
+}
+
+@keyframes sectionFade {
+
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =====================================================
+   GRID CARDS
+===================================================== */
+
+.grid-cards {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 14px;
+
+    margin-bottom: 18px;
+}
+
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.card {
+    position: relative;
+
+    padding: 18px;
+
+    border-radius: var(--radius);
+
+    border: 1px solid var(--border);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15,23,42,.94),
+            rgba(10,16,30,.94)
+        );
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.20);
+
+    transition:
+        border-color .2s ease,
+        transform .2s ease,
+        background .2s ease;
+}
+
+.card:hover {
+    border-color:
+        rgba(148,163,184,.20);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(18,28,48,.96),
+            rgba(10,17,32,.96)
+        );
+}
+
+.card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+
+    font-size: .98rem;
+    font-weight: 800;
+
+    color: #e2e8f0;
+}
+
+.card-title {
+    color: var(--muted);
+
+    font-size: .72rem;
+    font-weight: 700;
+
+    letter-spacing: .5px;
+
+    margin-bottom: 8px;
+}
+
+.card-value {
+    min-height: 34px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    font-size: 1.45rem;
+    font-weight: 900;
+
+    letter-spacing: .2px;
+}
+
+
+/* =====================================================
+   WINGO TOP CARDS
+===================================================== */
+
+.grid-cards > .card {
+    min-height: 118px;
+}
+
+.grid-cards > .card:nth-child(1) {
+    border-top:
+        2px solid rgba(148,163,184,.30);
+}
+
+.grid-cards > .card:nth-child(2) {
+    border-top:
+        2px solid rgba(34,211,238,.45);
+}
+
+.predict-box {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(37,99,235,.14),
+            rgba(15,23,42,.94)
+        );
+
+    border-color:
+        rgba(59,130,246,.28) !important;
+
+    box-shadow:
+        0 10px 35px rgba(37,99,235,.10);
+}
+
+.win-rate-box {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(16,185,129,.13),
+            rgba(15,23,42,.94)
+        );
+
+    border-color:
+        rgba(16,185,129,.28) !important;
+
+    box-shadow:
+        0 10px 35px rgba(16,185,129,.08);
+}
+
+
+/* =====================================================
+   PREDICTION
+===================================================== */
+
+.prediction-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.prediction-number {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 58px;
+    height: 58px;
+
+    border-radius: 17px;
+
+    color: #fff;
+
+    font-size: 1.7rem;
+    font-weight: 900;
+
+    border: 2px solid rgba(255,255,255,.85);
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.30),
+        0 0 20px rgba(255,255,255,.08);
+}
+
+
+/* =====================================================
+   NUMBER COLORS
+===================================================== */
+
+.prediction-number.bg-green,
+.icon-num.bg-green {
+    background:
+        linear-gradient(
+            145deg,
+            #10b981,
+            #059669
+        );
+}
+
+.prediction-number.bg-red,
+.icon-num.bg-red {
+    background:
+        linear-gradient(
+            145deg,
+            #ef4444,
+            #dc2626
+        );
+}
+
+.prediction-number.bg-red-purple,
+.icon-num.bg-red-purple {
+    background:
+        linear-gradient(
+            135deg,
+            #ef4444 0%,
+            #ef4444 50%,
+            #8b5cf6 50%,
+            #8b5cf6 100%
+        );
+}
+
+.prediction-number.bg-green-purple,
+.icon-num.bg-green-purple {
+    background:
+        linear-gradient(
+            135deg,
+            #10b981 0%,
+            #10b981 50%,
+            #8b5cf6 50%,
+            #8b5cf6 100%
+        );
+}
+
+
+/* =====================================================
+   WINGO ANALYSIS
+===================================================== */
+
+.analysis-box {
+    margin-bottom: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15,23,42,.97),
+            rgba(11,18,32,.94)
+        );
+}
+
+.analysis-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+}
+
+.analysis-item {
+    min-height: 72px;
+
+    padding: 12px;
+
+    border-radius: 11px;
+
+    border: 1px solid rgba(148,163,184,.10);
+
+    background:
+        rgba(7,12,24,.72);
+
+    transition:
+        border-color .2s ease,
+        background .2s ease;
+}
+
+.analysis-item:hover {
+    border-color:
+        rgba(96,165,250,.22);
+
+    background:
+        rgba(15,23,42,.90);
+}
+
+.analysis-label {
+    margin-bottom: 6px;
+
+    color: var(--muted2);
+
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+.analysis-value {
+    color: #e2e8f0;
+
+    font-size: .95rem;
+    font-weight: 900;
+}
+
+
+/* =====================================================
+   SCORE BAR
+===================================================== */
+
+.score-container {
+    margin-top: 16px;
+}
+
+.score-bar {
+    height: 10px;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    background:
+        #080e1b;
+
+    border:
+        1px solid rgba(148,163,184,.10);
+
+    box-shadow:
+        inset 0 2px 5px rgba(0,0,0,.30);
+}
+
+.score-fill {
+    height: 100%;
+    width: 50%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #3b82f6,
+            #60a5fa
+        );
+
+    border-radius: inherit;
+
+    transition:
+        width .4s ease,
+        background .3s ease;
+
+    box-shadow:
+        0 0 12px rgba(59,130,246,.30);
+}
+
+.score-text {
+    margin-top: 7px;
+
+    color: var(--muted);
+
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+
+/* =====================================================
+   AI REVIEW
+===================================================== */
+
+.ai-review-box {
+    margin-bottom: 18px;
+
+    border:
+        1px solid rgba(96,165,250,.20);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(37,99,235,.08),
+            rgba(139,92,246,.06),
+            rgba(15,23,42,.96)
+        );
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,.20);
+}
+
+.ai-review-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 14px;
+}
+
+.ai-review-title {
+    font-size: .98rem;
+    font-weight: 900;
+}
+
+.review-status {
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: .68rem;
+    font-weight: 900;
+
+    white-space: nowrap;
+}
+
+.review-win {
+    background: rgba(16,185,129,.10);
+    color: var(--green-light);
+    border: 1px solid rgba(16,185,129,.35);
+}
+
+.review-loss {
+    background: rgba(239,68,68,.10);
+    color: var(--red-light);
+    border: 1px solid rgba(239,68,68,.35);
+}
+
+.review-wait {
+    background: rgba(148,163,184,.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(148,163,184,.20);
+}
+
+.ai-review-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0,1fr));
+
+    gap: 10px;
+}
+
+.ai-review-item {
+    padding: 13px;
+
+    border-radius: 11px;
+
+    border: 1px solid rgba(148,163,184,.10);
+
+    background:
+        rgba(5,10,20,.55);
+}
+
+.ai-review-label {
+    margin-bottom: 6px;
+
+    color: var(--muted2);
+
+    font-size: .68rem;
+    font-weight: 700;
+}
+
+.ai-review-value {
+    color: #e2e8f0;
+
+    font-size: .9rem;
+    font-weight: 800;
+
+    line-height: 1.5;
+}
+
+.ai-review-message {
+    margin-top: 11px;
+
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    background:
+        rgba(5,10,20,.55);
+
+    border:
+        1px solid rgba(148,163,184,.08);
+
+    color: #cbd5e1;
+
+    line-height: 1.7;
+
+    font-size: .76rem;
+}
+
+
+/* =====================================================
+   TAGS
+===================================================== */
+
+.tag-big,
+.tag-small,
+.tag-win,
+.tag-loss,
+.tag-wait,
+.tag-buy {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 4px 8px;
+
+    border-radius: 7px;
+
+    font-size: .68rem;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+}
+
+.tag-big {
+    background: rgba(239,68,68,.10);
+    color: var(--red-light);
+    border: 1px solid rgba(239,68,68,.22);
+}
+
+.tag-small {
+    background: rgba(59,130,246,.10);
+    color: var(--blue-light);
+    border: 1px solid rgba(59,130,246,.22);
+}
+
+.tag-win {
+    background: rgba(16,185,129,.10);
+    color: var(--green-light);
+    border: 1px solid rgba(16,185,129,.30);
+}
+
+.tag-loss {
+    background: rgba(239,68,68,.10);
+    color: var(--red-light);
+    border: 1px solid rgba(239,68,68,.30);
+}
+
+.tag-wait {
+    background: rgba(148,163,184,.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(148,163,184,.22);
+}
+
+.tag-buy {
+    background: rgba(16,185,129,.10);
+    color: var(--green-light);
+    border: 1px solid rgba(16,185,129,.30);
+}
+
+
+/* =====================================================
+   NUMBER ICON
+===================================================== */
+
+.icon-num {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 29px;
+    height: 29px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    color: #fff;
+
+    font-weight: 900;
+    font-size: .78rem;
+
+    border: 1px solid rgba(255,255,255,.35);
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,.25);
+}
+
+
+/* =====================================================
+   WINGO CONTENT
+===================================================== */
+
+.content-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 2fr)
+        minmax(280px, 1fr);
+
+    gap: 16px;
+}
+
+.content-grid .card {
+    min-width: 0;
+}
+
+
+/* =====================================================
+   TABLE
+===================================================== */
+
+table {
+    width: 100%;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    margin-top: 5px;
+}
+
+th,
+td {
+    padding: 11px 9px;
+
+    text-align: center;
+
+    border-bottom:
+        1px solid rgba(148,163,184,.08);
+
+    font-size: .75rem;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+
+    color: var(--muted);
+
+    background:
+        #0d1525;
+
+    font-weight: 800;
+}
+
+tbody tr {
+    transition:
+        background .15s ease;
+}
+
+tbody tr:hover {
+    background:
+        rgba(59,130,246,.05);
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =====================================================
+   CHART
+===================================================== */
+
+#chart-numbers {
+    margin-top: 8px;
+}
+
+
+/* =====================================================
+   BACCARAT TABLE SELECTOR
+===================================================== */
+
+.baccarat-table-selector {
+    display: grid;
+
+    grid-template-columns:
+        repeat(8, minmax(0,1fr));
+
+    gap: 8px;
+
+    margin-top: 10px;
+}
+
+.baccarat-table-btn {
+    padding: 11px 7px;
+
+    border-radius: 10px;
+
+    border:
+        1px solid rgba(148,163,184,.12);
+
+    background:
+        rgba(8,14,26,.70);
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    text-align: center;
+
+    font-size: .78rem;
+    font-weight: 900;
+
+    transition:
+        all .2s ease;
+}
+
+.baccarat-table-btn:hover {
+    color: #fff;
+
+    border-color:
+        rgba(96,165,250,.30);
+
+    transform: translateY(-1px);
+}
+
+.baccarat-table-btn.active {
+    color: #fff;
+
+    border-color:
+        rgba(96,165,250,.65);
+
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #1d4ed8
+        );
+
+    box-shadow:
+        0 5px 18px rgba(37,99,235,.22);
+}
+
+
+/* =====================================================
+   BACCARAT TOP
+===================================================== */
+
+.baccarat-top-grid {
+    display: grid;
+
+    grid-template-columns:
+        1.2fr 1fr 1fr 1fr;
+
+    gap: 14px;
+
+    margin-bottom: 16px;
+}
+
+.baccarat-top-grid .card {
+    min-height: 105px;
+}
+
+.baccarat-result {
+    font-size: 1.45rem;
+    font-weight: 900;
+}
+
+.banker-color {
+    color: #ff6b6b !important;
+}
+
+.player-color {
+    color: #60a5fa !important;
+}
+
+.tie-color {
+    color: #22d3ee !important;
+}
+
+
+/* =====================================================
+   BACCARAT ROADS
+===================================================== */
+
+.road-card {
+    margin-bottom: 16px;
+}
+
+.road-title {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 13px;
+}
+
+.road-title h3 {
+    margin: 0;
+
+    font-size: .95rem;
+    font-weight: 900;
+}
+
+.road-title span {
+    color: var(--muted2);
+
+    font-size: .65rem;
+    font-weight: 700;
+}
+
+.big-road-wrapper {
+    overflow-x: auto;
+
+    padding-bottom: 5px;
+}
+
+.big-road {
+    display: grid;
+
+    grid-template-columns:
+        repeat(18, 34px);
+
+    grid-template-rows:
+        repeat(6, 34px);
+
+    gap: 4px;
+
+    width: max-content;
+}
+
+.road-cell {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 2px solid #475569;
+
+    background:
+        rgba(7,12,24,.70);
+
+    font-size: .65rem;
+    font-weight: 900;
+}
+
+.road-banker {
+    border-color: #ef4444;
+    color: #ef4444;
+
+    box-shadow:
+        inset 0 0 8px rgba(239,68,68,.06);
+}
+
+.road-player {
+    border-color: #3b82f6;
+    color: #3b82f6;
+
+    box-shadow:
+        inset 0 0 8px rgba(59,130,246,.06);
+}
+
+.road-tie {
+    border-color: #22d3ee;
+    color: #22d3ee;
+}
+
+
+/* =====================================================
+   SMALL ROADS
+===================================================== */
+
+.small-road-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0,1fr));
+
+    gap: 14px;
+}
+
+.small-road {
+    min-height: 175px;
+}
+
+.small-road-board {
+    display: grid;
+
+    grid-template-columns:
+        repeat(12, 22px);
+
+    grid-template-rows:
+        repeat(6, 22px);
+
+    gap: 3px;
+
+    width: max-content;
+}
+
+.small-cell {
+    width: 22px;
+    height: 22px;
+
+    border-radius: 50%;
+
+    border: 2px solid #475569;
+
+    background:
+        rgba(7,12,24,.70);
+}
+
+.small-red {
+    border-color: #ef4444;
+}
+
+.small-blue {
+    border-color: #3b82f6;
+}
+
+
+/* =====================================================
+   BACCARAT STATS
+===================================================== */
+
+.baccarat-stats-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0,1fr));
+
+    gap: 12px;
+
+    margin-bottom: 16px;
+}
+
+.stat-box {
+    padding: 14px;
+
+    border-radius: 12px;
+
+    background:
+        rgba(7,12,24,.62);
+
+    border:
+        1px solid rgba(148,163,184,.10);
+}
+
+.stat-row {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 9px 0;
+
+    border-bottom:
+        1px solid rgba(148,163,184,.08);
+
+    color: #cbd5e1;
+
+    font-size: .76rem;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-row strong {
+    color: #f8fafc;
+}
+
+
+/* =====================================================
+   HISTORY
+===================================================== */
+
+.history {
+    display: flex;
+
+    gap: 7px;
+
+    flex-wrap: wrap;
+}
+
+.history-ball {
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(7,12,24,.70);
+
+    font-size: .72rem;
+    font-weight: 900;
+
+    border: 2px solid;
+}
+
+.history-banker {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.history-player {
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.history-tie {
+    color: #22d3ee;
+    border-color: #22d3ee;
+}
+
+
+/* =====================================================
+   BACCARAT PREDICTION
+===================================================== */
+
+.baccarat-prediction {
+    margin-top: 16px;
+
+    border:
+        1px solid rgba(96,165,250,.20);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15,23,42,.97),
+            rgba(12,19,34,.95)
+        );
+}
+
+.prediction-main {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+}
+
+.prediction-result {
+    font-size: 2.25rem;
+
+    font-weight: 950;
+
+    letter-spacing: -.5px;
+}
+
+.bet,
+.pass {
+    padding: 9px 17px;
+
+    border-radius: 9px;
+
+    font-size: .75rem;
+    font-weight: 900;
+
+    letter-spacing: .5px;
+}
+
+.bet {
+    background:
+        rgba(16,185,129,.10);
+
+    border:
+        1px solid rgba(16,185,129,.40);
+
+    color:
+        var(--green-light);
+
+    box-shadow:
+        0 5px 18px rgba(16,185,129,.08);
+}
+
+.pass {
+    background:
+        rgba(148,163,184,.08);
+
+    border:
+        1px solid rgba(148,163,184,.25);
+
+    color:
+        #94a3b8;
+}
+
+.baccarat-reason {
+    margin-top: 15px;
+
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    background:
+        rgba(7,12,24,.55);
+
+    border:
+        1px solid rgba(148,163,184,.08);
+
+    color: #cbd5e1;
+
+    line-height: 1.9;
+
+    font-size: .76rem;
+}
+
+.demo-warning {
+    margin-top: 13px;
+
+    padding: 10px 12px;
+
+    border-radius: 9px;
+
+    background:
+        rgba(245,158,11,.07);
+
+    border:
+        1px solid rgba(245,158,11,.22);
+
+    color: #fbbf24;
+
+    font-size: .7rem;
+}
+
+
+/* =====================================================
+   MOBILE / TABLET
+===================================================== */
+
+@media (max-width: 1100px) {
+
+    .grid-cards {
+        grid-template-columns:
+            repeat(2, minmax(0,1fr));
+    }
+
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .analysis-grid {
+        grid-template-columns:
+            repeat(4, minmax(0,1fr));
+    }
+
+    .baccarat-top-grid {
+        grid-template-columns:
+            repeat(2, minmax(0,1fr));
+    }
+
+    .baccarat-table-selector {
+        grid-template-columns:
+            repeat(4, minmax(0,1fr));
+    }
+}
+
+
+@media (max-width: 800px) {
+
+    body {
+        padding: 14px;
+    }
+
+    header {
+        padding: 15px;
+
+        border-radius: 15px;
+    }
+
+    header h1 {
+        font-size: 1.25rem;
+    }
+
+    .analysis-grid {
+        grid-template-columns:
+            repeat(2, minmax(0,1fr));
+    }
+
+    .ai-review-grid {
+        grid-template-columns:
+            repeat(2, minmax(0,1fr));
+    }
+
+    .baccarat-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .small-road-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 9px;
+    }
+
+    header {
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 12px;
+    }
+
+    header > div:last-child {
+        width: 100%;
+
+        justify-content: space-between;
+    }
+
+    .time-badge,
+    .status-badge {
+        flex: 1;
+
+        justify-content: center;
+    }
+
+    .main-tabs {
+        gap: 8px;
+    }
+
+    .main-tab {
+        padding: 12px 8px;
+
+        font-size: .82rem;
+    }
+
+    .grid-cards {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .grid-cards > .card {
+        min-height: 100px;
+    }
+
+    .card {
+        padding: 14px;
+
+        border-radius: 14px;
+    }
+
+    .card h3 {
+        font-size: .9rem;
+    }
+
+    .analysis-grid {
+        grid-template-columns:
+            1fr 1fr;
+
+        gap: 8px;
+    }
+
+    .analysis-item {
+        min-height: 68px;
+
+        padding: 10px;
+    }
+
+    .ai-review-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ai-review-header {
+        align-items: flex-start;
+    }
+
+    .baccarat-top-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .baccarat-table-selector {
+        grid-template-columns:
+            repeat(4, minmax(0,1fr));
+
+        gap: 6px;
+    }
+
+    .baccarat-table-btn {
+        padding: 10px 4px;
+
+        font-size: .7rem;
+    }
+
+    .prediction-result {
+        font-size: 1.9rem;
+    }
+
+    .prediction-number {
+        width: 52px;
+        height: 52px;
+
+        border-radius: 15px;
+
+        font-size: 1.5rem;
+    }
+
+    .content-grid {
+        gap: 10px;
+    }
+
+    th,
+    td {
+        padding: 9px 5px;
+
+        font-size: .68rem;
+    }
+
+    .icon-num {
+        width: 26px;
+        height: 26px;
+
+        font-size: .7rem;
+    }
+
+    .tag-big,
+    .tag-small,
+    .tag-win,
+    .tag-loss,
+    .tag-wait,
+    .tag-buy {
+        padding: 3px 6px;
+
+        font-size: .62rem;
+    }
+
+    .history-ball {
+        width: 33px;
+        height: 33px;
+
+        font-size: .68rem;
+    }
+
+}
+
+
+/* =====================================================
+   EXTRA SMALL
+===================================================== */
+
+@media (max-width: 400px) {
+
+    body {
+        padding: 7px;
+    }
+
+    .main-tab {
+        font-size: .76rem;
+    }
+
+    .card {
+        padding: 12px;
+    }
+
+    .card-value {
+        font-size: 1.25rem;
+    }
+
+    .analysis-label {
+        font-size: .64rem;
+    }
+
+    .analysis-value {
+        font-size: .82rem;
+    }
+
+    .prediction-wrapper {
+        gap: 9px;
+    }
+
+    .prediction-number {
+        width: 48px;
+        height: 48px;
+
+        font-size: 1.35rem;
+    }
+
+}
+
+
+/* =====================================================
+   FOCUS / ACCESSIBILITY
+===================================================== */
+
+button:focus,
+.main-tab:focus,
+.baccarat-table-btn:focus {
+    outline: none;
+}
+
+
+/* =====================================================
+   SMOOTH CANVAS
+===================================================== */
+
+canvas {
+    max-width: 100%;
+}
+
+
+/* =====================================================
+   TABLE EMPTY STATE
+===================================================== */
+
+#draw-table td[colspan] {
+    padding: 35px 10px;
+
+    color: var(--muted2);
+}
+
+
+/* =====================================================
+   WIN RATE EMPHASIS
+===================================================== */
+
+#win-rate {
+    justify-content: center;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 0;
+}
+
+
+/* =====================================================
+   LATEST RESULT
+===================================================== */
+
+#latest-result {
+    align-items: center;
+
+    flex-wrap: wrap;
+}
+
+
+/* =====================================================
+   PREDICTED RESULT
+===================================================== */
+
+#predicted-result {
+    align-items: center;
+}
+
+
+/* =====================================================
+   SCORE / DATA EMPHASIS
+===================================================== */
+
+#analysis-number {
+    min-height: 29px;
+
+    display: flex;
+
+    align-items: center;
+}
+
+
+/* =====================================================
+   SELECTION
+===================================================== */
+
+::selection {
+    background: rgba(59,130,246,.35);
+
+    color: #fff;
+}
+
+</style>
 </head>
 
 <body>
