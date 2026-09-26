@@ -166,7 +166,8 @@ function deepMerge(base, source) {
 
         } else {
 
-            base[key] = source[key];
+            base[key] =
+                source[key];
         }
 
     });
@@ -271,23 +272,16 @@ function updateMYTClock() {
                 timeZone:
                     "Asia/Kuala_Lumpur",
 
-                hour:
-                    "2-digit",
+                hour: "2-digit",
 
-                minute:
-                    "2-digit",
+                minute: "2-digit",
 
-                second:
-                    "2-digit",
+                second: "2-digit",
 
-                hour12:
-                    false
+                hour12: false
             }
         ).format(now);
 
-    /*
-     * HTML 使用 myt-clock
-     */
     const el =
         document.getElementById(
             "myt-clock"
@@ -319,7 +313,6 @@ function switchMainTab(
                 section.classList.remove(
                     "active"
                 );
-
             }
         );
 
@@ -333,7 +326,6 @@ function switchMainTab(
                 btn.classList.remove(
                     "active"
                 );
-
             }
         );
 
@@ -402,7 +394,9 @@ function getNumberIconHtml(num) {
    FEATURE EXTRACTION
 ========================================================= */
 
-function getFeatureSnapshot(draws) {
+function getFeatureSnapshot(
+    draws
+) {
 
     if (
         !draws ||
@@ -427,7 +421,6 @@ function getFeatureSnapshot(draws) {
                 )
         );
 
-
     const sizes =
         draws.map(
             d =>
@@ -447,7 +440,6 @@ function getFeatureSnapshot(draws) {
     let bigTransitions = 0;
     let smallTransitions = 0;
     let totalTransitions = 0;
-
 
     for (
         let i = 1;
@@ -477,7 +469,6 @@ function getFeatureSnapshot(draws) {
 
     let markov = 0;
 
-
     if (
         totalTransitions > 0
     ) {
@@ -504,21 +495,17 @@ function getFeatureSnapshot(draws) {
             )
         );
 
-
     const big10 =
         recent10.filter(
             x =>
                 x === "大"
         ).length;
 
-
     const small10 =
         recent10.length -
         big10;
 
-
     let mean = 0;
-
 
     if (
         recent10.length >= 5
@@ -542,7 +529,6 @@ function getFeatureSnapshot(draws) {
 
     let streak = 1;
 
-
     for (
         let i = 1;
         i < sizes.length;
@@ -563,7 +549,6 @@ function getFeatureSnapshot(draws) {
 
 
     let streakSignal = 0;
-
 
     if (
         streak >= 2
@@ -596,13 +581,11 @@ function getFeatureSnapshot(draws) {
             )
         );
 
-
     const big20 =
         recent20.filter(
             x =>
                 x === "大"
         ).length;
-
 
     const frequency =
         recent20.length > 0
@@ -630,13 +613,11 @@ function getFeatureSnapshot(draws) {
             )
         );
 
-
     const big50 =
         recent50.filter(
             x =>
                 x === "大"
         ).length;
-
 
     const balance =
         recent50.length > 0
@@ -703,6 +684,7 @@ function getCurrentPattern(
         !draws ||
         draws.length < 6
     ) {
+
         return "";
     }
 
@@ -748,11 +730,9 @@ function rememberPattern(
             Date.now()
     };
 
-
     aiLearning.patterns.recent.unshift(
         item
     );
-
 
     aiLearning.patterns.recent =
         aiLearning.patterns.recent.slice(
@@ -808,7 +788,6 @@ function getPatternExperience(
             draws
         );
 
-
     if (!pattern) {
 
         return {
@@ -827,9 +806,7 @@ function getPatternExperience(
         );
 
 
-    if (
-        !records.length
-    ) {
+    if (!records.length) {
 
         return {
             bonus: 0,
@@ -843,29 +820,28 @@ function getPatternExperience(
     let wins = 0;
     let losses = 0;
 
-
     records.forEach(
         item => {
 
             if (
                 item.outcome === "WIN"
             ) {
+
                 wins++;
             }
 
             if (
                 item.outcome === "LOSS"
             ) {
+
                 losses++;
             }
-
         }
     );
 
 
     const total =
         wins + losses;
-
 
     if (!total) {
 
@@ -892,14 +868,12 @@ function getPatternExperience(
                     x.outcome === "WIN"
             ).length;
 
-
         const bigLosses =
             records.filter(
                 x =>
                     x.prediction === "大" &&
                     x.outcome === "LOSS"
             ).length;
-
 
         if (
             bigWins + bigLosses > 0
@@ -925,14 +899,12 @@ function getPatternExperience(
                     x.outcome === "WIN"
             ).length;
 
-
         const smallLosses =
             records.filter(
                 x =>
                     x.prediction === "小" &&
                     x.outcome === "LOSS"
             ).length;
-
 
         if (
             smallWins + smallLosses > 0
@@ -1029,7 +1001,6 @@ function getLearnedPrediction(
                 )
         );
 
-
     const sizes =
         draws.map(
             d =>
@@ -1064,25 +1035,23 @@ function getLearnedPrediction(
                     features[key]
                 );
 
-
             const weight =
                 clamp(
                     safeNumber(
                         factors[key]?.weight
                     ) || 1,
+
                     0.20,
+
                     2.00
                 );
-
 
             const contribution =
                 feature *
                 weight;
 
-
             contributions[key] =
                 contribution;
-
 
             score +=
                 contribution;
@@ -1093,7 +1062,6 @@ function getLearnedPrediction(
     const latest =
         sizes[0];
 
-
     const previous =
         sizes[1];
 
@@ -1101,7 +1069,6 @@ function getLearnedPrediction(
     let transitionScore = 0;
 
     let transitionSamples = 0;
-
 
     for (
         let i = 2;
@@ -1115,7 +1082,6 @@ function getLearnedPrediction(
         ) {
 
             transitionSamples++;
-
 
             if (
                 sizes[i + 1] === "大"
@@ -1150,7 +1116,6 @@ function getLearnedPrediction(
             ? "大"
             : "小";
 
-
     const patternMemory =
         getPatternExperience(
             draws,
@@ -1175,7 +1140,6 @@ function getLearnedPrediction(
 
     let momentum = 0;
 
-
     if (
         latest === previous
     ) {
@@ -1190,9 +1154,7 @@ function getLearnedPrediction(
             0.20;
     }
 
-
-    score +=
-        momentum;
+    score += momentum;
 
 
     const recentReviews =
@@ -1221,21 +1183,17 @@ function getLearnedPrediction(
                     x.outcome === "WIN"
             ).length;
 
-
         const losses =
             recentReviews.filter(
                 x =>
                     x.outcome === "LOSS"
             ).length;
 
-
         const total =
             wins + losses;
 
-
         const accuracy =
             wins / total;
-
 
         selfConfidence =
             (
@@ -1244,19 +1202,18 @@ function getLearnedPrediction(
             ) *
             0.8;
 
-
         score +=
             selfConfidence;
     }
 
 
-    const direction =
+    let direction =
         score >= 0
             ? 1
             : -1;
 
 
-    const prediction =
+    let prediction =
         getSizeFromDirection(
             direction
         );
@@ -1264,7 +1221,6 @@ function getLearnedPrediction(
 
     const confidenceRaw =
         Math.abs(score);
-
 
     let confidence =
         50 +
@@ -1337,7 +1293,6 @@ function getLearnedPrediction(
     const lastNum =
         nums[0];
 
-
     const isSpecial =
         lastNum === 0 ||
         lastNum === 5;
@@ -1354,9 +1309,7 @@ function getLearnedPrediction(
     }
 
 
-    let predictedNum =
-        null;
-
+    let predictedNum = null;
 
     const transitionCounts = {};
 
@@ -1395,9 +1348,9 @@ function getLearnedPrediction(
 
         transitionEntries.sort(
             (a, b) =>
-                b[1] - a[1]
+                b[1] -
+                a[1]
         );
-
 
         predictedNum =
             Number(
@@ -1408,11 +1361,12 @@ function getLearnedPrediction(
 
     if (
         predictedNum === null ||
-        Number.isNaN(predictedNum)
+        Number.isNaN(
+            predictedNum
+        )
     ) {
 
         const freq = {};
-
 
         nums.forEach(
             n => {
@@ -1431,16 +1385,14 @@ function getLearnedPrediction(
                 freq
             );
 
-
         entries.sort(
             (a, b) =>
-                b[1] - a[1]
+                b[1] -
+                a[1]
         );
 
 
-        if (
-            entries.length
-        ) {
+        if (entries.length) {
 
             predictedNum =
                 Number(
@@ -1549,7 +1501,6 @@ function getPassReason(
         return "近期预测连续失误，AI 自动降低下注信心";
     }
 
-
     if (
         Math.abs(score) <
         threshold * 0.55
@@ -1557,7 +1508,6 @@ function getPassReason(
 
         return "当前 Result 模式没有明显方向";
     }
-
 
     return "多个历史判断互相冲突";
 }
@@ -1589,12 +1539,11 @@ function getCurrentStreak(
         !sizes ||
         !sizes.length
     ) {
+
         return 0;
     }
 
-
     let count = 1;
-
 
     for (
         let i = 1;
@@ -1613,7 +1562,6 @@ function getCurrentStreak(
             break;
         }
     }
-
 
     return count;
 }
@@ -1636,7 +1584,6 @@ function getCounterfactualResult(
         return "NONE";
     }
 
-
     return prediction.size ===
         actualSize
         ? "WIN"
@@ -1653,11 +1600,11 @@ function getForcedCounterfactual(
             draws
         );
 
-
     if (
         !prediction ||
         !prediction.size
     ) {
+
         return null;
     }
 
@@ -1673,10 +1620,8 @@ function getForcedCounterfactual(
                 )
             );
 
-
         fakeLearning.passThreshold =
             0;
-
 
         const forced =
             getLearnedPrediction(
@@ -1685,10 +1630,8 @@ function getForcedCounterfactual(
                 true
             );
 
-
         return forced;
     }
-
 
     return prediction;
 }
@@ -1712,10 +1655,6 @@ function learnFromReview(
             review.actualSize
         );
 
-
-    /* -----------------------------------------------------
-       NORMAL WIN / LOSS
-    ----------------------------------------------------- */
 
     if (
         review.outcome === "WIN" ||
@@ -1746,7 +1685,9 @@ function learnFromReview(
 
                 const feature =
                     safeNumber(
-                        review.featureSnapshot?.[key]
+                        review.featureSnapshot?.[
+                            key
+                        ]
                     );
 
 
@@ -1754,6 +1695,7 @@ function learnFromReview(
                     Math.abs(feature) <
                     0.08
                 ) {
+
                     return;
                 }
 
@@ -1842,16 +1784,10 @@ function learnFromReview(
 
         aiLearning.lastLearningMessage =
             correct
-
                 ? `Result ${review.actualNum} 与 AI 判断一致，AI 提高了本次有效判断因素的权重。`
-
                 : `Result ${review.actualNum} 与 AI 判断相反，AI 已降低近期失效判断因素的权重。`;
     }
 
-
-    /* -----------------------------------------------------
-       PASS
-    ----------------------------------------------------- */
 
     if (
         review.outcome === "PASS"
@@ -1866,10 +1802,8 @@ function learnFromReview(
 
             aiLearning.stats.passMissed++;
 
-
             aiLearning.passThreshold -=
                 0.025;
-
 
             aiLearning.lastLearningMessage =
                 "本次 PASS 如果强制判断会 WIN，AI 会稍微降低 PASS 门槛。";
@@ -1880,10 +1814,8 @@ function learnFromReview(
 
             aiLearning.stats.passCorrect++;
 
-
             aiLearning.passThreshold +=
                 0.025;
-
 
             aiLearning.lastLearningMessage =
                 "本次 PASS 避开了错误判断，AI 保持更谨慎。";
@@ -1916,7 +1848,6 @@ function learnFromReview(
         review
     );
 
-
     aiLearning.recentReviews =
         aiLearning.recentReviews.slice(
             0,
@@ -1944,6 +1875,7 @@ function reviewNewOutcome(
         !draws ||
         draws.length < 12
     ) {
+
         return null;
     }
 
@@ -1990,7 +1922,6 @@ function reviewNewOutcome(
     let outcome =
         "PASS";
 
-
     let counterfactual =
         "NONE";
 
@@ -2008,7 +1939,8 @@ function reviewNewOutcome(
         if (forced) {
 
             counterfactual =
-                forced.size === actualSize
+                forced.size ===
+                actualSize
                     ? "WIN"
                     : "LOSS";
         }
@@ -2162,6 +2094,7 @@ function updateAILearningDashboard() {
             );
 
         if (el) {
+
             el.textContent =
                 value;
         }
@@ -2292,13 +2225,13 @@ function renderAIReview(
         !draws ||
         draws.length < 12
     ) {
+
         return;
     }
 
 
     const actual =
         draws[0];
-
 
     const history =
         draws.slice(1);
@@ -2315,24 +2248,20 @@ function renderAIReview(
             "review-status"
         );
 
-
     const predEl =
         document.getElementById(
             "review-prediction"
         );
-
 
     const actualEl =
         document.getElementById(
             "review-actual"
         );
 
-
     const resultEl =
         document.getElementById(
             "review-result"
         );
-
 
     const messageEl =
         document.getElementById(
@@ -2444,12 +2373,33 @@ function renderAIReview(
 
 /* =========================================================
    FETCH WINGO
-   UPDATED / COMPATIBLE WORKER PARSER
 ========================================================= */
 
 async function fetchDraws() {
 
     try {
+
+        if (
+            typeof CryptoJS ===
+            "undefined"
+        ) {
+
+            throw new Error(
+                "CryptoJS 未加载，请检查 index.html"
+            );
+        }
+
+
+        if (
+            !window.crypto ||
+            !crypto.getRandomValues
+        ) {
+
+            throw new Error(
+                "浏览器不支持 crypto.getRandomValues"
+            );
+        }
+
 
         const random =
             Array.from(
@@ -2506,8 +2456,7 @@ async function fetchDraws() {
             await fetch(
                 WORKER_URL,
                 {
-                    method:
-                        "POST",
+                    method: "POST",
 
                     headers: {
 
@@ -2531,9 +2480,7 @@ async function fetchDraws() {
             );
 
 
-        if (
-            !response.ok
-        ) {
+        if (!response.ok) {
 
             throw new Error(
                 `HTTP ${response.status}`
@@ -2545,11 +2492,6 @@ async function fetchDraws() {
             await response.json();
 
 
-        /*
-         * Debug:
-         * 看 Worker 实际返回什么。
-         */
-
         console.log(
             "Worker 返回:",
             json
@@ -2557,8 +2499,7 @@ async function fetchDraws() {
 
 
         /*
-         * Find list from several
-         * possible Worker structures.
+         * 支持不同 Worker 返回结构
          */
 
         let list = null;
@@ -2642,11 +2583,7 @@ async function fetchDraws() {
         }
 
 
-        /*
-         * Convert API records.
-         */
-
-        const converted =
+        const parsed =
             list
                 .map(
                     item => {
@@ -2665,7 +2602,7 @@ async function fetchDraws() {
                                 item?.issue ??
                                 item?.period ??
                                 item?.issue_no ??
-                                item?.drawNumber ??
+                                item?.periodNumber ??
                                 ""
                             );
 
@@ -2704,18 +2641,23 @@ async function fetchDraws() {
 
 
         console.log(
-            "WinGo 解析后:",
-            converted
+            `WinGo 成功解析 ${parsed.length} 笔`,
+            parsed.slice(0, 3)
         );
 
 
-        return converted;
+        return parsed;
 
     } catch (error) {
 
         console.error(
-            "Worker 请求解析失败:",
+            "fetchDraws ERROR:",
             error
+        );
+
+        console.error(
+            "Worker URL:",
+            WORKER_URL
         );
 
         return [];
@@ -2743,18 +2685,14 @@ function updateLatestCard(
         );
 
 
-    if (
-        issueEl
-    ) {
+    if (issueEl) {
 
         issueEl.textContent =
             latest.issue;
     }
 
 
-    if (
-        resultEl
-    ) {
+    if (resultEl) {
 
         resultEl.innerHTML = `
             ${getNumberIconHtml(
@@ -2986,7 +2924,6 @@ function updateMarketAnalysis(
                 95
             );
 
-
         fill.style.width =
             `${percentage}%`;
     }
@@ -3184,6 +3121,7 @@ function renderDrawTable(
 
                     return `
                         <tr>
+
                             <td>
                                 ${draw.issue}
                             </td>
@@ -3202,6 +3140,7 @@ function renderDrawTable(
                             <td>
                                 ${draw.colour || "-"}
                             </td>
+
                         </tr>
                     `;
                 }
@@ -3210,44 +3149,63 @@ function renderDrawTable(
 
 
     /*
-     * Support BOTH:
-     *
-     * 1. div#draw-table
-     * 2. tbody#draw-table
-     *
-     * So your existing HTML will not
-     * immediately break the dashboard.
+     * 如果 HTML 原本是 tbody，
+     * 直接写入 tr，避免 tbody 内嵌 div/table
      */
 
     if (
-        table.tagName === "TBODY"
+        table.tagName ===
+        "TBODY"
     ) {
 
         table.innerHTML =
-            rows;
+            rows ||
+            `
+                <tr>
+                    <td colspan="5">
+                        暂无数据
+                    </td>
+                </tr>
+            `;
 
         return;
     }
 
 
+    /*
+     * 如果未来 HTML 改成容器，
+     * 也兼容原本的完整 table
+     */
+
     table.innerHTML = `
         <div class="table-wrapper">
+
             <table>
 
                 <thead>
+
                     <tr>
+
                         <th>期号</th>
+
                         <th>号码</th>
+
                         <th>大小</th>
+
                         <th>颜色</th>
+
                     </tr>
+
                 </thead>
 
                 <tbody>
+
                     ${rows}
+
                 </tbody>
 
             </table>
+
         </div>
     `;
 }
@@ -3297,9 +3255,7 @@ function renderNumberChart(
         );
 
 
-    if (
-        myChart
-    ) {
+    if (myChart) {
 
         myChart.destroy();
     }
@@ -3309,6 +3265,7 @@ function renderNumberChart(
         typeof Chart ===
         "undefined"
     ) {
+
         return;
     }
 
@@ -3317,6 +3274,7 @@ function renderNumberChart(
         new Chart(
             canvas,
             {
+
                 type:
                     "line",
 
@@ -3364,8 +3322,7 @@ function renderNumberChart(
 
                             ticks: {
 
-                                stepSize:
-                                    1
+                                stepSize: 1
                             }
                         }
                     },
@@ -3374,8 +3331,7 @@ function renderNumberChart(
 
                         legend: {
 
-                            display:
-                                false
+                            display: false
                         }
                     }
                 }
@@ -3397,6 +3353,10 @@ async function refreshDashboard() {
     if (
         !draws.length
     ) {
+
+        console.warn(
+            "refreshDashboard: 没有取得 WinGo 数据"
+        );
 
         return;
     }
@@ -3480,6 +3440,7 @@ const baccaratData = {
 
     D51: {
         round: 128,
+
         history: [
             "B","B","P","P","B",
             "B","T","P","P","B",
@@ -3490,6 +3451,7 @@ const baccaratData = {
 
     D52: {
         round: 96,
+
         history: [
             "P","P","B","P","B",
             "B","P","P","B","B",
@@ -3500,6 +3462,7 @@ const baccaratData = {
 
     D53: {
         round: 142,
+
         history: [
             "B","P","B","B","P",
             "P","P","B","B","P",
@@ -3510,6 +3473,7 @@ const baccaratData = {
 
     D54: {
         round: 113,
+
         history: [
             "P","B","P","P","B",
             "B","B","P","P","B",
@@ -3520,6 +3484,7 @@ const baccaratData = {
 
     D55: {
         round: 87,
+
         history: [
             "B","B","B","P","P",
             "B","P","P","B","B",
@@ -3530,6 +3495,7 @@ const baccaratData = {
 
     D56: {
         round: 105,
+
         history: [
             "P","B","B","P","P",
             "P","B","P","B","B",
@@ -3540,6 +3506,7 @@ const baccaratData = {
 
     D57: {
         round: 76,
+
         history: [
             "B","P","P","B","B",
             "B","P","B","P","P",
@@ -3550,6 +3517,7 @@ const baccaratData = {
 
     D58: {
         round: 151,
+
         history: [
             "P","P","B","B","P",
             "B","B","B","P","P",
@@ -3584,12 +3552,14 @@ function baccaratResultName(
     if (
         result === "B"
     ) {
+
         return "庄";
     }
 
     if (
         result === "P"
     ) {
+
         return "闲";
     }
 
@@ -3605,6 +3575,7 @@ function getBaccaratStreak(
         !history ||
         !history.length
     ) {
+
         return 0;
     }
 
@@ -3621,7 +3592,9 @@ function getBaccaratStreak(
     for (
         let i =
             history.length - 2;
+
         i >= 0;
+
         i--
     ) {
 
@@ -3649,6 +3622,7 @@ function getMaxStreak(
 ) {
 
     let max = 0;
+
     let current = 0;
 
 
@@ -3690,13 +3664,17 @@ function predictBaccarat(
 
         return {
 
-            result: "PASS",
+            result:
+                "PASS",
 
-            confidence: 50,
+            confidence:
+                50,
 
-            action: "PASS",
+            action:
+                "PASS",
 
-            reason: "数据不足"
+            reason:
+                "数据不足"
         };
     }
 
@@ -3749,7 +3727,6 @@ function predictBaccarat(
 
     const confidence =
         total > 0
-
             ? Math.round(
                 (
                     Math.max(
@@ -3760,7 +3737,6 @@ function predictBaccarat(
                 ) *
                 100
             )
-
             : 50;
 
 
@@ -3769,6 +3745,7 @@ function predictBaccarat(
         result,
 
         confidence:
+
             clamp(
                 confidence,
                 50,
@@ -3805,6 +3782,7 @@ function renderBigRoad(
         history
             .map(
                 item => `
+
                     <span
                         class="history-item ${
                             item === "B"
@@ -3814,7 +3792,9 @@ function renderBigRoad(
                                     : "tie"
                         }"
                     >
+
                         ${item}
+
                     </span>
                 `
             )
@@ -3842,6 +3822,7 @@ function renderSmallRoad(
         history
             .map(
                 item => `
+
                     <span
                         class="history-item ${
                             item === "B"
@@ -3851,7 +3832,9 @@ function renderSmallRoad(
                                     : "tie"
                         }"
                     >
+
                         ${item}
+
                     </span>
                 `
             )
@@ -3878,6 +3861,7 @@ function renderBaccaratHistory(
         history
             .map(
                 item => `
+
                     <span
                         class="history-item ${
                             item === "B"
@@ -3887,9 +3871,11 @@ function renderBaccaratHistory(
                                     : "tie"
                         }"
                     >
+
                         ${baccaratResultName(
                             item
                         )}
+
                     </span>
                 `
             )
@@ -4175,8 +4161,7 @@ setInterval(
             countdownVal <= 0
         ) {
 
-            countdownVal =
-                5;
+            countdownVal = 5;
 
             refreshDashboard();
         }
