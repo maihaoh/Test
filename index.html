@@ -12,13 +12,10 @@
 
     <title>WinGo & Baccarat AI Dashboard</title>
 
-    <!-- Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- CryptoJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-    <!-- External CSS -->
     <link
         rel="stylesheet"
         href="style.css"
@@ -55,9 +52,7 @@
 
             <div class="time-box">
 
-                <span>
-                    MYT
-                </span>
+                <span>MYT</span>
 
                 <strong id="myt-clock">
                     --:--:--
@@ -68,9 +63,7 @@
 
             <div class="countdown-box">
 
-                <span>
-                    NEXT
-                </span>
+                <span>NEXT</span>
 
                 <strong id="countdown">
                     5s
@@ -110,7 +103,7 @@
 
 
     <!-- =====================================================
-         WINGO SECTION
+         WINGO
     ====================================================== -->
 
     <section
@@ -119,16 +112,12 @@
     >
 
 
-        <!-- =================================================
-             TOP CARDS
-        ================================================== -->
+        <!-- TOP -->
 
         <div class="grid-cards">
 
 
-            <!-- Latest -->
-
-            <div class="card">
+            <div class="card latest-card">
 
                 <div class="card-title">
                     🎯 最新开奖
@@ -152,9 +141,7 @@
 
 
 
-            <!-- Prediction -->
-
-            <div class="card">
+            <div class="card prediction-card">
 
                 <div class="card-title">
                     🔮 下一期预测
@@ -173,9 +160,7 @@
 
 
 
-            <!-- Win Rate -->
-
-            <div class="card">
+            <div class="card winrate-card">
 
                 <div class="card-title">
                     📈 AI 胜率
@@ -185,6 +170,7 @@
                     id="win-rate"
                     class="win-rate-box"
                 >
+
                     <div
                         style="
                             font-size:2rem;
@@ -204,6 +190,273 @@
                     >
                         最近 50 局
                     </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             MARKET ANALYSIS
+        ================================================== -->
+
+        <div class="section-card market-analysis-card">
+
+            <div class="section-title">
+                📊 WinGo 市场分析
+            </div>
+
+
+            <div class="analysis-grid">
+
+
+                <div class="analysis-item blue-item">
+
+                    <div class="analysis-label">
+                        🔥 当前长龙
+                    </div>
+
+                    <div
+                        id="analysis-streak"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-item purple-item">
+
+                    <div class="analysis-label">
+                        🧠 Markov
+                    </div>
+
+                    <div
+                        id="analysis-markov"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-item orange-item">
+
+                    <div class="analysis-label">
+                        📉 均值回归
+                    </div>
+
+                    <div
+                        id="analysis-mean"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-item cyan-item">
+
+                    <div class="analysis-label">
+                        🎯 目标号码
+                    </div>
+
+                    <div
+                        id="analysis-number"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-item green-item">
+
+                    <div class="analysis-label">
+                        大 10
+                    </div>
+
+                    <div
+                        id="analysis-big10"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-item red-item">
+
+                    <div class="analysis-label">
+                        小 10
+                    </div>
+
+                    <div
+                        id="analysis-small10"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-item teal-item">
+
+                    <div class="analysis-label">
+                        大 50
+                    </div>
+
+                    <div
+                        id="analysis-big50"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-item yellow-item">
+
+                    <div class="analysis-label">
+                        小 50
+                    </div>
+
+                    <div
+                        id="analysis-small50"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="score-section">
+
+                <div class="score-header">
+
+                    <span>
+                        大 / 小 分布
+                    </span>
+
+                    <strong id="score-text">
+                        大 --% / 小 --%
+                    </strong>
+
+                </div>
+
+
+                <div class="score-bar">
+
+                    <div
+                        id="score-fill"
+                        class="score-fill"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             AI REVIEW
+        ================================================== -->
+
+        <div class="section-card ai-review-card">
+
+            <div class="section-title">
+
+                🤖 AI 智能复盘
+
+                <span
+                    id="review-status"
+                    class="review-status review-wait"
+                >
+                    等待
+                </span>
+
+            </div>
+
+
+            <div class="review-grid">
+
+
+                <div class="review-item review-prediction">
+
+                    <div class="review-label">
+                        🔮 上一期预测
+                    </div>
+
+                    <div
+                        id="review-prediction"
+                        class="review-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="review-item review-actual">
+
+                    <div class="review-label">
+                        🎯 实际结果
+                    </div>
+
+                    <div
+                        id="review-actual"
+                        class="review-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="review-item review-result">
+
+                    <div class="review-label">
+                        📌 结果
+                    </div>
+
+                    <div
+                        id="review-result"
+                        class="review-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="review-item review-learning">
+
+                    <div class="review-label">
+                        🧠 AI 动作
+                    </div>
+
+                    <div
+                        id="review-message"
+                        class="review-value review-action-text"
+                    >
+                        等待复盘
+                    </div>
+
                 </div>
 
             </div>
@@ -232,12 +485,12 @@
             </div>
 
 
+            <!-- STATUS -->
+
             <div class="ai-learning-grid">
 
 
-                <!-- AI State -->
-
-                <div class="ai-learning-item">
+                <div class="ai-learning-item state-item">
 
                     <div class="ai-learning-label">
                         🧠 AI 状态
@@ -253,10 +506,7 @@
                 </div>
 
 
-
-                <!-- Learning Count -->
-
-                <div class="ai-learning-item">
+                <div class="ai-learning-item count-item">
 
                     <div class="ai-learning-label">
                         📚 学习次数
@@ -272,10 +522,7 @@
                 </div>
 
 
-
-                <!-- WIN -->
-
-                <div class="ai-learning-item">
+                <div class="ai-learning-item win-item">
 
                     <div class="ai-learning-label">
                         ✅ WIN
@@ -283,7 +530,7 @@
 
                     <div
                         id="ai-learning-win"
-                        class="ai-learning-value ai-win"
+                        class="ai-learning-value"
                     >
                         0
                     </div>
@@ -291,10 +538,7 @@
                 </div>
 
 
-
-                <!-- LOSS -->
-
-                <div class="ai-learning-item">
+                <div class="ai-learning-item loss-item">
 
                     <div class="ai-learning-label">
                         ❌ LOSS
@@ -302,7 +546,7 @@
 
                     <div
                         id="ai-learning-loss"
-                        class="ai-learning-value ai-loss"
+                        class="ai-learning-value"
                     >
                         0
                     </div>
@@ -310,10 +554,7 @@
                 </div>
 
 
-
-                <!-- PASS -->
-
-                <div class="ai-learning-item">
+                <div class="ai-learning-item pass-item">
 
                     <div class="ai-learning-label">
                         ⚪ PASS
@@ -329,10 +570,7 @@
                 </div>
 
 
-
-                <!-- PASS Accuracy -->
-
-                <div class="ai-learning-item">
+                <div class="ai-learning-item quality-item">
 
                     <div class="ai-learning-label">
                         🎯 PASS 判断
@@ -351,7 +589,7 @@
 
 
 
-            <!-- AI Factors -->
+            <!-- WEIGHTS -->
 
             <div class="ai-factor-title">
                 📊 当前学习权重
@@ -361,10 +599,10 @@
             <div class="ai-factor-grid">
 
 
-                <div class="ai-factor">
+                <div class="ai-factor markov-factor">
 
                     <span>
-                        Markov
+                        🧠 Markov
                     </span>
 
                     <strong id="ai-weight-markov">
@@ -374,10 +612,10 @@
                 </div>
 
 
-                <div class="ai-factor">
+                <div class="ai-factor mean-factor">
 
                     <span>
-                        均值回归
+                        📉 均值回归
                     </span>
 
                     <strong id="ai-weight-mean">
@@ -387,10 +625,10 @@
                 </div>
 
 
-                <div class="ai-factor">
+                <div class="ai-factor streak-factor">
 
                     <span>
-                        长龙
+                        🔥 长龙
                     </span>
 
                     <strong id="ai-weight-streak">
@@ -400,10 +638,10 @@
                 </div>
 
 
-                <div class="ai-factor">
+                <div class="ai-factor frequency-factor">
 
                     <span>
-                        频率
+                        📊 频率
                     </span>
 
                     <strong id="ai-weight-frequency">
@@ -413,10 +651,10 @@
                 </div>
 
 
-                <div class="ai-factor">
+                <div class="ai-factor balance-factor">
 
                     <span>
-                        平衡
+                        ⚖️ 平衡
                     </span>
 
                     <strong id="ai-weight-balance">
@@ -426,10 +664,10 @@
                 </div>
 
 
-                <div class="ai-factor">
+                <div class="ai-factor threshold-factor">
 
                     <span>
-                        PASS 阈值
+                        🎯 PASS 阈值
                     </span>
 
                     <strong id="ai-pass-threshold">
@@ -442,7 +680,7 @@
 
 
 
-            <!-- Last Learning -->
+            <!-- LAST LEARNING -->
 
             <div class="ai-learning-message">
 
@@ -464,303 +702,7 @@
 
 
         <!-- =================================================
-             AI REVIEW
-        ================================================== -->
-
-        <div class="section-card">
-
-            <div class="section-title">
-                🤖 AI 智能复盘
-            </div>
-
-
-            <div class="review-grid">
-
-
-                <div class="review-item">
-
-                    <div class="review-label">
-                        状态
-                    </div>
-
-                    <div
-                        id="review-status"
-                        class="review-status review-wait"
-                    >
-                        等待
-                    </div>
-
-                </div>
-
-
-
-                <div class="review-item">
-
-                    <div class="review-label">
-                        上一期预测
-                    </div>
-
-                    <div
-                        id="review-prediction"
-                        class="review-value"
-                    >
-                        --
-                    </div>
-
-                </div>
-
-
-
-                <div class="review-item">
-
-                    <div class="review-label">
-                        实际结果
-                    </div>
-
-                    <div
-                        id="review-actual"
-                        class="review-value"
-                    >
-                        --
-                    </div>
-
-                </div>
-
-
-
-                <div class="review-item">
-
-                    <div class="review-label">
-                        结果
-                    </div>
-
-                    <div
-                        id="review-result"
-                        class="review-value"
-                    >
-                        --
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="review-message"
-                class="review-message"
-            >
-                等待 AI 复盘……
-            </div>
-
-        </div>
-
-
-
-        <!-- =================================================
-             ANALYSIS
-        ================================================== -->
-
-        <div class="section-card">
-
-            <div class="section-title">
-                📊 WinGo 市场分析
-            </div>
-
-
-            <div class="analysis-grid">
-
-
-                <!-- Streak -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        🔥 当前长龙
-                    </div>
-
-                    <div
-                        id="analysis-streak"
-                        class="analysis-value"
-                    >
-                        --
-                    </div>
-
-                </div>
-
-
-
-                <!-- Markov -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        🧠 Markov
-                    </div>
-
-                    <div
-                        id="analysis-markov"
-                        class="analysis-value"
-                    >
-                        --
-                    </div>
-
-                </div>
-
-
-
-                <!-- Mean -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        📉 均值回归
-                    </div>
-
-                    <div
-                        id="analysis-mean"
-                        class="analysis-value"
-                    >
-                        --
-                    </div>
-
-                </div>
-
-
-
-                <!-- Number -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        🎯 目标号码
-                    </div>
-
-                    <div
-                        id="analysis-number"
-                        class="analysis-value"
-                    >
-                        --
-                    </div>
-
-                </div>
-
-
-
-                <!-- Big 10 -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        大 10
-                    </div>
-
-                    <div
-                        id="analysis-big10"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-
-
-                <!-- Small 10 -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        小 10
-                    </div>
-
-                    <div
-                        id="analysis-small10"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-
-
-                <!-- Big 50 -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        大 50
-                    </div>
-
-                    <div
-                        id="analysis-big50"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-
-
-                <!-- Small 50 -->
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
-                        小 50
-                    </div>
-
-                    <div
-                        id="analysis-small50"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- Big Small Score -->
-
-            <div class="score-section">
-
-                <div class="score-header">
-
-                    <span>
-                        大 / 小 分布
-                    </span>
-
-                    <strong id="score-text">
-                        大 --% / 小 --%
-                    </strong>
-
-                </div>
-
-
-                <div class="score-bar">
-
-                    <div
-                        id="score-fill"
-                        class="score-fill"
-                        style="width:50%;"
-                    >
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <!-- =================================================
-             WINGO HISTORY TABLE
+             HISTORY
         ================================================== -->
 
         <div class="section-card">
@@ -778,25 +720,15 @@
 
                         <tr>
 
-                            <th>
-                                期号
-                            </th>
+                            <th>期号</th>
 
-                            <th>
-                                实际
-                            </th>
+                            <th>实际</th>
 
-                            <th>
-                                AI预测
-                            </th>
+                            <th>AI预测</th>
 
-                            <th>
-                                信号
-                            </th>
+                            <th>信号</th>
 
-                            <th>
-                                结果
-                            </th>
+                            <th>结果</th>
 
                         </tr>
 
@@ -836,10 +768,7 @@
 
             <div class="chart-container">
 
-                <canvas
-                    id="chart-numbers"
-                >
-                </canvas>
+                <canvas id="chart-numbers"></canvas>
 
             </div>
 
@@ -851,7 +780,7 @@
 
 
     <!-- =====================================================
-         BACCARAT SECTION
+         BACCARAT
     ====================================================== -->
 
     <section
@@ -859,10 +788,6 @@
         class="main-section"
     >
 
-
-        <!-- =================================================
-             TABLE SELECTOR
-        ================================================== -->
 
         <div class="section-card">
 
@@ -943,12 +868,7 @@
 
 
 
-        <!-- =================================================
-             BACCARAT TOP STATS
-        ================================================== -->
-
         <div class="grid-cards">
-
 
             <div class="card">
 
@@ -973,7 +893,6 @@
             </div>
 
 
-
             <div class="card">
 
                 <div class="card-title">
@@ -988,7 +907,6 @@
                 </div>
 
             </div>
-
 
 
             <div class="card">
@@ -1010,10 +928,6 @@
 
 
 
-        <!-- =================================================
-             BIG ROAD
-        ================================================== -->
-
         <div class="section-card">
 
             <div
@@ -1023,20 +937,14 @@
                 📍 D51 大路
             </div>
 
-
             <div
                 id="big-road"
                 class="big-road"
-            >
-            </div>
+            ></div>
 
         </div>
 
 
-
-        <!-- =================================================
-             THREE ROADS
-        ================================================== -->
 
         <div class="road-grid">
 
@@ -1047,9 +955,7 @@
 
                     👁️ 眼路
 
-                    <span
-                        id="eye-road-label"
-                    >
+                    <span id="eye-road-label">
                         D51
                     </span>
 
@@ -1058,11 +964,9 @@
                 <div
                     id="eye-road"
                     class="small-road"
-                >
-                </div>
+                ></div>
 
             </div>
-
 
 
             <div class="section-card">
@@ -1071,9 +975,7 @@
 
                     🔴 小路
 
-                    <span
-                        id="small-road-label"
-                    >
+                    <span id="small-road-label">
                         D51
                     </span>
 
@@ -1082,11 +984,9 @@
                 <div
                     id="small-road"
                     class="small-road"
-                >
-                </div>
+                ></div>
 
             </div>
-
 
 
             <div class="section-card">
@@ -1095,9 +995,7 @@
 
                     🪳 蟑螂路
 
-                    <span
-                        id="cockroach-road-label"
-                    >
+                    <span id="cockroach-road-label">
                         D51
                     </span>
 
@@ -1106,18 +1004,13 @@
                 <div
                     id="cockroach-road"
                     class="small-road"
-                >
-                </div>
+                ></div>
 
             </div>
 
         </div>
 
 
-
-        <!-- =================================================
-             BACCARAT STATS
-        ================================================== -->
 
         <div class="section-card">
 
@@ -1132,7 +1025,7 @@
             <div class="analysis-grid">
 
 
-                <div class="analysis-item">
+                <div class="analysis-item banker-item">
 
                     <div class="analysis-label">
                         庄
@@ -1148,8 +1041,7 @@
                 </div>
 
 
-
-                <div class="analysis-item">
+                <div class="analysis-item player-item">
 
                     <div class="analysis-label">
                         闲
@@ -1165,8 +1057,7 @@
                 </div>
 
 
-
-                <div class="analysis-item">
+                <div class="analysis-item tie-item">
 
                     <div class="analysis-label">
                         和
@@ -1180,7 +1071,6 @@
                     </div>
 
                 </div>
-
 
 
                 <div class="analysis-item">
@@ -1199,7 +1089,6 @@
                 </div>
 
 
-
                 <div class="analysis-item">
 
                     <div class="analysis-label">
@@ -1214,7 +1103,6 @@
                     </div>
 
                 </div>
-
 
 
                 <div class="analysis-item">
@@ -1233,7 +1121,6 @@
                 </div>
 
 
-
                 <div class="analysis-item">
 
                     <div class="analysis-label">
@@ -1250,7 +1137,6 @@
                 </div>
 
 
-
                 <div class="analysis-item">
 
                     <div class="analysis-label">
@@ -1265,7 +1151,6 @@
                     </div>
 
                 </div>
-
 
 
                 <div class="analysis-item">
@@ -1289,10 +1174,6 @@
 
 
 
-        <!-- =================================================
-             BACCARAT HISTORY
-        ================================================== -->
-
         <div class="section-card">
 
             <div
@@ -1302,20 +1183,14 @@
                 📜 D51 最近20局
             </div>
 
-
             <div
                 id="bc-history"
                 class="history-list"
-            >
-            </div>
+            ></div>
 
         </div>
 
 
-
-        <!-- =================================================
-             BACCARAT PREDICTION
-        ================================================== -->
 
         <div class="section-card baccarat-prediction-card">
 
@@ -1323,9 +1198,7 @@
 
                 🔮 Baccarat AI 预测
 
-                <span
-                    id="prediction-table-name"
-                >
+                <span id="prediction-table-name">
                     D51
                 </span>
 
@@ -1333,7 +1206,6 @@
 
 
             <div class="baccarat-prediction">
-
 
                 <div
                     id="bc-prediction"
@@ -1364,27 +1236,17 @@
             <div
                 id="bc-reason"
                 class="prediction-reason"
-            >
-            </div>
+            ></div>
 
         </div>
 
 
     </section>
 
-
-
 </div>
 
 
-<!-- =====================================================
-     JAVASCRIPT
-====================================================== -->
-
-<script
-    src="script.js"
-></script>
-
+<script src="script.js"></script>
 
 </body>
 
