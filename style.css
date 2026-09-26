@@ -1,3 +1,8 @@
+/* =========================================================
+   WinGo + Baccarat AI Dashboard
+   CLEAN RESPONSIVE STYLE
+   ========================================================= */
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -17,21 +22,37 @@ body {
 
     background:
         radial-gradient(
-            circle at 10% 0%,
+            circle at 15% 0%,
             #172554 0%,
-            #0f172a 32%,
+            #0f172a 35%,
             #020617 100%
         );
 
     color: #e5e7eb;
     min-height: 100vh;
     line-height: 1.5;
+    overflow-x: hidden;
 }
 
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+    background: rgba(99, 102, 241, 0.35);
+    color: #fff;
+}
 
 /* =========================================================
    CONTAINER
-========================================================= */
+   ========================================================= */
 
 .container {
     width: 100%;
@@ -40,68 +61,84 @@ body {
     padding: 20px;
 }
 
-
 /* =========================================================
    HEADER
-========================================================= */
+   ========================================================= */
 
 .header {
+    width: 100%;
+
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
 
     padding: 20px 24px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 
-    background: rgba(15, 23, 42, 0.9);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15, 23, 42, 0.97),
+            rgba(15, 23, 42, 0.86)
+        );
 
-    border: 1px solid rgba(148, 163, 184, 0.15);
-
+    border: 1px solid rgba(148, 163, 184, 0.14);
     border-radius: 18px;
 
     box-shadow:
-        0 15px 40px rgba(0, 0, 0, 0.28);
+        0 18px 45px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
 
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
 }
 
 .header h1 {
+    color: #f8fafc;
     font-size: 25px;
-    font-weight: 800;
+    font-weight: 900;
+    letter-spacing: 0.2px;
 }
 
 .subtitle {
+    margin-top: 4px;
     color: #94a3b8;
     font-size: 13px;
-    margin-top: 4px;
 }
 
 .header-info {
     display: flex;
-    gap: 12px;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .time-box,
 .countdown-box {
-    min-width: 105px;
+    min-width: 108px;
 
     padding: 10px 14px;
 
-    background: rgba(30, 41, 59, 0.8);
-
-    border-radius: 12px;
-
     text-align: center;
+
+    background: rgba(30, 41, 59, 0.72);
+
+    border: 1px solid rgba(148, 163, 184, 0.10);
+    border-radius: 12px;
 }
 
 .time-box span,
 .countdown-box span {
     display: block;
 
+    margin-bottom: 2px;
+
     color: #64748b;
 
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: 0.5px;
 }
 
 .time-box strong,
@@ -111,43 +148,58 @@ body {
     color: #f8fafc;
 
     font-size: 16px;
+    font-weight: 800;
+
+    white-space: nowrap;
 }
 
-
 /* =========================================================
-   MAIN TAB
-========================================================= */
+   MAIN TABS
+   ========================================================= */
 
 .main-tabs {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
     gap: 10px;
-    margin-bottom: 18px;
+
+    width: 100%;
+    margin-bottom: 16px;
 }
 
 .main-tab {
-    flex: 1;
+    width: 100%;
 
     padding: 13px 18px;
 
-    border: 1px solid rgba(148, 163, 184, 0.15);
-
+    border: 1px solid rgba(148, 163, 184, 0.14);
     border-radius: 12px;
 
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(15, 23, 42, 0.82);
 
     color: #94a3b8;
 
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
 
     cursor: pointer;
 
-    transition: 0.2s;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .main-tab:hover {
     color: #fff;
+    background: rgba(30, 41, 59, 0.92);
     transform: translateY(-1px);
+}
+
+.main-tab:active {
+    transform: translateY(0);
 }
 
 .main-tab.active {
@@ -160,62 +212,86 @@ body {
             #7c3aed
         );
 
-    border-color:
-        rgba(129, 140, 248, 0.5);
+    border-color: rgba(129, 140, 248, 0.5);
 
     box-shadow:
-        0 8px 25px rgba(79, 70, 229, 0.25);
+        0 8px 25px rgba(79, 70, 229, 0.28);
 }
 
-
 /* =========================================================
-   SECTION
-========================================================= */
+   MAIN SECTIONS
+   ========================================================= */
 
 .main-section {
     display: none;
+    width: 100%;
 }
 
 .main-section.active {
     display: block;
 }
 
-.section-card {
-    margin-bottom: 14px;
-    padding: 20px;
+/* =========================================================
+   COMMON CARD
+   ========================================================= */
 
+.card,
+.section-card {
     background:
         linear-gradient(
             145deg,
-            rgba(15, 23, 42, 0.95),
-            rgba(15, 23, 42, 0.78)
+            rgba(15, 23, 42, 0.97),
+            rgba(15, 23, 42, 0.84)
         );
 
-    border: 1px solid rgba(148, 163, 184, 0.14);
-
-    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.13);
 
     box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.18);
+        0 10px 30px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* =========================================================
+   SECTION CARD
+   ========================================================= */
+
+.section-card {
+    width: 100%;
+
+    padding: 20px;
+    margin-bottom: 14px;
+
+    border-radius: 16px;
 }
 
 .section-title {
     display: flex;
     align-items: center;
+
     gap: 8px;
+
+    min-width: 0;
 
     margin-bottom: 16px;
 
     color: #f8fafc;
 
     font-size: 16px;
-    font-weight: 800;
+    font-weight: 850;
 }
 
+.section-title > span {
+    margin-left: auto;
+
+    color: #94a3b8;
+
+    font-size: 12px;
+    font-weight: 700;
+}
 
 /* =========================================================
    TOP CARDS
-========================================================= */
+   ========================================================= */
 
 .grid-cards {
     display: grid;
@@ -225,29 +301,22 @@ body {
 
     gap: 14px;
 
-    margin-bottom: 14px;
-
     width: 100%;
+
+    margin-bottom: 14px;
 }
 
 .card {
+    position: relative;
+
+    min-width: 0;
     min-height: 145px;
 
     padding: 20px;
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(15, 23, 42, 0.96),
-            rgba(15, 23, 42, 0.8)
-        );
-
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    overflow: hidden;
 
     border-radius: 16px;
-
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .latest-card {
@@ -263,52 +332,80 @@ body {
 }
 
 .card-title {
+    margin-bottom: 10px;
+
     color: #94a3b8;
 
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 750;
 
-    margin-bottom: 10px;
+    white-space: nowrap;
 }
 
 .card-value {
     color: #f8fafc;
 
     font-size: 27px;
-    font-weight: 800;
+    font-weight: 900;
+
+    line-height: 1.25;
+
+    overflow-wrap: anywhere;
 }
 
 .card-subvalue {
+    margin-top: 4px;
+
     color: #64748b;
-    margin-top: 3px;
+
+    font-size: 12px;
 }
+
+/* =========================================================
+   WINGO RESULT
+   ========================================================= */
 
 .result-box {
     display: inline-flex;
+
     align-items: center;
+    justify-content: center;
 
     min-height: 45px;
+    max-width: 100%;
 
+    margin-top: 2px;
     padding: 7px 16px;
 
     border-radius: 12px;
 
     background: rgba(14, 116, 144, 0.15);
 
+    border: 1px solid rgba(34, 211, 238, 0.08);
+
     color: #67e8f9;
 
     font-size: 24px;
     font-weight: 900;
+
+    overflow-wrap: anywhere;
 }
 
 .prediction-box {
-    min-height: 55px;
-
     display: flex;
+
     align-items: center;
+
+    min-height: 55px;
+    min-width: 0;
 }
 
 .tag-wait {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
     padding: 7px 14px;
 
     border-radius: 999px;
@@ -318,13 +415,29 @@ body {
     color: #94a3b8;
 
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 750;
 }
 
+/* =========================================================
+   WIN RATE
+   ========================================================= */
+
+.win-rate-box {
+    min-width: 0;
+}
+
+.win-rate-box > div:first-child {
+    color: #34d399 !important;
+    line-height: 1.1;
+}
+
+.win-rate-box > div:last-child {
+    color: #94a3b8 !important;
+}
 
 /* =========================================================
    MARKET ANALYSIS
-========================================================= */
+   ========================================================= */
 
 .market-analysis-card {
     border-top: 3px solid #38bdf8;
@@ -337,20 +450,52 @@ body {
         repeat(4, minmax(0, 1fr));
 
     gap: 10px;
+
+    width: 100%;
 }
 
 .analysis-item {
-    padding: 14px;
-
+    min-width: 0;
     min-height: 82px;
 
-    background:
-        rgba(2, 6, 23, 0.45);
+    padding: 14px;
 
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    background: rgba(2, 6, 23, 0.45);
+
+    border: 1px solid rgba(148, 163, 184, 0.10);
 
     border-radius: 11px;
+
+    overflow: hidden;
 }
+
+.analysis-label {
+    margin-bottom: 5px;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+    font-weight: 750;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.analysis-value {
+    color: #f8fafc;
+
+    font-size: 19px;
+    font-weight: 900;
+
+    line-height: 1.3;
+
+    overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   ANALYSIS COLORS
+   ========================================================= */
 
 .blue-item {
     border-left: 3px solid #3b82f6;
@@ -384,26 +529,9 @@ body {
     border-left: 3px solid #eab308;
 }
 
-.analysis-label {
-    color: #94a3b8;
-
-    font-size: 11px;
-    font-weight: 700;
-
-    margin-bottom: 5px;
-}
-
-.analysis-value {
-    color: #f8fafc;
-
-    font-size: 19px;
-    font-weight: 800;
-}
-
-
 /* =========================================================
    SCORE
-========================================================= */
+   ========================================================= */
 
 .score-section {
     margin-top: 16px;
@@ -411,7 +539,11 @@ body {
 
 .score-header {
     display: flex;
+
+    align-items: center;
     justify-content: space-between;
+
+    gap: 12px;
 
     margin-bottom: 8px;
 
@@ -422,6 +554,7 @@ body {
 
 .score-header strong {
     color: #e2e8f0;
+    white-space: nowrap;
 }
 
 .score-bar {
@@ -442,6 +575,7 @@ body {
 }
 
 .score-fill {
+    width: 0%;
     height: 100%;
 
     background:
@@ -457,10 +591,9 @@ body {
     transition: width 0.4s ease;
 }
 
-
 /* =========================================================
    AI REVIEW
-========================================================= */
+   ========================================================= */
 
 .ai-review-card {
     border-top: 3px solid #f59e0b;
@@ -480,15 +613,22 @@ body {
         repeat(4, minmax(0, 1fr));
 
     gap: 10px;
+
+    width: 100%;
 }
 
 .review-item {
+    min-width: 0;
+
     padding: 14px;
 
-    background:
-        rgba(2, 6, 23, 0.48);
+    background: rgba(2, 6, 23, 0.48);
+
+    border: 1px solid rgba(148, 163, 184, 0.08);
 
     border-radius: 11px;
+
+    overflow: hidden;
 }
 
 .review-prediction {
@@ -508,26 +648,34 @@ body {
 }
 
 .review-label {
+    margin-bottom: 5px;
+
     color: #64748b;
 
     font-size: 11px;
-    font-weight: 700;
-
-    margin-bottom: 5px;
+    font-weight: 750;
 }
 
 .review-value {
     color: #f8fafc;
 
     font-size: 16px;
-    font-weight: 800;
+    font-weight: 850;
+
+    overflow-wrap: anywhere;
 }
 
 .review-action-text {
     color: #34d399;
 }
 
-.review-status {
+.review-status,
+.ai-status {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
     margin-left: auto;
 
     padding: 4px 10px;
@@ -535,7 +683,9 @@ body {
     border-radius: 999px;
 
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 850;
+
+    white-space: nowrap;
 }
 
 .review-wait {
@@ -558,10 +708,9 @@ body {
     color: #facc15;
 }
 
-
 /* =========================================================
-   AI SMART LEARNING
-========================================================= */
+   AI LEARNING
+   ========================================================= */
 
 .ai-learning-card {
     border-top: 3px solid #8b5cf6;
@@ -575,22 +724,13 @@ body {
 }
 
 .ai-status {
-    margin-left: auto;
-
     padding: 5px 11px;
 
-    border-radius: 999px;
+    background: rgba(20, 184, 166, 0.15);
 
-    background:
-        rgba(20, 184, 166, 0.15);
-
-    border:
-        1px solid rgba(45, 212, 191, 0.3);
+    border: 1px solid rgba(45, 212, 191, 0.30);
 
     color: #2dd4bf;
-
-    font-size: 11px;
-    font-weight: 800;
 }
 
 .ai-learning-grid {
@@ -601,20 +741,24 @@ body {
 
     gap: 10px;
 
+    width: 100%;
+
     margin-bottom: 20px;
 }
 
 .ai-learning-item {
+    min-width: 0;
     min-height: 80px;
 
     padding: 13px;
 
-    background:
-        rgba(2, 6, 23, 0.5);
+    background: rgba(2, 6, 23, 0.50);
+
+    border: 1px solid rgba(148, 163, 184, 0.10);
 
     border-radius: 12px;
 
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    overflow: hidden;
 }
 
 .state-item {
@@ -627,46 +771,46 @@ body {
 
 .win-item {
     border-top: 3px solid #22c55e;
-
-    background:
-        rgba(22, 101, 52, 0.14);
+    background: rgba(22, 101, 52, 0.14);
 }
 
 .loss-item {
     border-top: 3px solid #ef4444;
-
-    background:
-        rgba(127, 29, 29, 0.14);
+    background: rgba(127, 29, 29, 0.14);
 }
 
 .pass-item {
     border-top: 3px solid #eab308;
-
-    background:
-        rgba(113, 63, 18, 0.14);
+    background: rgba(113, 63, 18, 0.14);
 }
 
 .quality-item {
     border-top: 3px solid #c084fc;
-
-    background:
-        rgba(88, 28, 135, 0.14);
+    background: rgba(88, 28, 135, 0.14);
 }
 
 .ai-learning-label {
+    margin-bottom: 5px;
+
     color: #94a3b8;
 
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 750;
 
-    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ai-learning-value {
     color: #f8fafc;
 
     font-size: 20px;
-    font-weight: 800;
+    font-weight: 900;
+
+    line-height: 1.3;
+
+    overflow-wrap: anywhere;
 }
 
 .win-item .ai-learning-value {
@@ -685,10 +829,9 @@ body {
     color: #d8b4fe;
 }
 
-
 /* =========================================================
    AI FACTORS
-========================================================= */
+   ========================================================= */
 
 .ai-factor-title {
     margin-bottom: 10px;
@@ -696,7 +839,7 @@ body {
     color: #cbd5e1;
 
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 850;
 }
 
 .ai-factor-grid {
@@ -707,30 +850,47 @@ body {
 
     gap: 10px;
 
+    width: 100%;
+
     margin-bottom: 16px;
 }
 
 .ai-factor {
     display: flex;
+
     align-items: center;
     justify-content: space-between;
 
+    gap: 8px;
+
+    min-width: 0;
+
     padding: 12px;
 
-    background:
-        rgba(2, 6, 23, 0.48);
+    background: rgba(2, 6, 23, 0.48);
+
+    border: 1px solid rgba(148, 163, 184, 0.10);
 
     border-radius: 10px;
 
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    overflow: hidden;
 }
 
 .ai-factor span {
+    min-width: 0;
+
     color: #cbd5e1;
+
     font-size: 11px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ai-factor strong {
+    flex-shrink: 0;
+
     font-size: 14px;
 }
 
@@ -782,16 +942,16 @@ body {
     color: #facc15;
 }
 
-
 /* =========================================================
    LAST LEARNING
-========================================================= */
+   ========================================================= */
 
 .ai-learning-message {
+    width: 100%;
+
     padding: 14px 15px;
 
-    background:
-        rgba(2, 6, 23, 0.48);
+    background: rgba(2, 6, 23, 0.48);
 
     border-left: 3px solid #8b5cf6;
 
@@ -803,16 +963,27 @@ body {
 
     font-size: 12px;
     line-height: 1.7;
-}
 
+    overflow-wrap: anywhere;
+}
 
 /* =========================================================
    TABLE
-========================================================= */
+   ========================================================= */
 
 .table-wrapper {
     width: 100%;
+
     overflow-x: auto;
+    overflow-y: hidden;
+
+    border-radius: 10px;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-wrapper table {
+    min-width: 620px;
 }
 
 table {
@@ -830,47 +1001,92 @@ thead th {
 
     color: #94a3b8;
 
-    background:
-        rgba(2, 6, 23, 0.65);
+    background: rgba(2, 6, 23, 0.65);
+
+    border-bottom: 1px solid rgba(148, 163, 184, 0.10);
 
     font-size: 11px;
+    font-weight: 800;
+
+    white-space: nowrap;
 }
 
 tbody td {
     padding: 10px;
 
-    border-top:
-        1px solid rgba(148, 163, 184, 0.08);
-
     color: #cbd5e1;
+
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+
+    white-space: nowrap;
+}
+
+tbody tr {
+    transition: background 0.15s ease;
 }
 
 tbody tr:hover {
-    background:
-        rgba(51, 65, 85, 0.18);
+    background: rgba(51, 65, 85, 0.18);
 }
 
+/* =========================================================
+   NUMBER ICON
+   ========================================================= */
+
+.number-icon {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 30px;
+    height: 30px;
+
+    border-radius: 50%;
+
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.number-red {
+    background: rgba(239, 68, 68, 0.15);
+
+    border: 1px solid rgba(248, 113, 113, 0.30);
+
+    color: #f87171;
+}
+
+.number-green {
+    background: rgba(34, 197, 94, 0.15);
+
+    border: 1px solid rgba(74, 222, 128, 0.30);
+
+    color: #4ade80;
+}
 
 /* =========================================================
    CHART
-========================================================= */
+   ========================================================= */
 
 .chart-container {
     position: relative;
 
     width: 100%;
     height: 320px;
+
+    min-height: 240px;
 }
 
 .chart-container canvas {
+    display: block;
+
     width: 100% !important;
     height: 100% !important;
 }
 
-
 /* =========================================================
-   BACCARAT
-========================================================= */
+   BACCARAT BUTTONS
+   ========================================================= */
 
 .baccarat-table-buttons {
     display: grid;
@@ -879,28 +1095,43 @@ tbody tr:hover {
         repeat(8, minmax(0, 1fr));
 
     gap: 8px;
+
+    width: 100%;
 }
 
 .baccarat-table-btn {
-    padding: 10px;
+    min-width: 0;
+
+    padding: 10px 8px;
 
     border: 1px solid rgba(148, 163, 184, 0.14);
-
     border-radius: 10px;
 
-    background:
-        rgba(30, 41, 59, 0.75);
+    background: rgba(30, 41, 59, 0.75);
 
     color: #94a3b8;
 
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 850;
 
     cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .baccarat-table-btn:hover {
     color: #fff;
+    background: rgba(51, 65, 85, 0.8);
+
+    transform: translateY(-1px);
+}
+
+.baccarat-table-btn:active {
+    transform: translateY(0);
 }
 
 .baccarat-table-btn.active {
@@ -913,13 +1144,22 @@ tbody tr:hover {
             #ec4899
         );
 
-    border-color:
-        rgba(192, 132, 252, 0.5);
+    border-color: rgba(192, 132, 252, 0.5);
+
+    box-shadow:
+        0 6px 18px rgba(139, 92, 246, 0.18);
 }
+
+/* =========================================================
+   BACCARAT RESULT
+   ========================================================= */
 
 .baccarat-result {
     font-size: 28px;
-    font-weight: 900;
+    font-weight: 950;
+    line-height: 1.2;
+
+    overflow-wrap: anywhere;
 }
 
 .banker-color {
@@ -946,39 +1186,9 @@ tbody tr:hover {
     border-left: 3px solid #22c55e;
 }
 
-
 /* =========================================================
-   ROADS
-========================================================= */
-
-.big-road {
-    display: flex;
-    align-items: flex-start;
-
-    min-height: 180px;
-
-    padding: 14px;
-
-    overflow-x: auto;
-
-    background:
-        rgba(2, 6, 23, 0.48);
-
-    border-radius: 10px;
-}
-
-.small-road {
-    min-height: 100px;
-
-    padding: 10px;
-
-    overflow-x: auto;
-
-    background:
-        rgba(2, 6, 23, 0.48);
-
-    border-radius: 10px;
-}
+   BACCARAT ROADS
+   ========================================================= */
 
 .road-grid {
     display: grid;
@@ -987,18 +1197,67 @@ tbody tr:hover {
         repeat(3, minmax(0, 1fr));
 
     gap: 14px;
+
+    width: 100%;
 }
 
+.road-grid .section-card {
+    min-width: 0;
+}
+
+.big-road {
+    display: flex;
+
+    align-items: flex-start;
+
+    width: 100%;
+    min-height: 180px;
+
+    padding: 14px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    background: rgba(2, 6, 23, 0.48);
+
+    border: 1px solid rgba(148, 163, 184, 0.06);
+
+    border-radius: 10px;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.small-road {
+    width: 100%;
+    min-height: 100px;
+
+    padding: 10px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    background: rgba(2, 6, 23, 0.48);
+
+    border: 1px solid rgba(148, 163, 184, 0.06);
+
+    border-radius: 10px;
+
+    -webkit-overflow-scrolling: touch;
+}
 
 /* =========================================================
-   HISTORY
-========================================================= */
+   BACCARAT HISTORY
+   ========================================================= */
 
 .history-list {
     display: flex;
+
     flex-wrap: wrap;
+    align-items: center;
 
     gap: 8px;
+
+    width: 100%;
 }
 
 .history-item {
@@ -1006,6 +1265,8 @@ tbody tr:hover {
 
     align-items: center;
     justify-content: center;
+
+    flex: 0 0 auto;
 
     width: 36px;
     height: 36px;
@@ -1018,26 +1279,31 @@ tbody tr:hover {
 
 .history-item.banker {
     background: rgba(239, 68, 68, 0.15);
+
     border: 1px solid rgba(248, 113, 113, 0.35);
+
     color: #f87171;
 }
 
 .history-item.player {
     background: rgba(59, 130, 246, 0.15);
+
     border: 1px solid rgba(96, 165, 250, 0.35);
+
     color: #60a5fa;
 }
 
 .history-item.tie {
     background: rgba(16, 185, 129, 0.15);
+
     border: 1px solid rgba(52, 211, 153, 0.35);
+
     color: #34d399;
 }
 
-
 /* =========================================================
    BACCARAT PREDICTION
-========================================================= */
+   ========================================================= */
 
 .baccarat-prediction-card {
     text-align: center;
@@ -1045,10 +1311,14 @@ tbody tr:hover {
     border-top: 3px solid #ec4899;
 }
 
+.baccarat-prediction-card .section-title {
+    justify-content: center;
+}
+
 .baccarat-prediction {
     display: flex;
-    flex-direction: column;
 
+    flex-direction: column;
     align-items: center;
 
     gap: 8px;
@@ -1058,7 +1328,10 @@ tbody tr:hover {
 
 .prediction-result {
     font-size: 34px;
-    font-weight: 900;
+    font-weight: 950;
+    line-height: 1.2;
+
+    overflow-wrap: anywhere;
 }
 
 .prediction-confidence {
@@ -1068,6 +1341,11 @@ tbody tr:hover {
 
 #bc-action {
     display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 70px;
 
     padding: 7px 18px;
 
@@ -1093,24 +1371,42 @@ tbody tr:hover {
 }
 
 .prediction-reason {
-    margin-top: 8px;
+    width: 100%;
 
+    margin-top: 8px;
     padding: 12px 15px;
 
     color: #94a3b8;
 
-    background:
-        rgba(2, 6, 23, 0.35);
+    background: rgba(2, 6, 23, 0.35);
+
+    border: 1px solid rgba(148, 163, 184, 0.06);
 
     border-radius: 9px;
 
     font-size: 12px;
+    line-height: 1.7;
+
+    overflow-wrap: anywhere;
 }
 
+/* =========================================================
+   SPECIAL
+   ========================================================= */
+
+#big-road-title,
+#stats-title,
+#history-title {
+    overflow-wrap: anywhere;
+}
+
+#bc-round {
+    white-space: nowrap;
+}
 
 /* =========================================================
    SCROLLBAR
-========================================================= */
+   ========================================================= */
 
 ::-webkit-scrollbar {
     width: 7px;
@@ -1130,21 +1426,45 @@ tbody tr:hover {
     background: #64748b;
 }
 
-
 /* =========================================================
-   MOBILE
-========================================================= */
+   LAPTOP
+   ========================================================= */
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
 
-    .ai-learning-grid {
+    .container {
+        max-width: 1200px;
+        padding: 16px;
+    }
+
+    .ai-learning-grid,
+    .ai-factor-grid {
         grid-template-columns:
             repeat(3, minmax(0, 1fr));
     }
 
-    .ai-factor-grid {
+    .baccarat-table-buttons {
         grid-template-columns:
-            repeat(3, minmax(0, 1fr));
+            repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .container {
+        padding: 12px;
+    }
+
+    .header {
+        padding: 17px 18px;
+    }
+
+    .header h1 {
+        font-size: 22px;
     }
 
     .analysis-grid {
@@ -1152,46 +1472,88 @@ tbody tr:hover {
             repeat(3, minmax(0, 1fr));
     }
 
-}
-
-
-@media (max-width: 800px) {
-
-    .grid-cards {
+    .review-grid {
         grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 8px;
+            repeat(2, minmax(0, 1fr));
     }
 
-    .grid-cards .card {
-        min-width: 0;
-        padding: 12px;
+    .road-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
     }
 
-    .grid-cards .card-title {
-        font-size: 11px;
-        white-space: nowrap;
+    .road-grid .section-card:last-child {
+        grid-column: 1 / -1;
     }
 
-    .grid-cards .card-value {
-        font-size: 18px;
+    .chart-container {
+        height: 300px;
     }
-
-    .grid-cards .result-box {
-        font-size: 18px;
-        padding: 5px 9px;
-    }
-
-    .grid-cards .prediction-box {
-        min-height: 40px;
-    }
-
-    .grid-cards .win-rate-box > div:first-child {
-        font-size: 1.4rem !important;
-    }
-
 }
+
+/* =========================================================
+   MOBILE TABLET
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .container {
+        padding: 10px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+
+        gap: 14px;
+    }
+
+    .header-info {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        width: 100%;
+    }
+
+    .time-box,
+    .countdown-box {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .section-card {
+        padding: 16px;
+    }
+
+    .analysis-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .ai-learning-grid,
+    .ai-factor-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .road-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .road-grid .section-card:last-child {
+        grid-column: auto;
+    }
+
+    .chart-container {
+        height: 280px;
+    }
+}
+
+/* =========================================================
+   PHONE
+   ========================================================= */
 
 @media (max-width: 550px) {
 
@@ -1200,15 +1562,23 @@ tbody tr:hover {
     }
 
     .header {
-        padding: 16px;
+        padding: 15px;
+        border-radius: 15px;
     }
 
     .header h1 {
-        font-size: 20px;
+        font-size: 19px;
     }
+
+    .subtitle {
+        font-size: 12px;
+    }
+
+    /* MAIN TABS */
 
     .main-tabs {
         gap: 6px;
+        margin-bottom: 12px;
     }
 
     .main-tab {
@@ -1216,37 +1586,206 @@ tbody tr:hover {
         font-size: 12px;
     }
 
-    .section-card {
+    /* =====================================================
+       TOP 3 CARDS
+       ===================================================== */
+
+    .grid-cards {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 7px;
+    }
+
+    .grid-cards .card {
+        min-width: 0;
+        min-height: 125px;
+
+        padding: 12px;
+    }
+
+    .grid-cards .card-title {
+        margin-bottom: 8px;
+        font-size: 10px;
+    }
+
+    .grid-cards .card-value {
+        font-size: 18px;
+    }
+
+    .grid-cards .result-box {
+        min-height: 36px;
+
+        padding: 5px 8px;
+
+        font-size: 17px;
+    }
+
+    .grid-cards .prediction-box {
+        min-height: 40px;
+    }
+
+    .grid-cards .tag-wait {
+        padding: 6px 8px;
+        font-size: 10px;
+    }
+
+    .grid-cards .win-rate-box > div:first-child {
+        font-size: 1.35rem !important;
+    }
+
+    .grid-cards .win-rate-box > div:last-child {
+        font-size: 0.68rem !important;
+    }
+
+    /* =====================================================
+       GENERAL
+       ===================================================== */
+
+    .card {
         padding: 14px;
     }
 
-    .card {
-        padding: 16px;
+    .section-card {
+        padding: 14px;
+        margin-bottom: 10px;
+
+        border-radius: 14px;
     }
+
+    .section-title {
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+
+    .section-title > span {
+        font-size: 10px;
+    }
+
+    /* =====================================================
+       ANALYSIS
+       ===================================================== */
+
+    .analysis-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 8px;
+    }
+
+    .analysis-item {
+        min-height: 70px;
+        padding: 11px;
+    }
+
+    .analysis-label {
+        font-size: 10px;
+    }
+
+    .analysis-value {
+        font-size: 16px;
+    }
+
+    /* =====================================================
+       SCORE
+       ===================================================== */
+
+    .score-header {
+        font-size: 10px;
+    }
+
+    .score-header strong {
+        font-size: 10px;
+    }
+
+    .score-bar {
+        height: 10px;
+    }
+
+    /* =====================================================
+       REVIEW
+       ===================================================== */
+
+    .review-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 8px;
+    }
+
+    .review-item {
+        padding: 11px;
+    }
+
+    .review-label {
+        font-size: 10px;
+    }
+
+    .review-value {
+        font-size: 14px;
+    }
+
+    .review-status {
+        padding: 3px 8px;
+        font-size: 9px;
+    }
+
+    /* =====================================================
+       AI LEARNING
+       ===================================================== */
 
     .ai-learning-grid {
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
+
+        gap: 8px;
+    }
+
+    .ai-learning-item {
+        min-height: 70px;
+        padding: 11px;
+    }
+
+    .ai-learning-label {
+        font-size: 10px;
+    }
+
+    .ai-learning-value {
+        font-size: 17px;
     }
 
     .ai-factor-grid {
         grid-template-columns:
-            1fr 1fr;
+            repeat(2, minmax(0, 1fr));
+
+        gap: 8px;
     }
 
-    .review-grid {
-        grid-template-columns:
-            1fr 1fr;
+    .ai-factor {
+        padding: 10px;
     }
 
-    .analysis-grid {
-        grid-template-columns:
-            1fr 1fr;
+    .ai-factor span {
+        font-size: 10px;
     }
+
+    .ai-factor strong {
+        font-size: 13px;
+    }
+
+    .ai-learning-text {
+        font-size: 11px;
+    }
+
+    /* =====================================================
+       BACCARAT BUTTONS
+       ===================================================== */
 
     .baccarat-table-buttons {
         grid-template-columns:
             repeat(4, minmax(0, 1fr));
+
+        gap: 6px;
     }
 
     .baccarat-table-btn {
@@ -1254,7 +1793,11 @@ tbody tr:hover {
         font-size: 11px;
     }
 
-    .card-value {
+    /* =====================================================
+       BACCARAT
+       ===================================================== */
+
+    .baccarat-result {
         font-size: 23px;
     }
 
@@ -1262,6 +1805,146 @@ tbody tr:hover {
         font-size: 28px;
     }
 
+    .prediction-confidence {
+        font-size: 11px;
+    }
+
+    #bc-action {
+        padding: 6px 15px;
+        font-size: 11px;
+    }
+
+    .prediction-reason {
+        padding: 10px 12px;
+        font-size: 11px;
+    }
+
+    .big-road {
+        min-height: 150px;
+        padding: 10px;
+    }
+
+    .small-road {
+        min-height: 85px;
+        padding: 8px;
+    }
+
+    .history-item {
+        width: 32px;
+        height: 32px;
+
+        font-size: 11px;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
 }
 
-對嗎？
+/* =========================================================
+   VERY SMALL PHONE
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+    .container {
+        padding: 6px;
+    }
+
+    .header {
+        padding: 13px;
+    }
+
+    .header h1 {
+        font-size: 17px;
+    }
+
+    .header-info {
+        gap: 6px;
+    }
+
+    .time-box,
+    .countdown-box {
+        padding: 8px 6px;
+    }
+
+    .time-box strong,
+    .countdown-box strong {
+        font-size: 14px;
+    }
+
+    .grid-cards {
+        gap: 5px;
+    }
+
+    .grid-cards .card {
+        padding: 9px;
+        min-height: 115px;
+    }
+
+    .grid-cards .card-title {
+        font-size: 9px;
+    }
+
+    .grid-cards .card-value {
+        font-size: 16px;
+    }
+
+    .grid-cards .result-box {
+        padding: 4px 6px;
+        font-size: 15px;
+    }
+
+    .grid-cards .win-rate-box > div:first-child {
+        font-size: 1.15rem !important;
+    }
+
+    .grid-cards .win-rate-box > div:last-child {
+        font-size: 0.6rem !important;
+    }
+
+    .section-card {
+        padding: 12px;
+    }
+
+    .analysis-item {
+        padding: 9px;
+    }
+
+    .analysis-value {
+        font-size: 14px;
+    }
+
+    .baccarat-table-btn {
+        padding: 7px 3px;
+        font-size: 10px;
+    }
+}
+
+/* =========================================================
+   TOUCH
+   ========================================================= */
+
+@media (hover: none) {
+
+    .main-tab:hover,
+    .baccarat-table-btn:hover {
+        transform: none;
+    }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
