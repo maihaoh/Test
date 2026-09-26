@@ -2,14 +2,6 @@
 <html lang="zh-CN">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>WinGo & Baccarat AI Dashboard</title>
-<!DOCTYPE html>
-<html lang="zh-CN">
-
-<head>
 
     <meta charset="UTF-8">
 
@@ -20,10 +12,13 @@
 
     <title>WinGo & Baccarat AI Dashboard</title>
 
+    <!-- Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- CryptoJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
+    <!-- External CSS -->
     <link
         rel="stylesheet"
         href="style.css"
@@ -31,266 +26,124 @@
 
 </head>
 
+
 <body>
 
 <div class="container">
 
-<header>
 
-    <div>
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
-        <h1>
-            🎯 AI GAMING DASHBOARD
-        </h1>
+    <header class="header">
 
-        <div class="sub-title">
-            WinGo + Baccarat 独立分析系统
-        </div>
+        <div>
 
-    </div>
+            <h1>
+                🎯 AI GAMING DASHBOARD
+            </h1>
 
-    <div
-        style="
-            display:flex;
-            gap:10px;
-            align-items:center;
-        "
-    >
-
-        <div class="time-badge">
-
-            🇲🇾
-            <span id="myt-clock">
-                --:--:--
-            </span>
-            MYT
-
-        </div>
-
-        <div class="status-badge">
-
-            <div class="pulse-dot"></div>
-
-            <span id="countdown">
-                5s
-            </span>
-
-        </div>
-
-    </div>
-
-</header>
-
-
-<div class="main-tabs">
-
-    <div
-        class="main-tab active"
-        onclick="switchMainTab('wingo', this)"
-    >
-        🎲 WinGo
-    </div>
-
-    <div
-        class="main-tab"
-        onclick="switchMainTab('baccarat', this)"
-    >
-        🃏 Baccarat
-    </div>
-
-</div>
-
-
-<!-- =====================================================
-     WINGO
-====================================================== -->
-
-<section
-    id="wingo-section"
-    class="main-section active"
->
-
-    <div class="grid-cards">
-
-        <div class="card">
-
-            <div class="card-title">
-                最新期号
-            </div>
-
-            <div
-                class="card-value"
-                id="latest-issue"
-            >
-                ----
+            <div class="subtitle">
+                WinGo + Baccarat 独立分析系统
             </div>
 
         </div>
 
 
-        <div class="card">
+        <div class="header-info">
 
-            <div class="card-title">
-                最新开奖
-            </div>
+            <div class="time-box">
 
-            <div
-                class="card-value"
-                id="latest-result"
-            >
-                --
-            </div>
+                <span>
+                    MYT
+                </span>
 
-        </div>
-
-
-        <div class="card predict-box">
-
-            <div
-                class="card-title"
-                style="color:#60a5fa;"
-            >
-                🔮 下期预测
-            </div>
-
-            <div
-                class="card-value"
-                id="predicted-result"
-                style="min-height:58px;"
-            >
-                --
-            </div>
-
-        </div>
-
-
-        <div class="card win-rate-box">
-
-            <div
-                class="card-title"
-                style="color:#34d399;"
-            >
-                📊 近 50 期有效胜率
-            </div>
-
-            <div
-                class="card-value"
-                style="color:#34d399;"
-                id="win-rate"
-            >
-                -- %
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =========================
-         AI 输后复盘系统
-    ========================== -->
-
-    <div class="card ai-review-box">
-
-        <div class="ai-review-header">
-
-            <div class="ai-review-title">
-                🤖 AI 输后复盘系统
-            </div>
-
-            <div
-                id="review-status"
-                class="review-status review-wait"
-            >
-                等待复盘
-            </div>
-
-        </div>
-
-
-        <div class="ai-review-grid">
-
-            <div class="ai-review-item">
-
-                <div class="ai-review-label">
-                    上一期预测
-                </div>
-
-                <div
-                    class="ai-review-value"
-                    id="review-prediction"
-                >
-                    --
-                </div>
+                <strong id="myt-clock">
+                    --:--:--
+                </strong>
 
             </div>
 
 
-            <div class="ai-review-item">
+            <div class="countdown-box">
 
-                <div class="ai-review-label">
-                    实际开奖
-                </div>
+                <span>
+                    NEXT
+                </span>
 
-                <div
-                    class="ai-review-value"
-                    id="review-actual"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="ai-review-item">
-
-                <div class="ai-review-label">
-                    复盘结果
-                </div>
-
-                <div
-                    class="ai-review-value"
-                    id="review-result"
-                >
-                    --
-                </div>
+                <strong id="countdown">
+                    5s
+                </strong>
 
             </div>
 
         </div>
 
+    </header>
 
-        <div
-            class="ai-review-message"
-            id="review-message"
+
+
+    <!-- =====================================================
+         MAIN TAB
+    ====================================================== -->
+
+    <div class="main-tabs">
+
+        <button
+            class="main-tab active"
+            onclick="switchMainTab('wingo', this)"
         >
-            等待足够数据后，系统会自动检查上一期预测，并分析预测错误原因。
-        </div>
+            🎯 WinGo AI
+        </button>
+
+
+        <button
+            class="main-tab"
+            onclick="switchMainTab('baccarat', this)"
+        >
+            🃏 Baccarat
+        </button>
 
     </div>
 
 
-    <!-- =========================
-         WINGO ANALYSIS
-    ========================== -->
 
-    <div class="card analysis-box">
+    <!-- =====================================================
+         WINGO SECTION
+    ====================================================== -->
 
-        <h3>
-            🧠 WinGo 多指标分析
-        </h3>
+    <section
+        id="wingo-section"
+        class="main-section active"
+    >
 
-        <div class="analysis-grid">
 
-            <div class="analysis-item">
+        <!-- =================================================
+             TOP CARDS
+        ================================================== -->
 
-                <div class="analysis-label">
-                    当前长龙
+        <div class="grid-cards">
+
+
+            <!-- Latest -->
+
+            <div class="card">
+
+                <div class="card-title">
+                    🎯 最新开奖
                 </div>
 
                 <div
-                    class="analysis-value"
-                    id="analysis-streak"
+                    id="latest-issue"
+                    class="card-value"
+                >
+                    ----
+                </div>
+
+                <div
+                    id="latest-result"
+                    class="result-box"
                 >
                     --
                 </div>
@@ -298,117 +151,59 @@
             </div>
 
 
-            <div class="analysis-item">
 
-                <div class="analysis-label">
-                    Markov
+            <!-- Prediction -->
+
+            <div class="card">
+
+                <div class="card-title">
+                    🔮 下一期预测
                 </div>
 
                 <div
-                    class="analysis-value"
-                    id="analysis-markov"
+                    id="predicted-result"
+                    class="prediction-box"
                 >
-                    --
+                    <span class="tag-wait">
+                        等待数据
+                    </span>
                 </div>
 
             </div>
 
 
-            <div class="analysis-item">
 
-                <div class="analysis-label">
-                    均值回归
+            <!-- Win Rate -->
+
+            <div class="card">
+
+                <div class="card-title">
+                    📈 AI 胜率
                 </div>
 
                 <div
-                    class="analysis-value"
-                    id="analysis-mean"
+                    id="win-rate"
+                    class="win-rate-box"
                 >
-                    --
-                </div>
+                    <div
+                        style="
+                            font-size:2rem;
+                            font-weight:800;
+                            color:#34d399;
+                        "
+                    >
+                        --%
+                    </div>
 
-            </div>
-
-
-            <div class="analysis-item">
-
-                <div class="analysis-label">
-                    预测号码
-                </div>
-
-                <div
-                    class="analysis-value"
-                    id="analysis-number"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="analysis-item">
-
-                <div class="analysis-label">
-                    近10期 大
-                </div>
-
-                <div
-                    class="analysis-value"
-                    id="analysis-big10"
-                    style="color:#ef4444;"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="analysis-item">
-
-                <div class="analysis-label">
-                    近10期 小
-                </div>
-
-                <div
-                    class="analysis-value"
-                    id="analysis-small10"
-                    style="color:#3b82f6;"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="analysis-item">
-
-                <div class="analysis-label">
-                    近50期 大
-                </div>
-
-                <div
-                    class="analysis-value"
-                    id="analysis-big50"
-                    style="color:#ef4444;"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="analysis-item">
-
-                <div class="analysis-label">
-                    近50期 小
-                </div>
-
-                <div
-                    class="analysis-value"
-                    id="analysis-small50"
-                    style="color:#3b82f6;"
-                >
-                    --
+                    <div
+                        style="
+                            font-size:.8rem;
+                            color:#94a3b8;
+                            margin-top:4px;
+                        "
+                    >
+                        最近 50 局
+                    </div>
                 </div>
 
             </div>
@@ -416,77 +211,607 @@
         </div>
 
 
-        <div class="score-container">
 
-            <div class="score-bar">
+        <!-- =================================================
+             AI SMART LEARNING
+        ================================================== -->
 
-                <div
-                    class="score-fill"
-                    id="score-fill"
-                ></div>
+        <div class="section-card ai-learning-card">
+
+            <div class="section-title">
+
+                🤖 AI 智能学习
+
+                <span
+                    id="ai-learning-status"
+                    class="ai-status"
+                >
+                    学习中
+                </span>
 
             </div>
 
-            <div
-                class="score-text"
-                id="score-text"
-            >
-                等待数据...
+
+            <div class="ai-learning-grid">
+
+
+                <!-- AI State -->
+
+                <div class="ai-learning-item">
+
+                    <div class="ai-learning-label">
+                        🧠 AI 状态
+                    </div>
+
+                    <div
+                        id="ai-state"
+                        class="ai-learning-value"
+                    >
+                        初始化
+                    </div>
+
+                </div>
+
+
+
+                <!-- Learning Count -->
+
+                <div class="ai-learning-item">
+
+                    <div class="ai-learning-label">
+                        📚 学习次数
+                    </div>
+
+                    <div
+                        id="ai-learning-count"
+                        class="ai-learning-value"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <!-- WIN -->
+
+                <div class="ai-learning-item">
+
+                    <div class="ai-learning-label">
+                        ✅ WIN
+                    </div>
+
+                    <div
+                        id="ai-learning-win"
+                        class="ai-learning-value ai-win"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <!-- LOSS -->
+
+                <div class="ai-learning-item">
+
+                    <div class="ai-learning-label">
+                        ❌ LOSS
+                    </div>
+
+                    <div
+                        id="ai-learning-loss"
+                        class="ai-learning-value ai-loss"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <!-- PASS -->
+
+                <div class="ai-learning-item">
+
+                    <div class="ai-learning-label">
+                        ⚪ PASS
+                    </div>
+
+                    <div
+                        id="ai-learning-pass"
+                        class="ai-learning-value"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <!-- PASS Accuracy -->
+
+                <div class="ai-learning-item">
+
+                    <div class="ai-learning-label">
+                        🎯 PASS 判断
+                    </div>
+
+                    <div
+                        id="ai-pass-quality"
+                        class="ai-learning-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- AI Factors -->
+
+            <div class="ai-factor-title">
+                📊 当前学习权重
+            </div>
+
+
+            <div class="ai-factor-grid">
+
+
+                <div class="ai-factor">
+
+                    <span>
+                        Markov
+                    </span>
+
+                    <strong id="ai-weight-markov">
+                        1.00
+                    </strong>
+
+                </div>
+
+
+                <div class="ai-factor">
+
+                    <span>
+                        均值回归
+                    </span>
+
+                    <strong id="ai-weight-mean">
+                        1.00
+                    </strong>
+
+                </div>
+
+
+                <div class="ai-factor">
+
+                    <span>
+                        长龙
+                    </span>
+
+                    <strong id="ai-weight-streak">
+                        0.80
+                    </strong>
+
+                </div>
+
+
+                <div class="ai-factor">
+
+                    <span>
+                        频率
+                    </span>
+
+                    <strong id="ai-weight-frequency">
+                        0.70
+                    </strong>
+
+                </div>
+
+
+                <div class="ai-factor">
+
+                    <span>
+                        平衡
+                    </span>
+
+                    <strong id="ai-weight-balance">
+                        0.60
+                    </strong>
+
+                </div>
+
+
+                <div class="ai-factor">
+
+                    <span>
+                        PASS 阈值
+                    </span>
+
+                    <strong id="ai-pass-threshold">
+                        0.80
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Last Learning -->
+
+            <div class="ai-learning-message">
+
+                <div class="ai-learning-label">
+                    🔄 最近一次 AI 复盘
+                </div>
+
+                <div
+                    id="ai-last-learning"
+                    class="ai-learning-text"
+                >
+                    等待第一笔复盘数据……
+                </div>
+
             </div>
 
         </div>
 
-    </div>
 
 
-    <!-- =========================
-         WINGO CONTENT
-    ========================== -->
+        <!-- =================================================
+             AI REVIEW
+        ================================================== -->
 
-    <div class="content-grid">
+        <div class="section-card">
 
-        <div class="card">
+            <div class="section-title">
+                🤖 AI 智能复盘
+            </div>
 
-            <h3>
-                📜 近期预测 VS 实际开奖
-            </h3>
+
+            <div class="review-grid">
+
+
+                <div class="review-item">
+
+                    <div class="review-label">
+                        状态
+                    </div>
+
+                    <div
+                        id="review-status"
+                        class="review-status review-wait"
+                    >
+                        等待
+                    </div>
+
+                </div>
+
+
+
+                <div class="review-item">
+
+                    <div class="review-label">
+                        上一期预测
+                    </div>
+
+                    <div
+                        id="review-prediction"
+                        class="review-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+
+                <div class="review-item">
+
+                    <div class="review-label">
+                        实际结果
+                    </div>
+
+                    <div
+                        id="review-actual"
+                        class="review-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+
+                <div class="review-item">
+
+                    <div class="review-label">
+                        结果
+                    </div>
+
+                    <div
+                        id="review-result"
+                        class="review-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+            </div>
+
 
             <div
-                style="
-                    max-height:500px;
-                    overflow-y:auto;
-                "
+                id="review-message"
+                class="review-message"
             >
+                等待 AI 复盘……
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             ANALYSIS
+        ================================================== -->
+
+        <div class="section-card">
+
+            <div class="section-title">
+                📊 WinGo 市场分析
+            </div>
+
+
+            <div class="analysis-grid">
+
+
+                <!-- Streak -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        🔥 当前长龙
+                    </div>
+
+                    <div
+                        id="analysis-streak"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+
+                <!-- Markov -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        🧠 Markov
+                    </div>
+
+                    <div
+                        id="analysis-markov"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+
+                <!-- Mean -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        📉 均值回归
+                    </div>
+
+                    <div
+                        id="analysis-mean"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+
+                <!-- Number -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        🎯 目标号码
+                    </div>
+
+                    <div
+                        id="analysis-number"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+
+                <!-- Big 10 -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        大 10
+                    </div>
+
+                    <div
+                        id="analysis-big10"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+
+
+                <!-- Small 10 -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        小 10
+                    </div>
+
+                    <div
+                        id="analysis-small10"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+
+
+                <!-- Big 50 -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        大 50
+                    </div>
+
+                    <div
+                        id="analysis-big50"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+
+
+                <!-- Small 50 -->
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        小 50
+                    </div>
+
+                    <div
+                        id="analysis-small50"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Big Small Score -->
+
+            <div class="score-section">
+
+                <div class="score-header">
+
+                    <span>
+                        大 / 小 分布
+                    </span>
+
+                    <strong id="score-text">
+                        大 --% / 小 --%
+                    </strong>
+
+                </div>
+
+
+                <div class="score-bar">
+
+                    <div
+                        id="score-fill"
+                        class="score-fill"
+                        style="width:50%;"
+                    >
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             WINGO HISTORY TABLE
+        ================================================== -->
+
+        <div class="section-card">
+
+            <div class="section-title">
+                📜 WinGo 最近 50 局
+            </div>
+
+
+            <div class="table-wrapper">
 
                 <table>
 
                     <thead>
 
-                    <tr>
+                        <tr>
 
-                        <th>期号</th>
+                            <th>
+                                期号
+                            </th>
 
-                        <th>实际开奖</th>
+                            <th>
+                                实际
+                            </th>
 
-                        <th>系统预测</th>
+                            <th>
+                                AI预测
+                            </th>
 
-                        <th>信号</th>
+                            <th>
+                                信号
+                            </th>
 
-                        <th>结果</th>
+                            <th>
+                                结果
+                            </th>
 
-                    </tr>
+                        </tr>
 
                     </thead>
 
+
                     <tbody id="draw-table">
 
-                    <tr>
+                        <tr>
 
-                        <td colspan="5">
-                            数据加载中...
-                        </td>
+                            <td colspan="5">
+                                等待数据……
+                            </td>
 
-                    </tr>
+                        </tr>
 
                     </tbody>
 
@@ -497,550 +822,570 @@
         </div>
 
 
-        <div class="card">
 
-            <h3>
-                🔢 近50期号码分布
-            </h3>
+        <!-- =================================================
+             CHART
+        ================================================== -->
 
-            <canvas
-                id="chart-numbers"
-                style="max-height:250px;"
-            ></canvas>
+        <div class="section-card">
+
+            <div class="section-title">
+                📈 WinGo 数字走势
+            </div>
+
+
+            <div class="chart-container">
+
+                <canvas
+                    id="chart-numbers"
+                >
+                </canvas>
+
+            </div>
 
         </div>
 
-    </div>
 
-</section>
+    </section>
 
 
-<!-- =====================================================
-     BACCARAT SECTION
-====================================================== -->
 
-<section
-    id="baccarat-section"
-    class="main-section"
->
+    <!-- =====================================================
+         BACCARAT SECTION
+    ====================================================== -->
 
-    <div
-        class="card"
-        style="margin-bottom:20px;"
+    <section
+        id="baccarat-section"
+        class="main-section"
     >
 
-        <div class="card-title">
-            🃏 选择百家乐台
-        </div>
 
-        <div class="baccarat-table-selector">
+        <!-- =================================================
+             TABLE SELECTOR
+        ================================================== -->
 
-            <div
-                class="baccarat-table-btn active"
-                onclick="switchBaccaratTable('D51', this)"
-            >
-                D51
+        <div class="section-card">
+
+            <div class="section-title">
+                🃏 Baccarat 台选择
             </div>
 
-            <div
-                class="baccarat-table-btn"
-                onclick="switchBaccaratTable('D52', this)"
-            >
-                D52
-            </div>
 
-            <div
-                class="baccarat-table-btn"
-                onclick="switchBaccaratTable('D53', this)"
-            >
-                D53
-            </div>
-
-            <div
-                class="baccarat-table-btn"
-                onclick="switchBaccaratTable('D54', this)"
-            >
-                D54
-            </div>
-
-            <div
-                class="baccarat-table-btn"
-                onclick="switchBaccaratTable('D55', this)"
-            >
-                D55
-            </div>
-
-            <div
-                class="baccarat-table-btn"
-                onclick="switchBaccaratTable('D56', this)"
-            >
-                D56
-            </div>
-
-            <div
-                class="baccarat-table-btn"
-                onclick="switchBaccaratTable('D57', this)"
-            >
-                D57
-            </div>
-
-            <div
-                class="baccarat-table-btn"
-                onclick="switchBaccaratTable('D58', this)"
-            >
-                D58
-            </div>
-
-        </div>
-
-    </div>
+            <div class="baccarat-table-buttons">
 
 
-    <div class="baccarat-top-grid">
-
-        <div class="card">
-
-            <div class="card-title">
-                当前台号
-            </div>
-
-            <div
-                class="card-value"
-                id="bc-table-name"
-            >
-                D51
-            </div>
-
-        </div>
+                <button
+                    class="baccarat-table-btn active"
+                    onclick="switchBaccaratTable('D51', this)"
+                >
+                    D51
+                </button>
 
 
-        <div class="card">
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D52', this)"
+                >
+                    D52
+                </button>
 
-            <div class="card-title">
-                当前局号
-            </div>
 
-            <div
-                class="card-value"
-                id="bc-round"
-            >
-                #128
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D53', this)"
+                >
+                    D53
+                </button>
+
+
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D54', this)"
+                >
+                    D54
+                </button>
+
+
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D55', this)"
+                >
+                    D55
+                </button>
+
+
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D56', this)"
+                >
+                    D56
+                </button>
+
+
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D57', this)"
+                >
+                    D57
+                </button>
+
+
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D58', this)"
+                >
+                    D58
+                </button>
+
             </div>
 
         </div>
 
 
-        <div class="card">
 
-            <div class="card-title">
-                最新结果
+        <!-- =================================================
+             BACCARAT TOP STATS
+        ================================================== -->
+
+        <div class="grid-cards">
+
+
+            <div class="card">
+
+                <div class="card-title">
+                    🎰 当前台
+                </div>
+
+                <div
+                    id="bc-table-name"
+                    class="card-value"
+                >
+                    D51
+                </div>
+
+                <div
+                    id="bc-round"
+                    class="card-subvalue"
+                >
+                    #128
+                </div>
+
             </div>
 
-            <div
-                class="baccarat-result banker-color"
-                id="bc-latest"
-            >
-                🔴 庄
+
+
+            <div class="card">
+
+                <div class="card-title">
+                    🎯 最新结果
+                </div>
+
+                <div
+                    id="bc-latest"
+                    class="baccarat-result"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+
+            <div class="card">
+
+                <div class="card-title">
+                    🔥 当前走势
+                </div>
+
+                <div
+                    id="bc-streak"
+                    class="card-value"
+                >
+                    --
+                </div>
+
             </div>
 
         </div>
 
 
-        <div class="card">
 
-            <div class="card-title">
-                当前连路
-            </div>
+        <!-- =================================================
+             BIG ROAD
+        ================================================== -->
+
+        <div class="section-card">
 
             <div
-                class="card-value banker-color"
-                id="bc-streak"
+                id="big-road-title"
+                class="section-title"
             >
-                庄 3 连
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="card road-card">
-
-        <div class="road-title">
-
-            <h3 id="big-road-title">
                 📍 D51 大路
-            </h3>
+            </div>
 
-            <span>
-                独立台号
-            </span>
-
-        </div>
-
-        <div class="big-road-wrapper">
 
             <div
-                class="big-road"
                 id="big-road"
-            ></div>
-
-        </div>
-
-    </div>
-
-
-    <div class="small-road-grid">
-
-        <div class="card small-road">
-
-            <div class="road-title">
-
-                <h3>
-                    👁 大眼仔路
-                </h3>
-
-                <span id="eye-road-label">
-                    D51
-                </span>
-
-            </div>
-
-            <div
-                class="small-road-board"
-                id="eye-road"
-            ></div>
-
-        </div>
-
-
-        <div class="card small-road">
-
-            <div class="road-title">
-
-                <h3>
-                    🔵 小路
-                </h3>
-
-                <span id="small-road-label">
-                    D51
-                </span>
-
-            </div>
-
-            <div
-                class="small-road-board"
-                id="small-road"
-            ></div>
-
-        </div>
-
-
-        <div class="card small-road">
-
-            <div class="road-title">
-
-                <h3>
-                    🪳 蟑螂路
-                </h3>
-
-                <span id="cockroach-road-label">
-                    D51
-                </span>
-
-            </div>
-
-            <div
-                class="small-road-board"
-                id="cockroach-road"
-            ></div>
-
-        </div>
-
-    </div>
-
-
-    <div
-        class="card"
-        style="margin-top:18px;"
-    >
-
-        <h3 id="stats-title">
-            📊 D51 走势统计
-        </h3>
-
-        <div class="baccarat-stats-grid">
-
-            <div class="stat-box">
-
-                <div class="stat-row">
-
-                    <span>
-                        🔴 庄
-                    </span>
-
-                    <strong
-                        class="banker-color"
-                        id="bc-banker-count"
-                    >
-                        62
-                    </strong>
-
-                </div>
-
-                <div class="stat-row">
-
-                    <span>
-                        🔵 闲
-                    </span>
-
-                    <strong
-                        class="player-color"
-                        id="bc-player-count"
-                    >
-                        59
-                    </strong>
-
-                </div>
-
-                <div class="stat-row">
-
-                    <span>
-                        🟦 和
-                    </span>
-
-                    <strong
-                        class="tie-color"
-                        id="bc-tie-count"
-                    >
-                        7
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <div class="stat-box">
-
-                <div class="stat-row">
-
-                    <span>
-                        近10局庄
-                    </span>
-
-                    <strong id="bc-banker-rate">
-                        60%
-                    </strong>
-
-                </div>
-
-                <div class="stat-row">
-
-                    <span>
-                        近10局闲
-                    </span>
-
-                    <strong id="bc-player-rate">
-                        40%
-                    </strong>
-
-                </div>
-
-                <div class="stat-row">
-
-                    <span>
-                        当前连路
-                    </span>
-
-                    <strong id="bc-current-streak">
-                        庄 3
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <div class="stat-box">
-
-                <div class="stat-row">
-
-                    <span>
-                        庄最大连
-                    </span>
-
-                    <strong id="bc-max-banker">
-                        6
-                    </strong>
-
-                </div>
-
-                <div class="stat-row">
-
-                    <span>
-                        闲最大连
-                    </span>
-
-                    <strong id="bc-max-player">
-                        5
-                    </strong>
-
-                </div>
-
-                <div class="stat-row">
-
-                    <span>
-                        总局数
-                    </span>
-
-                    <strong id="bc-total-rounds">
-                        128
-                    </strong>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <h3 id="history-title">
-            📜 D51 最近20局
-        </h3>
-
-        <div
-            class="history"
-            id="bc-history"
-        ></div>
-
-    </div>
-
-
-    <div class="card baccarat-prediction">
-
-        <div class="card-title">
-
-            🎯
-            <span id="prediction-table-name">
-                D51
-            </span>
-            下一局预测
-
-        </div>
-
-
-        <div class="prediction-main">
-
-            <div>
-
-                <div
-                    class="prediction-result banker-color"
-                    id="bc-prediction"
-                >
-                    🔴 庄
-                </div>
-
-                <div
-                    style="
-                        color:#94a3b8;
-                        margin-top:5px;
-                    "
-                    id="bc-confidence"
-                >
-                    信心：72%
-                </div>
-
-            </div>
-
-
-            <div
-                class="bet"
-                id="bc-action"
+                class="big-road"
             >
-                BET
             </div>
 
         </div>
 
 
-        <div
-            class="baccarat-reason"
-            id="bc-reason"
-        >
 
-            <div>
-                ✓ 大路：庄方向
+        <!-- =================================================
+             THREE ROADS
+        ================================================== -->
+
+        <div class="road-grid">
+
+
+            <div class="section-card">
+
+                <div class="section-title">
+
+                    👁️ 眼路
+
+                    <span
+                        id="eye-road-label"
+                    >
+                        D51
+                    </span>
+
+                </div>
+
+                <div
+                    id="eye-road"
+                    class="small-road"
+                >
+                </div>
+
             </div>
 
-            <div>
-                ✓ 大眼仔路：红
+
+
+            <div class="section-card">
+
+                <div class="section-title">
+
+                    🔴 小路
+
+                    <span
+                        id="small-road-label"
+                    >
+                        D51
+                    </span>
+
+                </div>
+
+                <div
+                    id="small-road"
+                    class="small-road"
+                >
+                </div>
+
             </div>
 
-            <div>
-                ✓ 小路：红
-            </div>
 
-            <div>
-                ✓ 蟑螂路：红
-            </div>
 
-            <div>
-                ✓ 近10局：庄 60%
-            </div>
+            <div class="section-card">
 
-            <div style="color:#fbbf24;">
-                ⚠️ 当前庄 3 连，注意连续走势风险
+                <div class="section-title">
+
+                    🪳 蟑螂路
+
+                    <span
+                        id="cockroach-road-label"
+                    >
+                        D51
+                    </span>
+
+                </div>
+
+                <div
+                    id="cockroach-road"
+                    class="small-road"
+                >
+                </div>
+
             </div>
 
         </div>
 
 
-        <div class="demo-warning">
 
-            ⚠️ 当前百家乐部分为 UI / Demo 数据。
-            尚未连接真实百家乐开奖 API。
+        <!-- =================================================
+             BACCARAT STATS
+        ================================================== -->
+
+        <div class="section-card">
+
+            <div
+                id="stats-title"
+                class="section-title"
+            >
+                📊 D51 走势统计
+            </div>
+
+
+            <div class="analysis-grid">
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        庄
+                    </div>
+
+                    <div
+                        id="bc-banker-count"
+                        class="analysis-value banker-color"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        闲
+                    </div>
+
+                    <div
+                        id="bc-player-count"
+                        class="analysis-value player-color"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        和
+                    </div>
+
+                    <div
+                        id="bc-tie-count"
+                        class="analysis-value tie-color"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        庄率
+                    </div>
+
+                    <div
+                        id="bc-banker-rate"
+                        class="analysis-value banker-color"
+                    >
+                        0%
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        闲率
+                    </div>
+
+                    <div
+                        id="bc-player-rate"
+                        class="analysis-value player-color"
+                    >
+                        0%
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        当前连
+                    </div>
+
+                    <div
+                        id="bc-current-streak"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        最大庄连
+                    </div>
+
+                    <div
+                        id="bc-max-banker"
+                        class="analysis-value banker-color"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        最大闲连
+                    </div>
+
+                    <div
+                        id="bc-max-player"
+                        class="analysis-value player-color"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+
+                <div class="analysis-item">
+
+                    <div class="analysis-label">
+                        总局数
+                    </div>
+
+                    <div
+                        id="bc-total-rounds"
+                        class="analysis-value"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
-    </div>
 
-</section>
+
+        <!-- =================================================
+             BACCARAT HISTORY
+        ================================================== -->
+
+        <div class="section-card">
+
+            <div
+                id="history-title"
+                class="section-title"
+            >
+                📜 D51 最近20局
+            </div>
+
+
+            <div
+                id="bc-history"
+                class="history-list"
+            >
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             BACCARAT PREDICTION
+        ================================================== -->
+
+        <div class="section-card baccarat-prediction-card">
+
+            <div class="section-title">
+
+                🔮 Baccarat AI 预测
+
+                <span
+                    id="prediction-table-name"
+                >
+                    D51
+                </span>
+
+            </div>
+
+
+            <div class="baccarat-prediction">
+
+
+                <div
+                    id="bc-prediction"
+                    class="prediction-result"
+                >
+                    ⚪ PASS
+                </div>
+
+
+                <div
+                    id="bc-confidence"
+                    class="prediction-confidence"
+                >
+                    信心：50%
+                </div>
+
+
+                <div
+                    id="bc-action"
+                    class="pass"
+                >
+                    PASS
+                </div>
+
+            </div>
+
+
+            <div
+                id="bc-reason"
+                class="prediction-reason"
+            >
+            </div>
+
+        </div>
+
+
+    </section>
+
+
 
 </div>
 
 
-<script src="script.js"></script>
+<!-- =====================================================
+     JAVASCRIPT
+====================================================== -->
+
+<script
+    src="script.js"
+></script>
+
 
 </body>
-</html>
-    <!-- 外部 Style -->
-    <link rel="stylesheet" href="style.css">
-</head>
 
-<body>
-
-    <!-- =========================
-         Dashboard 内容
-    ========================== -->
-
-    <div class="dashboard-container">
-
-        <!-- 你原本的 Dashboard HTML
-             会放在这里 -->
-
-    </div>
-
-
-    <!-- =========================
-         JavaScript
-    ========================== -->
-
-    <script src="script.js"></script>
-
-</body>
 </html>
