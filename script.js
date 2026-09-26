@@ -90,26 +90,24 @@ function loadAILearning() {
         const saved =
             localStorage.getItem(AI_LEARNING_KEY);
 
-        if (!saved) {
-
-            const base =
-    structuredClone
-        ? structuredClone(DEFAULT_AI_LEARNING)
+        const base =
+            typeof structuredClone === "function"
+                ? structuredClone(DEFAULT_AI_LEARNING)
                 : JSON.parse(
                     JSON.stringify(DEFAULT_AI_LEARNING)
                 );
+
+        if (!saved) {
+            return base;
         }
 
-        const parsed = JSON.parse(saved);
+        const parsed =
+            JSON.parse(saved);
 
-        const base =
-    typeof structuredClone === "function"
-        ? structuredClone(DEFAULT_AI_LEARNING)
-        : JSON.parse(
-            JSON.stringify(DEFAULT_AI_LEARNING)
+        return deepMerge(
+            base,
+            parsed
         );
-
-        return deepMerge(base, parsed);
 
     } catch (e) {
 
@@ -1214,13 +1212,14 @@ function getLearnedPrediction(
 
 
     if (
-        recentLosses >= 3
-    ) {
+    !forceDecision &&
+    recentLosses >= 3
+) {
 
-        isPass =
-            Math.abs(score) <
-            threshold * 1.18;
-    }
+    isPass =
+        Math.abs(score) <
+        threshold * 1.18;
+}
 
 
     /*
