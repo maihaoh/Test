@@ -2452,6 +2452,29 @@ async function fetchDraws() {
                 .toUpperCase();
 
 
+        const requestBody = {
+
+            ...signObj,
+
+            timestamp,
+
+            sign
+        };
+
+
+        console.log(
+            "========== Worker Request =========="
+        );
+
+        console.log(
+            requestBody
+        );
+
+        console.log(
+            "===================================="
+        );
+
+
         const response =
             await fetch(
                 WORKER_URL,
@@ -2468,14 +2491,9 @@ async function fetchDraws() {
                     },
 
                     body:
-                        JSON.stringify({
-
-                            ...signObj,
-
-                            timestamp,
-
-                            sign
-                        })
+                        JSON.stringify(
+                            requestBody
+                        )
                 }
             );
 
@@ -2488,13 +2506,64 @@ async function fetchDraws() {
         }
 
 
-        const json =
-            await response.json();
+        const rawText =
+            await response.text();
 
 
         console.log(
-            "Worker 返回:",
+            "========== Worker Raw Response =========="
+        );
+
+        console.log(
+            rawText
+        );
+
+        console.log(
+            "=========================================="
+        );
+
+
+        if (!rawText) {
+
+            console.warn(
+                "Worker 返回空内容"
+            );
+
+            return [];
+        }
+
+
+        let json;
+
+
+        try {
+
+            json =
+                JSON.parse(
+                    rawText
+                );
+
+        } catch (parseError) {
+
+            console.error(
+                "Worker 返回不是 JSON:",
+                parseError
+            );
+
+            return [];
+        }
+
+
+        console.log(
+            "========== Worker JSON =========="
+        );
+
+        console.log(
             json
+        );
+
+        console.log(
+            "================================="
         );
 
 
@@ -2505,6 +2574,10 @@ async function fetchDraws() {
         let list = null;
 
 
+        /*
+         * data.list
+         */
+
         if (
             Array.isArray(
                 json?.data?.list
@@ -2514,25 +2587,14 @@ async function fetchDraws() {
             list =
                 json.data.list;
 
-        } else if (
-            Array.isArray(
-                json?.data
-            )
-        ) {
+        }
 
-            list =
-                json.data;
 
-        } else if (
-            Array.isArray(
-                json?.list
-            )
-        ) {
+        /*
+         * data.records
+         */
 
-            list =
-                json.list;
-
-        } else if (
+        else if (
             Array.isArray(
                 json?.data?.records
             )
@@ -2541,7 +2603,14 @@ async function fetchDraws() {
             list =
                 json.data.records;
 
-        } else if (
+        }
+
+
+        /*
+         * data.rows
+         */
+
+        else if (
             Array.isArray(
                 json?.data?.rows
             )
@@ -2550,7 +2619,94 @@ async function fetchDraws() {
             list =
                 json.data.rows;
 
-        } else if (
+        }
+
+
+        /*
+         * data.data
+         */
+
+        else if (
+            Array.isArray(
+                json?.data?.data
+            )
+        ) {
+
+            list =
+                json.data.data;
+
+        }
+
+
+        /*
+         * data 本身就是数组
+         */
+
+        else if (
+            Array.isArray(
+                json?.data
+            )
+        ) {
+
+            list =
+                json.data;
+
+        }
+
+
+        /*
+         * result.list
+         */
+
+        else if (
+            Array.isArray(
+                json?.result?.list
+            )
+        ) {
+
+            list =
+                json.result.list;
+
+        }
+
+
+        /*
+         * result.records
+         */
+
+        else if (
+            Array.isArray(
+                json?.result?.records
+            )
+        ) {
+
+            list =
+                json.result.records;
+
+        }
+
+
+        /*
+         * result.rows
+         */
+
+        else if (
+            Array.isArray(
+                json?.result?.rows
+            )
+        ) {
+
+            list =
+                json.result.rows;
+
+        }
+
+
+        /*
+         * result 本身就是数组
+         */
+
+        else if (
             Array.isArray(
                 json?.result
             )
@@ -2559,59 +2715,247 @@ async function fetchDraws() {
             list =
                 json.result;
 
-        } else if (
+        }
+
+
+        /*
+         * payload.list
+         */
+
+        else if (
             Array.isArray(
-                json?.result?.list
+                json?.payload?.list
             )
         ) {
 
             list =
-                json.result.list;
+                json.payload.list;
+
         }
 
+
+        /*
+         * payload.records
+         */
+
+        else if (
+            Array.isArray(
+                json?.payload?.records
+            )
+        ) {
+
+            list =
+                json.payload.records;
+
+        }
+
+
+        /*
+         * payload.rows
+         */
+
+        else if (
+            Array.isArray(
+                json?.payload?.rows
+            )
+        ) {
+
+            list =
+                json.payload.rows;
+
+        }
+
+
+        /*
+         * list
+         */
+
+        else if (
+            Array.isArray(
+                json?.list
+            )
+        ) {
+
+            list =
+                json.list;
+
+        }
+
+
+        /*
+         * records
+         */
+
+        else if (
+            Array.isArray(
+                json?.records
+            )
+        ) {
+
+            list =
+                json.records;
+
+        }
+
+
+        /*
+         * rows
+         */
+
+        else if (
+            Array.isArray(
+                json?.rows
+            )
+        ) {
+
+            list =
+                json.rows;
+        }
+
+
+        /*
+         * 找不到开奖数组
+         */
 
         if (
             !Array.isArray(list)
         ) {
 
-            console.warn(
-                "Worker 返回没有开奖列表:",
-                json
+            console.error(
+                "========== 找不到开奖数组 =========="
             );
+
+            console.error(
+                "Worker 完整 JSON:"
+            );
+
+            console.error(
+                JSON.stringify(
+                    json,
+                    null,
+                    2
+                )
+            );
+
+            console.error(
+                "===================================="
+            );
+
+
+            if (
+                json?.code !== undefined ||
+                json?.msg !== undefined
+            ) {
+
+                console.error(
+                    "Worker Code:",
+                    json?.code
+                );
+
+                console.error(
+                    "Worker Message:",
+                    json?.msg
+                );
+            }
+
 
             return [];
         }
 
+
+        console.log(
+            "Worker 找到开奖数量:",
+            list.length
+        );
+
+
+        /*
+         * 转换开奖资料
+         */
 
         const parsed =
             list
                 .map(
                     item => {
 
+                        if (
+                            !item ||
+                            typeof item !==
+                            "object"
+                        ) {
+
+                            return null;
+                        }
+
+
+                        /*
+                         * Number
+                         */
+
+                        const rawNumber =
+                            item?.number ??
+                            item?.num ??
+                            item?.result ??
+                            item?.openNumber ??
+                            item?.openNum ??
+                            item?.winningNumber;
+
+
                         const number =
                             safeNumber(
-                                item?.number ??
-                                item?.num ??
-                                item?.result
+                                rawNumber
                             );
 
+
+                        /*
+                         * Issue
+                         */
 
                         const issue =
                             String(
                                 item?.issueNumber ??
                                 item?.issue ??
                                 item?.period ??
-                                item?.issue_no ??
                                 item?.periodNumber ??
+                                item?.issue_no ??
+                                item?.drawNumber ??
+                                item?.drawNo ??
                                 ""
                             );
 
+
+                        /*
+                         * Colour
+                         */
 
                         const colour =
                             item?.colour ??
                             item?.color ??
                             item?.colourName ??
+                            item?.colorName ??
                             "";
+
+
+                        /*
+                         * Size
+                         */
+
+                        let size =
+                            item?.size ??
+                            item?.sizeName ??
+                            "";
+
+
+                        if (
+                            size !== "大" &&
+                            size !== "小"
+                        ) {
+
+                            size =
+                                number >= 5
+                                    ? "大"
+                                    : "小";
+                        }
 
 
                         return {
@@ -2620,10 +2964,7 @@ async function fetchDraws() {
 
                             number,
 
-                            size:
-                                number >= 5
-                                    ? "大"
-                                    : "小",
+                            size,
 
                             colour
                         };
@@ -2631,6 +2972,7 @@ async function fetchDraws() {
                 )
                 .filter(
                     x =>
+                        x &&
                         x.issue &&
                         Number.isFinite(
                             x.number
@@ -2644,6 +2986,20 @@ async function fetchDraws() {
             `WinGo 成功解析 ${parsed.length} 笔`,
             parsed.slice(0, 3)
         );
+
+
+        if (
+            parsed.length === 0
+        ) {
+
+            console.warn(
+                "Worker 找到了数组，但没有解析出有效开奖资料:"
+            );
+
+            console.warn(
+                list
+            );
+        }
 
 
         return parsed;
@@ -3141,17 +3497,16 @@ function renderDrawTable(
                                 ${draw.colour || "-"}
                             </td>
 
+                            <td>
+                                -
+                            </td>
+
                         </tr>
                     `;
                 }
             )
             .join("");
 
-
-    /*
-     * 如果 HTML 原本是 tbody，
-     * 直接写入 tr，避免 tbody 内嵌 div/table
-     */
 
     if (
         table.tagName ===
@@ -3172,11 +3527,6 @@ function renderDrawTable(
     }
 
 
-    /*
-     * 如果未来 HTML 改成容器，
-     * 也兼容原本的完整 table
-     */
-
     table.innerHTML = `
         <div class="table-wrapper">
 
@@ -3193,6 +3543,8 @@ function renderDrawTable(
                         <th>大小</th>
 
                         <th>颜色</th>
+
+                        <th>-</th>
 
                     </tr>
 
