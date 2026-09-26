@@ -56,7 +56,6 @@ const DEFAULT_AI_LEARNING = {
         win: 0,
         loss: 0,
         pass: 0,
-
         passCorrect: 0,
         passMissed: 0
     },
@@ -71,7 +70,8 @@ const DEFAULT_AI_LEARNING = {
 
     lastReviewedIssue: null,
 
-    lastLearningMessage: "等待第一笔真实 Result 进行学习",
+    lastLearningMessage:
+        "等待第一笔真实 Result 进行学习",
 
     confidenceBias: 0,
 
@@ -88,13 +88,19 @@ function loadAILearning() {
     try {
 
         const saved =
-            localStorage.getItem(AI_LEARNING_KEY);
+            localStorage.getItem(
+                AI_LEARNING_KEY
+            );
 
         const base =
             typeof structuredClone === "function"
-                ? structuredClone(DEFAULT_AI_LEARNING)
+                ? structuredClone(
+                    DEFAULT_AI_LEARNING
+                )
                 : JSON.parse(
-                    JSON.stringify(DEFAULT_AI_LEARNING)
+                    JSON.stringify(
+                        DEFAULT_AI_LEARNING
+                    )
                 );
 
         if (!saved) {
@@ -117,7 +123,9 @@ function loadAILearning() {
         );
 
         return JSON.parse(
-            JSON.stringify(DEFAULT_AI_LEARNING)
+            JSON.stringify(
+                DEFAULT_AI_LEARNING
+            )
         );
     }
 }
@@ -167,7 +175,8 @@ function deepMerge(base, source) {
 }
 
 
-let aiLearning = loadAILearning();
+let aiLearning =
+    loadAILearning();
 
 
 function saveAILearning() {
@@ -176,7 +185,9 @@ function saveAILearning() {
 
         localStorage.setItem(
             AI_LEARNING_KEY,
-            JSON.stringify(aiLearning)
+            JSON.stringify(
+                aiLearning
+            )
         );
 
     } catch (e) {
@@ -193,18 +204,26 @@ function saveAILearning() {
    BASIC HELPERS
 ========================================================= */
 
-function clamp(value, min, max) {
+function clamp(
+    value,
+    min,
+    max
+) {
 
     return Math.max(
         min,
-        Math.min(max, value)
+        Math.min(
+            max,
+            value
+        )
     );
 }
 
 
 function safeNumber(value) {
 
-    const n = Number(value);
+    const n =
+        Number(value);
 
     return Number.isFinite(n)
         ? n
@@ -226,7 +245,9 @@ function getDirectionFromSize(size) {
 }
 
 
-function getSizeFromDirection(direction) {
+function getSizeFromDirection(
+    direction
+) {
 
     return direction >= 0
         ? "大"
@@ -240,27 +261,41 @@ function getSizeFromDirection(direction) {
 
 function updateMYTClock() {
 
-    const now = new Date();
+    const now =
+        new Date();
 
     const myt =
         new Intl.DateTimeFormat(
             "en-GB",
             {
-                timeZone: "Asia/Kuala_Lumpur",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false
+                timeZone:
+                    "Asia/Kuala_Lumpur",
+
+                hour:
+                    "2-digit",
+
+                minute:
+                    "2-digit",
+
+                second:
+                    "2-digit",
+
+                hour12:
+                    false
             }
         ).format(now);
 
+    /*
+     * HTML 使用 myt-clock
+     */
     const el =
         document.getElementById(
-            "myt-time"
+            "myt-clock"
         );
 
     if (el) {
-        el.textContent = myt;
+        el.textContent =
+            myt;
     }
 }
 
@@ -269,25 +304,38 @@ function updateMYTClock() {
    MAIN TAB
 ========================================================= */
 
-function switchMainTab(tab, button) {
+function switchMainTab(
+    tab,
+    button
+) {
 
     document
-        .querySelectorAll(".main-section")
-        .forEach(section => {
+        .querySelectorAll(
+            ".main-section"
+        )
+        .forEach(
+            section => {
 
-            section.classList.remove(
-                "active"
-            );
-        });
+                section.classList.remove(
+                    "active"
+                );
+
+            }
+        );
 
     document
-        .querySelectorAll(".main-tab")
-        .forEach(btn => {
+        .querySelectorAll(
+            ".main-tab"
+        )
+        .forEach(
+            btn => {
 
-            btn.classList.remove(
-                "active"
-            );
-        });
+                btn.classList.remove(
+                    "active"
+                );
+
+            }
+        );
 
     const target =
         document.getElementById(
@@ -295,12 +343,14 @@ function switchMainTab(tab, button) {
         );
 
     if (target) {
+
         target.classList.add(
             "active"
         );
     }
 
     if (button) {
+
         button.classList.add(
             "active"
         );
@@ -314,18 +364,30 @@ function switchMainTab(tab, button) {
 
 function getNumberIconHtml(num) {
 
-    const n = Number(num);
+    const n =
+        Number(num);
 
     let cls = "";
 
     if (n === 0) {
-        cls = "number-red";
+
+        cls =
+            "number-red";
+
     } else if (n === 5) {
-        cls = "number-green";
+
+        cls =
+            "number-green";
+
     } else if (n % 2 === 0) {
-        cls = "number-red";
+
+        cls =
+            "number-red";
+
     } else {
-        cls = "number-green";
+
+        cls =
+            "number-green";
     }
 
     return `
@@ -342,7 +404,10 @@ function getNumberIconHtml(num) {
 
 function getFeatureSnapshot(draws) {
 
-    if (!draws || draws.length < 5) {
+    if (
+        !draws ||
+        draws.length < 5
+    ) {
 
         return {
             markov: 0,
@@ -355,15 +420,20 @@ function getFeatureSnapshot(draws) {
 
 
     const nums =
-        draws.map(d =>
-            safeNumber(d.number)
+        draws.map(
+            d =>
+                safeNumber(
+                    d.number
+                )
         );
 
+
     const sizes =
-        draws.map(d =>
-            d.size === "大"
-                ? "大"
-                : "小"
+        draws.map(
+            d =>
+                d.size === "大"
+                    ? "大"
+                    : "小"
         );
 
 
@@ -376,8 +446,8 @@ function getFeatureSnapshot(draws) {
 
     let bigTransitions = 0;
     let smallTransitions = 0;
-
     let totalTransitions = 0;
+
 
     for (
         let i = 1;
@@ -407,7 +477,10 @@ function getFeatureSnapshot(draws) {
 
     let markov = 0;
 
-    if (totalTransitions > 0) {
+
+    if (
+        totalTransitions > 0
+    ) {
 
         markov =
             (
@@ -425,19 +498,27 @@ function getFeatureSnapshot(draws) {
     const recent10 =
         sizes.slice(
             0,
-            Math.min(10, sizes.length)
+            Math.min(
+                10,
+                sizes.length
+            )
         );
+
 
     const big10 =
         recent10.filter(
-            x => x === "大"
+            x =>
+                x === "大"
         ).length;
+
 
     const small10 =
         recent10.length -
         big10;
 
+
     let mean = 0;
+
 
     if (
         recent10.length >= 5
@@ -450,7 +531,8 @@ function getFeatureSnapshot(draws) {
             ) /
             recent10.length;
 
-        mean = -ratio;
+        mean =
+            -ratio;
     }
 
 
@@ -459,6 +541,7 @@ function getFeatureSnapshot(draws) {
     ----------------------------------------------------- */
 
     let streak = 1;
+
 
     for (
         let i = 1;
@@ -481,21 +564,15 @@ function getFeatureSnapshot(draws) {
 
     let streakSignal = 0;
 
-    if (streak >= 2) {
+
+    if (
+        streak >= 2
+    ) {
 
         const currentDirection =
             getDirectionFromSize(
                 sizes[0]
             );
-
-        /*
-         * IMPORTANT:
-         * Streak is not automatically reversed.
-         *
-         * The AI will decide whether
-         * following the streak or reversing
-         * it has worked better historically.
-         */
 
         streakSignal =
             currentDirection *
@@ -513,19 +590,28 @@ function getFeatureSnapshot(draws) {
     const recent20 =
         sizes.slice(
             0,
-            Math.min(20, sizes.length)
+            Math.min(
+                20,
+                sizes.length
+            )
         );
+
 
     const big20 =
         recent20.filter(
-            x => x === "大"
+            x =>
+                x === "大"
         ).length;
+
 
     const frequency =
         recent20.length > 0
             ? (
                 big20 -
-                (recent20.length - big20)
+                (
+                    recent20.length -
+                    big20
+                )
             ) /
             recent20.length
             : 0;
@@ -538,19 +624,28 @@ function getFeatureSnapshot(draws) {
     const recent50 =
         sizes.slice(
             0,
-            Math.min(50, sizes.length)
+            Math.min(
+                50,
+                sizes.length
+            )
         );
+
 
     const big50 =
         recent50.filter(
-            x => x === "大"
+            x =>
+                x === "大"
         ).length;
+
 
     const balance =
         recent50.length > 0
             ? (
                 big50 -
-                (recent50.length - big50)
+                (
+                    recent50.length -
+                    big50
+                )
             ) /
             recent50.length
             : 0;
@@ -559,19 +654,39 @@ function getFeatureSnapshot(draws) {
     return {
 
         markov:
-            clamp(markov, -1, 1),
+            clamp(
+                markov,
+                -1,
+                1
+            ),
 
         mean:
-            clamp(mean, -1, 1),
+            clamp(
+                mean,
+                -1,
+                1
+            ),
 
         streak:
-            clamp(streakSignal, -1, 1),
+            clamp(
+                streakSignal,
+                -1,
+                1
+            ),
 
         frequency:
-            clamp(frequency, -1, 1),
+            clamp(
+                frequency,
+                -1,
+                1
+            ),
 
         balance:
-            clamp(balance, -1, 1)
+            clamp(
+                balance,
+                -1,
+                1
+            )
     };
 }
 
@@ -580,19 +695,28 @@ function getFeatureSnapshot(draws) {
    PATTERN MEMORY
 ========================================================= */
 
-function getCurrentPattern(draws) {
+function getCurrentPattern(
+    draws
+) {
 
-    if (!draws || draws.length < 6) {
+    if (
+        !draws ||
+        draws.length < 6
+    ) {
         return "";
     }
 
     const sizes =
         draws
-            .slice(0, 6)
-            .map(d =>
-                d.size === "大"
-                    ? "B"
-                    : "S"
+            .slice(
+                0,
+                6
+            )
+            .map(
+                d =>
+                    d.size === "大"
+                        ? "B"
+                        : "S"
             );
 
     return sizes.join("");
@@ -611,16 +735,24 @@ function rememberPattern(
     }
 
     const item = {
+
         pattern,
+
         prediction,
+
         actual,
+
         outcome,
-        time: Date.now()
+
+        time:
+            Date.now()
     };
+
 
     aiLearning.patterns.recent.unshift(
         item
     );
+
 
     aiLearning.patterns.recent =
         aiLearning.patterns.recent.slice(
@@ -629,7 +761,9 @@ function rememberPattern(
         );
 
 
-    if (outcome === "WIN") {
+    if (
+        outcome === "WIN"
+    ) {
 
         aiLearning.patterns.successfulPatterns.unshift(
             item
@@ -643,7 +777,9 @@ function rememberPattern(
     }
 
 
-    if (outcome === "LOSS") {
+    if (
+        outcome === "LOSS"
+    ) {
 
         aiLearning.patterns.wrongPatterns.unshift(
             item
@@ -668,7 +804,10 @@ function getPatternExperience(
 ) {
 
     const pattern =
-        getCurrentPattern(draws);
+        getCurrentPattern(
+            draws
+        );
+
 
     if (!pattern) {
 
@@ -688,7 +827,9 @@ function getPatternExperience(
         );
 
 
-    if (!records.length) {
+    if (
+        !records.length
+    ) {
 
         return {
             bonus: 0,
@@ -702,24 +843,29 @@ function getPatternExperience(
     let wins = 0;
     let losses = 0;
 
-    records.forEach(item => {
 
-        if (
-            item.outcome === "WIN"
-        ) {
-            wins++;
-        }
+    records.forEach(
+        item => {
 
-        if (
-            item.outcome === "LOSS"
-        ) {
-            losses++;
+            if (
+                item.outcome === "WIN"
+            ) {
+                wins++;
+            }
+
+            if (
+                item.outcome === "LOSS"
+            ) {
+                losses++;
+            }
+
         }
-    });
+    );
 
 
     const total =
         wins + losses;
+
 
     if (!total) {
 
@@ -732,18 +878,8 @@ function getPatternExperience(
     }
 
 
-    const accuracy =
-        wins / total;
-
-
-    /*
-     * Pattern memory does NOT directly force
-     * Big/Small.
-     *
-     * It only adjusts confidence.
-     */
-
     let bonus = 0;
+
 
     if (
         prediction === "大"
@@ -756,12 +892,14 @@ function getPatternExperience(
                     x.outcome === "WIN"
             ).length;
 
+
         const bigLosses =
             records.filter(
                 x =>
                     x.prediction === "大" &&
                     x.outcome === "LOSS"
             ).length;
+
 
         if (
             bigWins + bigLosses > 0
@@ -787,12 +925,14 @@ function getPatternExperience(
                     x.outcome === "WIN"
             ).length;
 
+
         const smallLosses =
             records.filter(
                 x =>
                     x.prediction === "小" &&
                     x.outcome === "LOSS"
             ).length;
+
 
         if (
             smallWins + smallLosses > 0
@@ -824,6 +964,7 @@ function getPatternExperience(
             total,
 
         wins,
+
         losses
     };
 }
@@ -831,7 +972,6 @@ function getPatternExperience(
 
 /* =========================================================
    AI PREDICTION
-   RESULT-DRIVEN / ADAPTIVE
 ========================================================= */
 
 function getLearnedPrediction(
@@ -848,49 +988,62 @@ function getLearnedPrediction(
         return {
 
             num: null,
+
             size: "PASS",
+
             signal: "等待",
+
             confidence: 0,
+
             bigScore: 0,
+
             smallScore: 0,
+
             streakCnt: 0,
+
             markovSize: "等待",
+
             meanSize: "等待",
+
             isSpecial: false,
+
             features: {},
+
             weightedScore: 0,
+
             rawScore: 0,
-            passReason: "历史数据不足",
+
+            passReason:
+                "历史数据不足",
+
             factorContributions: {}
         };
     }
 
 
     const nums =
-        draws.map(d =>
-            safeNumber(d.number)
+        draws.map(
+            d =>
+                safeNumber(
+                    d.number
+                )
         );
 
+
     const sizes =
-        draws.map(d =>
-            d.size === "大"
-                ? "大"
-                : "小"
+        draws.map(
+            d =>
+                d.size === "大"
+                    ? "大"
+                    : "小"
         );
 
 
     const features =
-        getFeatureSnapshot(draws);
+        getFeatureSnapshot(
+            draws
+        );
 
-
-    /*
-     * =====================================================
-     * LEARNING WEIGHTS
-     *
-     * These are NOT fixed.
-     * They change according to Result.
-     * =====================================================
-     */
 
     const factors =
         learning.factors;
@@ -901,13 +1054,16 @@ function getLearnedPrediction(
     const contributions = {};
 
 
-    Object.keys(features).forEach(
+    Object.keys(
+        features
+    ).forEach(
         key => {
 
             const feature =
                 safeNumber(
                     features[key]
                 );
+
 
             const weight =
                 clamp(
@@ -923,20 +1079,16 @@ function getLearnedPrediction(
                 feature *
                 weight;
 
+
             contributions[key] =
                 contribution;
+
 
             score +=
                 contribution;
         }
     );
 
-
-    /*
-     * =====================================================
-     * CURRENT RESULT MEMORY
-     * =====================================================
-     */
 
     const latest =
         sizes[0];
@@ -946,16 +1098,10 @@ function getLearnedPrediction(
         sizes[1];
 
 
-    /*
-     * The latest Result is not blindly followed.
-     *
-     * It checks how often the current transition
-     * worked in previous history.
-     */
-
     let transitionScore = 0;
 
     let transitionSamples = 0;
+
 
     for (
         let i = 2;
@@ -969,6 +1115,7 @@ function getLearnedPrediction(
         ) {
 
             transitionSamples++;
+
 
             if (
                 sizes[i + 1] === "大"
@@ -998,16 +1145,11 @@ function getLearnedPrediction(
     }
 
 
-    /*
-     * =====================================================
-     * PATTERN MEMORY
-     * =====================================================
-     */
-
     const temporaryPrediction =
         score >= 0
             ? "大"
             : "小";
+
 
     const patternMemory =
         getPatternExperience(
@@ -1031,13 +1173,8 @@ function getLearnedPrediction(
     }
 
 
-    /*
-     * =====================================================
-     * RECENT RESULT MOMENTUM
-     * =====================================================
-     */
-
     let momentum = 0;
+
 
     if (
         latest === previous
@@ -1054,21 +1191,16 @@ function getLearnedPrediction(
     }
 
 
-    score += momentum;
+    score +=
+        momentum;
 
-
-    /*
-     * =====================================================
-     * SELF CONFIDENCE
-     *
-     * If recent AI predictions are losing,
-     * reduce confidence.
-     * =====================================================
-     */
 
     const recentReviews =
         learning.recentReviews
-            .slice(0, 10)
+            .slice(
+                0,
+                10
+            )
             .filter(
                 x =>
                     x.outcome === "WIN" ||
@@ -1089,17 +1221,21 @@ function getLearnedPrediction(
                     x.outcome === "WIN"
             ).length;
 
+
         const losses =
             recentReviews.filter(
                 x =>
                     x.outcome === "LOSS"
             ).length;
 
+
         const total =
             wins + losses;
 
+
         const accuracy =
             wins / total;
+
 
         selfConfidence =
             (
@@ -1108,34 +1244,23 @@ function getLearnedPrediction(
             ) *
             0.8;
 
+
         score +=
             selfConfidence;
     }
 
 
-    /*
-     * =====================================================
-     * DIRECTION
-     * =====================================================
-     */
-
-    let direction =
+    const direction =
         score >= 0
             ? 1
             : -1;
 
 
-    let prediction =
+    const prediction =
         getSizeFromDirection(
             direction
         );
 
-
-    /*
-     * =====================================================
-     * CONFIDENCE
-     * =====================================================
-     */
 
     const confidenceRaw =
         Math.abs(score);
@@ -1155,10 +1280,6 @@ function getLearnedPrediction(
         );
 
 
-    /*
-     * Learning state affects confidence.
-     */
-
     confidence +=
         safeNumber(
             learning.confidenceBias
@@ -1173,15 +1294,6 @@ function getLearnedPrediction(
         );
 
 
-    /*
-     * =====================================================
-     * PASS
-     *
-     * PASS is based on uncertainty,
-     * not a fixed formula.
-     * =====================================================
-     */
-
     const threshold =
         clamp(
             safeNumber(
@@ -1192,19 +1304,19 @@ function getLearnedPrediction(
         );
 
 
-    let isPass = forceDecision
-    ? false
-    : Math.abs(score) < threshold;
+    let isPass =
+        forceDecision
+            ? false
+            : Math.abs(score) <
+                threshold;
 
-
-    /*
-     * If AI has recently been wrong repeatedly,
-     * become more conservative.
-     */
 
     const recentLosses =
         learning.recentReviews
-            .slice(0, 5)
+            .slice(
+                0,
+                5
+            )
             .filter(
                 x =>
                     x.outcome === "LOSS"
@@ -1212,50 +1324,35 @@ function getLearnedPrediction(
 
 
     if (
-    !forceDecision &&
-    recentLosses >= 3
-) {
+        !forceDecision &&
+        recentLosses >= 3
+    ) {
 
-    isPass =
-        Math.abs(score) <
-        threshold * 1.18;
-}
+        isPass =
+            Math.abs(score) <
+            threshold * 1.18;
+    }
 
-
-    /*
-     * =====================================================
-     * SPECIAL NUMBERS
-     * =====================================================
-     */
 
     const lastNum =
         nums[0];
+
 
     const isSpecial =
         lastNum === 0 ||
         lastNum === 5;
 
 
-    /*
-     * Special result is a caution,
-     * NOT automatic PASS.
-     */
-
     if (
-    !forceDecision &&
-    isSpecial &&
-    Math.abs(score) <
-    threshold * 1.25
-) {
-    isPass = true;
-}
+        !forceDecision &&
+        isSpecial &&
+        Math.abs(score) <
+        threshold * 1.25
+    ) {
 
+        isPass = true;
+    }
 
-    /*
-     * =====================================================
-     * TARGET NUMBER
-     * =====================================================
-     */
 
     let predictedNum =
         null;
@@ -1301,16 +1398,13 @@ function getLearnedPrediction(
                 b[1] - a[1]
         );
 
+
         predictedNum =
             Number(
                 transitionEntries[0][0]
             );
     }
 
-
-    /*
-     * fallback frequency
-     */
 
     if (
         predictedNum === null ||
@@ -1319,17 +1413,24 @@ function getLearnedPrediction(
 
         const freq = {};
 
-        nums.forEach(n => {
 
-            freq[n] =
-                (
-                    freq[n] || 0
-                ) + 1;
-        });
+        nums.forEach(
+            n => {
+
+                freq[n] =
+                    (
+                        freq[n] ||
+                        0
+                    ) + 1;
+            }
+        );
 
 
         const entries =
-            Object.entries(freq);
+            Object.entries(
+                freq
+            );
+
 
         entries.sort(
             (a, b) =>
@@ -1337,7 +1438,9 @@ function getLearnedPrediction(
         );
 
 
-        if (entries.length) {
+        if (
+            entries.length
+        ) {
 
             predictedNum =
                 Number(
@@ -1446,6 +1549,7 @@ function getPassReason(
         return "近期预测连续失误，AI 自动降低下注信心";
     }
 
+
     if (
         Math.abs(score) <
         threshold * 0.55
@@ -1453,6 +1557,7 @@ function getPassReason(
 
         return "当前 Result 模式没有明显方向";
     }
+
 
     return "多个历史判断互相冲突";
 }
@@ -1462,7 +1567,9 @@ function getPassReason(
    OLD COMPATIBILITY FUNCTION
 ========================================================= */
 
-function getPredictionForDraw(draws) {
+function getPredictionForDraw(
+    draws
+) {
 
     return getLearnedPrediction(
         draws
@@ -1474,7 +1581,9 @@ function getPredictionForDraw(draws) {
    CURRENT STREAK
 ========================================================= */
 
-function getCurrentStreak(sizes) {
+function getCurrentStreak(
+    sizes
+) {
 
     if (
         !sizes ||
@@ -1483,7 +1592,9 @@ function getCurrentStreak(sizes) {
         return 0;
     }
 
+
     let count = 1;
+
 
     for (
         let i = 1;
@@ -1502,6 +1613,7 @@ function getCurrentStreak(sizes) {
             break;
         }
     }
+
 
     return count;
 }
@@ -1524,6 +1636,7 @@ function getCounterfactualResult(
         return "NONE";
     }
 
+
     return prediction.size ===
         actualSize
         ? "WIN"
@@ -1540,11 +1653,11 @@ function getForcedCounterfactual(
             draws
         );
 
+
     if (
         !prediction ||
         !prediction.size
     ) {
-
         return null;
     }
 
@@ -1553,11 +1666,6 @@ function getForcedCounterfactual(
         prediction.size === "PASS"
     ) {
 
-        /*
-         * Recalculate without PASS threshold
-         * to see what AI would have chosen.
-         */
-
         const fakeLearning =
             JSON.parse(
                 JSON.stringify(
@@ -1565,15 +1673,18 @@ function getForcedCounterfactual(
                 )
             );
 
+
         fakeLearning.passThreshold =
             0;
 
+
         const forced =
-    getLearnedPrediction(
-        draws,
-        fakeLearning,
-        true
-    );
+            getLearnedPrediction(
+                draws,
+                fakeLearning,
+                true
+            );
+
 
         return forced;
     }
@@ -1602,11 +1713,9 @@ function learnFromReview(
         );
 
 
-    /*
-     * -----------------------------------------------------
-     * NORMAL WIN / LOSS
-     * -----------------------------------------------------
-     */
+    /* -----------------------------------------------------
+       NORMAL WIN / LOSS
+    ----------------------------------------------------- */
 
     if (
         review.outcome === "WIN" ||
@@ -1630,93 +1739,78 @@ function learnFromReview(
         }
 
 
-        /*
-         * Update each factor separately.
-         *
-         * A factor is not simply "good" or "bad".
-         * Its current contribution is compared
-         * with the actual Result.
-         */
-
         Object.keys(
             aiLearning.factors
-        ).forEach(key => {
+        ).forEach(
+            key => {
 
-            const feature =
-                safeNumber(
-                    review.featureSnapshot?.[key]
-                );
+                const feature =
+                    safeNumber(
+                        review.featureSnapshot?.[key]
+                    );
 
 
-            if (
-                Math.abs(feature) <
-                0.08
-            ) {
-                return;
+                if (
+                    Math.abs(feature) <
+                    0.08
+                ) {
+                    return;
+                }
+
+
+                const factor =
+                    aiLearning.factors[key];
+
+
+                const factorDirection =
+                    feature >= 0
+                        ? 1
+                        : -1;
+
+
+                const aligned =
+                    factorDirection ===
+                    actualDirection;
+
+
+                if (
+                    aligned === correct
+                ) {
+
+                    factor.weight +=
+                        correct
+                            ? 0.035
+                            : 0.020;
+
+                } else {
+
+                    factor.weight -=
+                        correct
+                            ? 0.020
+                            : 0.040;
+                }
+
+
+                factor.weight =
+                    clamp(
+                        factor.weight,
+                        0.25,
+                        2.00
+                    );
+
+
+                if (correct) {
+
+                    factor.win++;
+
+                } else {
+
+                    factor.loss++;
+                }
+
             }
+        );
 
-
-            const factor =
-                aiLearning.factors[key];
-
-
-            const factorDirection =
-                feature >= 0
-                    ? 1
-                    : -1;
-
-
-            const aligned =
-                factorDirection ===
-                actualDirection;
-
-
-            /*
-             * If this factor pointed to the
-             * actual Result, reward it.
-             *
-             * If it pointed opposite, punish it.
-             */
-
-            if (aligned === correct) {
-
-                factor.weight +=
-                    correct
-                        ? 0.035
-                        : 0.020;
-
-            } else {
-
-                factor.weight -=
-                    correct
-                        ? 0.020
-                        : 0.040;
-            }
-
-
-            factor.weight =
-                clamp(
-                    factor.weight,
-                    0.25,
-                    2.00
-                );
-
-
-            if (correct) {
-
-                factor.win++;
-
-            } else {
-
-                factor.loss++;
-            }
-
-        });
-
-
-        /*
-         * Confidence adaptation
-         */
 
         if (correct) {
 
@@ -1755,11 +1849,9 @@ function learnFromReview(
     }
 
 
-    /*
-     * -----------------------------------------------------
-     * PASS
-     * -----------------------------------------------------
-     */
+    /* -----------------------------------------------------
+       PASS
+    ----------------------------------------------------- */
 
     if (
         review.outcome === "PASS"
@@ -1774,16 +1866,13 @@ function learnFromReview(
 
             aiLearning.stats.passMissed++;
 
-            /*
-             * PASS was too conservative.
-             * Slowly lower threshold.
-             */
 
             aiLearning.passThreshold -=
                 0.025;
 
+
             aiLearning.lastLearningMessage =
-                `本次 PASS 如果强制判断会 WIN，AI 会稍微降低 PASS 门槛。`;
+                "本次 PASS 如果强制判断会 WIN，AI 会稍微降低 PASS 门槛。";
 
         } else if (
             review.counterfactual === "LOSS"
@@ -1791,20 +1880,18 @@ function learnFromReview(
 
             aiLearning.stats.passCorrect++;
 
-            /*
-             * PASS protected the system.
-             */
 
             aiLearning.passThreshold +=
                 0.025;
 
+
             aiLearning.lastLearningMessage =
-                `本次 PASS 避开了错误判断，AI 保持更谨慎。`;
+                "本次 PASS 避开了错误判断，AI 保持更谨慎。";
 
         } else {
 
             aiLearning.lastLearningMessage =
-                `本次 PASS 没有足够方向，AI 保持观察。`;
+                "本次 PASS 没有足够方向，AI 保持观察。";
         }
 
 
@@ -1825,13 +1912,10 @@ function learnFromReview(
     }
 
 
-    /*
-     * Recent reviews
-     */
-
     aiLearning.recentReviews.unshift(
         review
     );
+
 
     aiLearning.recentReviews =
         aiLearning.recentReviews.slice(
@@ -1852,7 +1936,9 @@ function learnFromReview(
    REVIEW NEW RESULT
 ========================================================= */
 
-function reviewNewOutcome(draws) {
+function reviewNewOutcome(
+    draws
+) {
 
     if (
         !draws ||
@@ -1861,13 +1947,6 @@ function reviewNewOutcome(draws) {
         return null;
     }
 
-
-    /*
-     * draws[0] = latest real result
-     *
-     * draws[1...] = information available
-     * before latest result
-     */
 
     const actual =
         draws[0];
@@ -1890,11 +1969,6 @@ function reviewNewOutcome(draws) {
     const history =
         draws.slice(1);
 
-
-    /*
-     * This is the prediction that would have
-     * been made BEFORE actual Result appeared.
-     */
 
     const prediction =
         getLearnedPrediction(
@@ -1999,10 +2073,6 @@ function reviewNewOutcome(draws) {
     review.weightAfter =
         getCurrentWeights();
 
-
-    /*
-     * Save updated review with weightAfter.
-     */
 
     if (
         aiLearning.recentReviews[0]
@@ -2270,22 +2340,16 @@ function renderAIReview(
         );
 
 
-    if (
-        predEl
-    ) {
+    if (predEl) {
 
         predEl.textContent =
             prediction.size === "PASS"
-
                 ? "PASS"
-
                 : `${prediction.size} / ${prediction.confidence}%`;
     }
 
 
-    if (
-        actualEl
-    ) {
+    if (actualEl) {
 
         actualEl.textContent =
             `${actual.number} / ${actual.size}`;
@@ -2322,6 +2386,7 @@ function renderAIReview(
 
 
         if (resultEl) {
+
             resultEl.textContent =
                 counter;
         }
@@ -2330,7 +2395,10 @@ function renderAIReview(
         if (messageEl) {
 
             messageEl.textContent =
-                `AI 选择观察。${prediction.passReason || ""}`;
+                `AI 选择观察。${
+                    prediction.passReason ||
+                    ""
+                }`;
         }
 
     } else {
@@ -2367,9 +2435,7 @@ function renderAIReview(
 
             messageEl.textContent =
                 win
-
                     ? "真实 Result 与 AI 判断一致，本次使用的有效因素会得到强化。"
-
                     : "真实 Result 与 AI 判断相反，AI 会降低近期失效因素的权重。";
         }
     }
@@ -2378,6 +2444,7 @@ function renderAIReview(
 
 /* =========================================================
    FETCH WINGO
+   UPDATED / COMPATIBLE WORKER PARSER
 ========================================================= */
 
 async function fetchDraws() {
@@ -2393,7 +2460,10 @@ async function fetchDraws() {
                 .map(
                     b =>
                         b.toString(16)
-                            .padStart(2, "0")
+                            .padStart(
+                                2,
+                                "0"
+                            )
                 )
                 .join("");
 
@@ -2436,10 +2506,15 @@ async function fetchDraws() {
             await fetch(
                 WORKER_URL,
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
+
                         "Content-Type":
+                            "application/json",
+
+                        "Accept":
                             "application/json"
                     },
 
@@ -2456,7 +2531,9 @@ async function fetchDraws() {
             );
 
 
-        if (!response.ok) {
+        if (
+            !response.ok
+        ) {
 
             throw new Error(
                 `HTTP ${response.status}`
@@ -2468,8 +2545,88 @@ async function fetchDraws() {
             await response.json();
 
 
-        const list =
-            json?.data?.list;
+        /*
+         * Debug:
+         * 看 Worker 实际返回什么。
+         */
+
+        console.log(
+            "Worker 返回:",
+            json
+        );
+
+
+        /*
+         * Find list from several
+         * possible Worker structures.
+         */
+
+        let list = null;
+
+
+        if (
+            Array.isArray(
+                json?.data?.list
+            )
+        ) {
+
+            list =
+                json.data.list;
+
+        } else if (
+            Array.isArray(
+                json?.data
+            )
+        ) {
+
+            list =
+                json.data;
+
+        } else if (
+            Array.isArray(
+                json?.list
+            )
+        ) {
+
+            list =
+                json.list;
+
+        } else if (
+            Array.isArray(
+                json?.data?.records
+            )
+        ) {
+
+            list =
+                json.data.records;
+
+        } else if (
+            Array.isArray(
+                json?.data?.rows
+            )
+        ) {
+
+            list =
+                json.data.rows;
+
+        } else if (
+            Array.isArray(
+                json?.result
+            )
+        ) {
+
+            list =
+                json.result;
+
+        } else if (
+            Array.isArray(
+                json?.result?.list
+            )
+        ) {
+
+            list =
+                json.result.list;
+        }
 
 
         if (
@@ -2477,51 +2634,82 @@ async function fetchDraws() {
         ) {
 
             console.warn(
-                "Worker 返回没有开奖列表"
+                "Worker 返回没有开奖列表:",
+                json
             );
 
             return [];
         }
 
 
-        return list
-            .map(item => {
+        /*
+         * Convert API records.
+         */
 
-                const number =
-                    safeNumber(
-                        item.number
-                    );
+        const converted =
+            list
+                .map(
+                    item => {
+
+                        const number =
+                            safeNumber(
+                                item?.number ??
+                                item?.num ??
+                                item?.result
+                            );
 
 
-                return {
+                        const issue =
+                            String(
+                                item?.issueNumber ??
+                                item?.issue ??
+                                item?.period ??
+                                item?.issue_no ??
+                                item?.drawNumber ??
+                                ""
+                            );
 
-                    issue:
-                        String(
-                            item.issueNumber ??
-                            item.issue ??
-                            ""
-                        ),
 
-                    number,
+                        const colour =
+                            item?.colour ??
+                            item?.color ??
+                            item?.colourName ??
+                            "";
 
-                    size:
-                        number >= 5
-                            ? "大"
-                            : "小",
 
-                    colour:
-                        item.colour ??
-                        item.color ??
-                        ""
-                };
-            })
-            .filter(
-                x =>
-                    x.issue &&
-                    Number.isFinite(
-                        x.number
-                    )
-            );
+                        return {
+
+                            issue,
+
+                            number,
+
+                            size:
+                                number >= 5
+                                    ? "大"
+                                    : "小",
+
+                            colour
+                        };
+                    }
+                )
+                .filter(
+                    x =>
+                        x.issue &&
+                        Number.isFinite(
+                            x.number
+                        ) &&
+                        x.number >= 0 &&
+                        x.number <= 9
+                );
+
+
+        console.log(
+            "WinGo 解析后:",
+            converted
+        );
+
+
+        return converted;
 
     } catch (error) {
 
@@ -2616,6 +2804,7 @@ function updatePredictionCard(
         <strong>
             ${prediction.size}
         </strong>
+
         <span>
             ${prediction.confidence}%
         </span>
@@ -2634,7 +2823,8 @@ function updateMarketAnalysis(
 
     const sizes =
         draws.map(
-            d => d.size
+            d =>
+                d.size
         );
 
 
@@ -2709,6 +2899,7 @@ function updateMarketAnalysis(
             );
 
         if (el) {
+
             el.textContent =
                 value;
         }
@@ -2795,6 +2986,7 @@ function updateMarketAnalysis(
                 95
             );
 
+
         fill.style.width =
             `${percentage}%`;
     }
@@ -2840,14 +3032,6 @@ function runBacktest(
             draws.length - 10
         );
 
-
-    /*
-     * IMPORTANT:
-     *
-     * Backtest uses a COPY of current learning.
-     *
-     * It does NOT modify live AI memory.
-     */
 
     const simulatedLearning =
         JSON.parse(
@@ -2991,9 +3175,12 @@ function renderDrawTable(
 
     const rows =
         draws
-            .slice(0, 50)
+            .slice(
+                0,
+                50
+            )
             .map(
-                (draw, index) => {
+                draw => {
 
                     return `
                         <tr>
@@ -3020,6 +3207,27 @@ function renderDrawTable(
                 }
             )
             .join("");
+
+
+    /*
+     * Support BOTH:
+     *
+     * 1. div#draw-table
+     * 2. tbody#draw-table
+     *
+     * So your existing HTML will not
+     * immediately break the dashboard.
+     */
+
+    if (
+        table.tagName === "TBODY"
+    ) {
+
+        table.innerHTML =
+            rows;
+
+        return;
+    }
 
 
     table.innerHTML = `
@@ -3109,7 +3317,8 @@ function renderNumberChart(
         new Chart(
             canvas,
             {
-                type: "line",
+                type:
+                    "line",
 
                 data: {
 
@@ -3118,6 +3327,7 @@ function renderNumberChart(
                     datasets: [
 
                         {
+
                             label:
                                 "WinGo 数字",
 
@@ -3153,7 +3363,9 @@ function renderNumberChart(
                             max: 9,
 
                             ticks: {
-                                stepSize: 1
+
+                                stepSize:
+                                    1
                             }
                         }
                     },
@@ -3161,7 +3373,9 @@ function renderNumberChart(
                     plugins: {
 
                         legend: {
-                            display: false
+
+                            display:
+                                false
                         }
                     }
                 }
@@ -3188,10 +3402,6 @@ async function refreshDashboard() {
     }
 
 
-    /*
-     * Sort latest first
-     */
-
     draws.sort(
         (a, b) =>
             String(b.issue)
@@ -3201,20 +3411,10 @@ async function refreshDashboard() {
     );
 
 
-    /*
-     * FIRST:
-     * Learn from newly arrived Result.
-     */
-
     reviewNewOutcome(
         draws
     );
 
-
-    /*
-     * THEN:
-     * Generate next prediction.
-     */
 
     const prediction =
         getLearnedPrediction(
@@ -3381,11 +3581,15 @@ function baccaratResultName(
     result
 ) {
 
-    if (result === "B") {
+    if (
+        result === "B"
+    ) {
         return "庄";
     }
 
-    if (result === "P") {
+    if (
+        result === "P"
+    ) {
         return "闲";
     }
 
@@ -3565,7 +3769,6 @@ function predictBaccarat(
         result,
 
         confidence:
-
             clamp(
                 confidence,
                 50,
@@ -3713,19 +3916,22 @@ function renderBaccarat(
 
     const banker =
         history.filter(
-            x => x === "B"
+            x =>
+                x === "B"
         ).length;
 
 
     const player =
         history.filter(
-            x => x === "P"
+            x =>
+                x === "P"
         ).length;
 
 
     const tie =
         history.filter(
-            x => x === "T"
+            x =>
+                x === "T"
         ).length;
 
 
@@ -3746,6 +3952,7 @@ function renderBaccarat(
             );
 
         if (el) {
+
             el.textContent =
                 value;
         }
@@ -3794,13 +4001,19 @@ function renderBaccarat(
 
 
     renderSmallRoad(
-        history.slice(0, 10),
+        history.slice(
+            0,
+            10
+        ),
         "small-road"
     );
 
 
     renderSmallRoad(
-        history.slice(0, 10),
+        history.slice(
+            0,
+            10
+        ),
         "cockroach-road"
     );
 
@@ -3957,11 +4170,13 @@ setInterval(
 
         countdownVal--;
 
+
         if (
             countdownVal <= 0
         ) {
 
-            countdownVal = 5;
+            countdownVal =
+                5;
 
             refreshDashboard();
         }
