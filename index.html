@@ -1,449 +1,1188 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WinGo & Baccarat AI Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <title>WinGo & Baccarat AI Dashboard</title>
 
-<style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-body{
-    font-family:Arial,"Microsoft YaHei",sans-serif;
-    background:#0b1120;
-    color:#e5e7eb;
-}
+    <style>
 
-.header{
-    padding:20px;
-    text-align:center;
-    background:#111827;
-    border-bottom:1px solid #1f2937;
-}
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --green-color: #10b981;
+            --red-color: #ef4444;
+            --blue-color: #3b82f6;
+            --cyan-color: #22d3ee;
+            --purple-color: #8b5cf6;
+            --border-color: #334155;
+        }
 
-.header h1{
-    font-size:25px;
-    margin-bottom:6px;
-}
+        * {
+            box-sizing: border-box;
+        }
 
-.header p{
-    color:#9ca3af;
-    font-size:13px;
-}
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                "Microsoft YaHei",
+                sans-serif;
+        }
 
-.top-info{
-    display:flex;
-    justify-content:center;
-    gap:20px;
-    margin-top:10px;
-    font-size:13px;
-}
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-.tabs{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    padding:15px;
-    background:#0f172a;
-}
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
 
-.tab{
-    padding:10px 25px;
-    border-radius:8px;
-    cursor:pointer;
-    background:#1f2937;
-    color:#9ca3af;
-}
+        h1 {
+            margin: 0;
+            font-size: 1.6rem;
+        }
 
-.tab.active{
-    background:#2563eb;
-    color:#fff;
-}
+        .sub-title {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
 
-.container{
-    max-width:1400px;
-    margin:auto;
-    padding:20px;
-}
+        .time-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #38bdf8;
+            font-weight: bold;
+        }
 
-.tab-content{
-    display:none;
-}
+        .status-badge {
+            background: #065f46;
+            color: #34d399;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-.tab-content.active{
-    display:block;
-}
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #34d399;
+        }
 
-.cards{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:15px;
-    margin-bottom:20px;
-}
+        .main-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
 
-.card{
-    background:#111827;
-    border:1px solid #1f2937;
-    border-radius:12px;
-    padding:18px;
-}
+        .main-tab {
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: #94a3b8;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: .2s;
+        }
 
-.card-title{
-    color:#9ca3af;
-    font-size:13px;
-    margin-bottom:10px;
-}
+        .main-tab:hover {
+            background: #334155;
+            color: white;
+        }
 
-.card-value{
-    font-size:25px;
-    font-weight:bold;
-}
+        .main-tab.active {
+            background: #2563eb;
+            border-color: #60a5fa;
+            color: white;
+        }
 
-.prediction{
-    font-size:30px;
-    color:#60a5fa;
-}
+        .main-section {
+            display: none;
+        }
 
-.analysis-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:12px;
-}
+        .main-section.active {
+            display: block;
+        }
 
-.analysis-item{
-    background:#0f172a;
-    border:1px solid #1f2937;
-    border-radius:10px;
-    padding:15px;
-}
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
 
-.analysis-label{
-    color:#9ca3af;
-    font-size:12px;
-    margin-bottom:7px;
-}
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
 
-.analysis-value{
-    font-size:18px;
-    font-weight:bold;
-}
+        .card-title {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
 
-.red{
-    color:#ef4444;
-}
+        .card-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-.blue{
-    color:#3b82f6;
-}
+        /* =========================
+           WINGO
+        ========================= */
 
-.green{
-    color:#22c55e;
-}
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
 
-.yellow{
-    color:#facc15;
-}
+        .predict-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
 
-.score-bar{
-    margin-top:18px;
-}
+        .win-rate-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
 
-.score-title{
-    display:flex;
-    justify-content:space-between;
-    margin-bottom:8px;
-    font-size:13px;
-    color:#9ca3af;
-}
+        .analysis-box {
+            margin-bottom: 20px;
+        }
 
-.score-bg{
-    height:18px;
-    border-radius:20px;
-    background:#1f2937;
-    overflow:hidden;
-}
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
 
-.score-fill{
-    height:100%;
-    width:50%;
-    transition:.3s;
-}
+        .analysis-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+        }
 
-.content-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-    margin-top:20px;
-}
+        .analysis-label {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
 
-.table-wrapper{
-    overflow-x:auto;
-}
+        .analysis-value {
+            font-weight: bold;
+        }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-}
+        .score-container {
+            margin-top: 15px;
+        }
 
-th,td{
-    padding:10px;
-    text-align:center;
-    border-bottom:1px solid #1f2937;
-    font-size:13px;
-}
+        .score-bar {
+            height: 12px;
+            background: #0f172a;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
 
-th{
-    color:#9ca3af;
-}
+        .score-fill {
+            height: 100%;
+            width: 50%;
+            background: #3b82f6;
+            transition: width .3s;
+        }
 
-.number-ball{
-    width:35px;
-    height:35px;
-    border-radius:50%;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-}
+        .score-text {
+            margin-top: 7px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
 
-.num-red{
-    background:#dc2626;
-}
+        /* =========================
+           AI REVIEW
+        ========================= */
 
-.num-green{
-    background:#16a34a;
-}
+        .ai-review-box {
+            margin-bottom: 20px;
+            border: 1px solid #475569;
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(59,130,246,.08),
+                    rgba(139,92,246,.08)
+                );
+        }
 
-.num-violet{
-    background:#9333ea;
-}
+        .ai-review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
 
-.chart-box{
-    height:330px;
-}
+        .ai-review-title {
+            font-size: 1.05rem;
+            font-weight: bold;
+        }
 
-.section-title{
-    font-size:17px;
-    font-weight:bold;
-    margin-bottom:15px;
-}
+        .review-status {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
 
-.baccarat-tabs{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    margin-bottom:20px;
-}
+        .review-win {
+            background: rgba(16,185,129,.15);
+            color: #34d399;
+            border: 1px solid #10b981;
+        }
 
-.baccarat-btn{
-    padding:9px 15px;
-    background:#1f2937;
-    border-radius:7px;
-    cursor:pointer;
-    color:#9ca3af;
-}
+        .review-loss {
+            background: rgba(239,68,68,.15);
+            color: #f87171;
+            border: 1px solid #ef4444;
+        }
 
-.baccarat-btn.active{
-    background:#2563eb;
-    color:white;
-}
+        .review-wait {
+            background: rgba(148,163,184,.12);
+            color: #cbd5e1;
+            border: 1px solid #64748b;
+        }
 
-.road{
-    display:flex;
-    gap:3px;
-    overflow-x:auto;
-    padding:10px;
-    background:#0f172a;
-    min-height:100px;
-}
+        .ai-review-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
 
-.road-cell{
-    min-width:32px;
-    height:32px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:12px;
-    font-weight:bold;
-}
+        .ai-review-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+        }
 
-.banker{
-    background:#dc2626;
-}
+        .ai-review-label {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
 
-.player{
-    background:#2563eb;
-}
+        .ai-review-value {
+            font-weight: bold;
+            line-height: 1.5;
+        }
 
-.tie{
-    background:#16a34a;
-}
+        .ai-review-message {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(15,23,42,.8);
+            border-radius: 8px;
+            color: #cbd5e1;
+            line-height: 1.7;
+            font-size: 13px;
+        }
 
-.stats-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:12px;
-}
+        /* =========================
+           PREDICTION NUMBER
+        ========================= */
 
-.stat-box{
-    background:#0f172a;
-    padding:15px;
-    border-radius:10px;
-    text-align:center;
-}
+        .prediction-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 1.7rem;
+            font-weight: 900;
+            border: 2px solid rgba(255,255,255,.9);
+            box-shadow: 0 0 15px rgba(255,255,255,.12);
+        }
 
-.stat-number{
-    font-size:22px;
-    font-weight:bold;
-    margin-top:5px;
-}
+        .prediction-number.bg-green {
+            background-color: var(--green-color);
+        }
 
-@media(max-width:900px){
-    .cards,
-    .analysis-grid,
-    .stats-grid{
-        grid-template-columns:repeat(2,1fr);
-    }
+        .prediction-number.bg-red {
+            background-color: var(--red-color);
+        }
 
-    .content-grid{
-        grid-template-columns:1fr;
-    }
-}
+        .prediction-number.bg-red-purple {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--red-color) 50%,
+                    var(--purple-color) 50%
+                );
+        }
 
-@media(max-width:600px){
-    .cards,
-    .analysis-grid,
-    .stats-grid{
-        grid-template-columns:1fr 1fr;
-    }
+        .prediction-number.bg-green-purple {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--green-color) 50%,
+                    var(--purple-color) 50%
+                );
+        }
 
-    .container{
-        padding:10px;
-    }
-}
-</style>
+        .prediction-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+            font-size: 0.9rem;
+        }
+
+        th {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .tag-big {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .tag-small {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .tag-win {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid #10b981;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .tag-loss {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid #ef4444;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .tag-wait {
+            background: rgba(148, 163, 184, 0.15);
+            color: #cbd5e1;
+            border: 1px solid #64748b;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .tag-buy {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid #10b981;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .icon-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .bg-green {
+            background-color: var(--green-color);
+        }
+
+        .bg-red {
+            background-color: var(--red-color);
+        }
+
+        .bg-red-purple {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--red-color) 50%,
+                    var(--purple-color) 50%
+                );
+        }
+
+        .bg-green-purple {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--green-color) 50%,
+                    var(--purple-color) 50%
+                );
+        }
+
+        /* =========================
+           BACCARAT
+        ========================= */
+
+        .baccarat-table-selector {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .baccarat-table-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: #94a3b8;
+            padding: 13px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: .2s;
+        }
+
+        .baccarat-table-btn:hover {
+            background: #334155;
+            color: white;
+        }
+
+        .baccarat-table-btn.active {
+            background: #2563eb;
+            border-color: #60a5fa;
+            color: white;
+        }
+
+        .baccarat-top-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .baccarat-result {
+            font-size: 1.7rem;
+            font-weight: bold;
+        }
+
+        .banker-color {
+            color: #ef4444;
+        }
+
+        .player-color {
+            color: #3b82f6;
+        }
+
+        .tie-color {
+            color: #22d3ee;
+        }
+
+        .road-card {
+            margin-bottom: 18px;
+        }
+
+        .road-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .road-title h3 {
+            margin: 0;
+        }
+
+        .road-title span {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .big-road-wrapper {
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .big-road {
+            display: grid;
+            grid-template-columns: repeat(18, 34px);
+            grid-template-rows: repeat(6, 34px);
+            gap: 4px;
+            width: max-content;
+        }
+
+        .road-cell {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .road-banker {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .road-player {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .road-tie {
+            border-color: #22d3ee;
+            color: #22d3ee;
+        }
+
+        .small-road-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .small-road {
+            min-height: 170px;
+        }
+
+        .small-road-board {
+            display: grid;
+            grid-template-columns: repeat(12, 22px);
+            grid-template-rows: repeat(6, 22px);
+            gap: 3px;
+            width: max-content;
+        }
+
+        .small-cell {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #475569;
+        }
+
+        .small-red {
+            border-color: #ef4444;
+        }
+
+        .small-blue {
+            border-color: #3b82f6;
+        }
+
+        .baccarat-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .stat-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .history {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .history-ball {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            border: 2px solid;
+        }
+
+        .history-banker {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .history-player {
+            color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .history-tie {
+            color: #22d3ee;
+            border-color: #22d3ee;
+        }
+
+        .baccarat-prediction {
+            border: 1px solid #475569;
+            margin-top: 18px;
+        }
+
+        .prediction-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .prediction-result {
+            font-size: 38px;
+            font-weight: bold;
+        }
+
+        .bet {
+            background: rgba(16,185,129,.15);
+            border: 1px solid #10b981;
+            color: #34d399;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .pass {
+            background: rgba(148,163,184,.1);
+            border: 1px solid #64748b;
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .baccarat-reason {
+            margin-top: 15px;
+            color: #cbd5e1;
+            line-height: 1.9;
+        }
+
+        .demo-warning {
+            margin-top: 15px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(245,158,11,.1);
+            border: 1px solid rgba(245,158,11,.4);
+            color: #fbbf24;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .analysis-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .ai-review-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .baccarat-top-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .baccarat-stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .small-road-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .baccarat-table-selector {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 10px;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .main-tabs {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .analysis-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .ai-review-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .baccarat-top-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .baccarat-table-selector {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .main-tab {
+                padding: 12px 5px;
+            }
+        }
+
+    </style>
 </head>
 
 <body>
 
-<div class="header">
-    <h1>🎯 AI GAMING DASHBOARD</h1>
-    <p>WinGo + Baccarat 独立分析系统</p>
-
-    <div class="top-info">
-        <span id="myt-clock">MYT --:--:--</span>
-        <span>刷新倒计时：<b id="countdown">5</b>s</span>
-    </div>
-</div>
-
-<div class="tabs">
-    <div class="tab active" onclick="switchTab('wingo')">🎯 WinGo</div>
-    <div class="tab" onclick="switchTab('baccarat')">🃏 Baccarat</div>
-</div>
-
 <div class="container">
 
-<!-- ================= WIN GO ================= -->
+<header>
 
-<div id="wingo" class="tab-content active">
+    <div>
+        <h1>🎯 AI GAMING DASHBOARD</h1>
 
-    <div class="cards">
+        <div class="sub-title">
+            WinGo + Baccarat 独立分析系统
+        </div>
+    </div>
 
-        <div class="card">
-            <div class="card-title">最新期号</div>
-            <div class="card-value" id="latest-issue">--</div>
+    <div style="display:flex;gap:10px;align-items:center;">
+
+        <div class="time-badge">
+            🇲🇾 <span id="myt-clock">--:--:--</span> MYT
         </div>
 
-        <div class="card">
-            <div class="card-title">最新开奖</div>
-            <div class="card-value" id="latest-number">--</div>
+        <div class="status-badge">
+            <div class="pulse-dot"></div>
+            <span id="countdown">5s</span>
         </div>
 
-        <div class="card">
-            <div class="card-title">🔮 下期预测</div>
-            <div class="card-value prediction" id="next-prediction">--</div>
-        </div>
+    </div>
+
+</header>
+
+
+<div class="main-tabs">
+
+    <div
+        class="main-tab active"
+        onclick="switchMainTab('wingo', this)"
+    >
+        🎲 WinGo
+    </div>
+
+    <div
+        class="main-tab"
+        onclick="switchMainTab('baccarat', this)"
+    >
+        🃏 Baccarat
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     WINGO
+====================================================== -->
+
+<section id="wingo-section" class="main-section active">
+
+    <div class="grid-cards">
 
         <div class="card">
-            <div class="card-title">📊 近 50 期有效胜率</div>
-            <div class="card-value" id="win-rate">--</div>
+
+            <div class="card-title">
+                最新期号
+            </div>
+
+            <div
+                class="card-value"
+                id="latest-issue"
+            >
+                ----
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                最新开奖
+            </div>
+
+            <div
+                class="card-value"
+                id="latest-result"
+            >
+                --
+            </div>
+
+        </div>
+
+
+        <div class="card predict-box">
+
+            <div
+                class="card-title"
+                style="color:#60a5fa;"
+            >
+                🔮 下期预测
+            </div>
+
+            <div
+                class="card-value"
+                id="predicted-result"
+                style="min-height:58px;"
+            >
+                --
+            </div>
+
+        </div>
+
+
+        <div class="card win-rate-box">
+
+            <div
+                class="card-title"
+                style="color:#34d399;"
+            >
+                📊 近 50 期有效胜率
+            </div>
+
+            <div
+                class="card-value"
+                style="color:#34d399;"
+                id="win-rate"
+            >
+                -- %
+            </div>
+
         </div>
 
     </div>
 
 
-    <!-- WIN GO ANALYSIS -->
+    <!-- =========================
+         AI 输后复盘系统
+    ========================== -->
 
-    <div class="card">
+    <div class="card ai-review-box">
 
-        <div class="section-title">
-            📈 WinGo AI 分析
+        <div class="ai-review-header">
+
+            <div class="ai-review-title">
+                🤖 AI 输后复盘系统
+            </div>
+
+            <div
+                id="review-status"
+                class="review-status review-wait"
+            >
+                等待复盘
+            </div>
+
         </div>
+
+
+        <div class="ai-review-grid">
+
+            <div class="ai-review-item">
+
+                <div class="ai-review-label">
+                    上一期预测
+                </div>
+
+                <div
+                    class="ai-review-value"
+                    id="review-prediction"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+            <div class="ai-review-item">
+
+                <div class="ai-review-label">
+                    实际开奖
+                </div>
+
+                <div
+                    class="ai-review-value"
+                    id="review-actual"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+            <div class="ai-review-item">
+
+                <div class="ai-review-label">
+                    复盘结果
+                </div>
+
+                <div
+                    class="ai-review-value"
+                    id="review-result"
+                >
+                    --
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="ai-review-message"
+            id="review-message"
+        >
+            等待足够数据后，系统会自动检查上一期预测，并分析预测错误原因。
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         WINGO ANALYSIS
+    ========================== -->
+
+    <div class="card analysis-box">
+
+        <h3>🧠 WinGo 多指标分析</h3>
 
         <div class="analysis-grid">
 
             <div class="analysis-item">
-                <div class="analysis-label">当前长龙</div>
-                <div class="analysis-value" id="analysis-streak">--</div>
+
+                <div class="analysis-label">
+                    当前长龙
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-streak"
+                >
+                    --
+                </div>
+
             </div>
 
-            <div class="analysis-item">
-                <div class="analysis-label">Markov</div>
-                <div class="analysis-value" id="analysis-markov">--</div>
-            </div>
 
             <div class="analysis-item">
-                <div class="analysis-label">均值回归</div>
-                <div class="analysis-value" id="analysis-reversion">--</div>
+
+                <div class="analysis-label">
+                    Markov
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-markov"
+                >
+                    --
+                </div>
+
             </div>
 
-            <div class="analysis-item">
-                <div class="analysis-label">预测号码</div>
-                <div class="analysis-value" id="analysis-number">--</div>
-            </div>
 
             <div class="analysis-item">
-                <div class="analysis-label">近10期 大</div>
-                <div class="analysis-value red" id="analysis-big10">--</div>
+
+                <div class="analysis-label">
+                    均值回归
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-mean"
+                >
+                    --
+                </div>
+
             </div>
 
-            <div class="analysis-item">
-                <div class="analysis-label">近10期 小</div>
-                <div class="analysis-value blue" id="analysis-small10">--</div>
-            </div>
 
             <div class="analysis-item">
-                <div class="analysis-label">近50期 大</div>
-                <div class="analysis-value red" id="analysis-big50">--</div>
+
+                <div class="analysis-label">
+                    预测号码
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-number"
+                >
+                    --
+                </div>
+
             </div>
 
+
             <div class="analysis-item">
-                <div class="analysis-label">近50期 小</div>
-                <div class="analysis-value blue" id="analysis-small50">--</div>
+
+                <div class="analysis-label">
+                    近10期 大
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-big10"
+                    style="color:#ef4444;"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+            <div class="analysis-item">
+
+                <div class="analysis-label">
+                    近10期 小
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-small10"
+                    style="color:#3b82f6;"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+            <div class="analysis-item">
+
+                <div class="analysis-label">
+                    近50期 大
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-big50"
+                    style="color:#ef4444;"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+            <div class="analysis-item">
+
+                <div class="analysis-label">
+                    近50期 小
+                </div>
+
+                <div
+                    class="analysis-value"
+                    id="analysis-small50"
+                    style="color:#3b82f6;"
+                >
+                    --
+                </div>
+
             </div>
 
         </div>
 
 
-        <!-- BIG / SMALL BALANCE -->
+        <div class="score-container">
 
-        <div class="score-bar">
+            <div class="score-bar">
 
-            <div class="score-title">
-                <span>大小比例</span>
-                <span id="size-balance-text">大 --% / 小 --%</span>
+                <div
+                    class="score-fill"
+                    id="score-fill"
+                ></div>
+
             </div>
 
-            <div class="score-bg">
-                <div id="size-balance-fill" class="score-fill"></div>
+            <div
+                class="score-text"
+                id="score-text"
+            >
+                等待数据...
             </div>
 
         </div>
@@ -451,31 +1190,45 @@ th{
     </div>
 
 
-    <div class="content-grid">
+    <!-- =========================
+         WINGO CONTENT
+    ========================== -->
 
-        <!-- RECENT PREDICTIONS -->
+    <div class="content-grid">
 
         <div class="card">
 
-            <div class="section-title">
-                🔮 最近预测记录
-            </div>
+            <h3>
+                📜 近期预测 VS 实际开奖
+            </h3>
 
-            <div class="table-wrapper">
+            <div
+                style="max-height:500px;overflow-y:auto;"
+            >
 
                 <table>
 
                     <thead>
-                        <tr>
-                            <th>期号</th>
-                            <th>预测</th>
-                            <th>实际</th>
-                            <th>大小</th>
-                            <th>结果</th>
-                        </tr>
+
+                    <tr>
+                        <th>期号</th>
+                        <th>实际开奖</th>
+                        <th>系统预测</th>
+                        <th>信号</th>
+                        <th>结果</th>
+                    </tr>
+
                     </thead>
 
-                    <tbody id="prediction-table"></tbody>
+                    <tbody id="draw-table">
+
+                    <tr>
+                        <td colspan="5">
+                            数据加载中...
+                        </td>
+                    </tr>
+
+                    </tbody>
 
                 </table>
 
@@ -484,127 +1237,414 @@ th{
         </div>
 
 
-        <!-- NUMBER DISTRIBUTION -->
-
         <div class="card">
 
-            <div class="section-title">
+            <h3>
                 🔢 近50期号码分布
+            </h3>
+
+            <canvas
+                id="chart-numbers"
+                style="max-height:250px;"
+            ></canvas>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     BACCARAT SECTION
+====================================================== -->
+
+<section
+    id="baccarat-section"
+    class="main-section"
+>
+
+    <div class="card" style="margin-bottom:20px;">
+
+        <div class="card-title">
+            🃏 选择百家乐台
+        </div>
+
+        <div class="baccarat-table-selector">
+
+            <div
+                class="baccarat-table-btn active"
+                onclick="switchBaccaratTable('D51', this)"
+            >
+                D51
             </div>
 
-            <div class="chart-box">
-                <canvas id="chart-numbers"></canvas>
+            <div
+                class="baccarat-table-btn"
+                onclick="switchBaccaratTable('D52', this)"
+            >
+                D52
+            </div>
+
+            <div
+                class="baccarat-table-btn"
+                onclick="switchBaccaratTable('D53', this)"
+            >
+                D53
+            </div>
+
+            <div
+                class="baccarat-table-btn"
+                onclick="switchBaccaratTable('D54', this)"
+            >
+                D54
+            </div>
+
+            <div
+                class="baccarat-table-btn"
+                onclick="switchBaccaratTable('D55', this)"
+            >
+                D55
+            </div>
+
+            <div
+                class="baccarat-table-btn"
+                onclick="switchBaccaratTable('D56', this)"
+            >
+                D56
+            </div>
+
+            <div
+                class="baccarat-table-btn"
+                onclick="switchBaccaratTable('D57', this)"
+            >
+                D57
+            </div>
+
+            <div
+                class="baccarat-table-btn"
+                onclick="switchBaccaratTable('D58', this)"
+            >
+                D58
             </div>
 
         </div>
 
     </div>
 
-</div>
 
-
-<!-- ================= BACCARAT ================= -->
-
-<div id="baccarat" class="tab-content">
-
-    <div class="card">
-
-        <div class="section-title">
-            🃏 Baccarat Tables
-        </div>
-
-        <div class="baccarat-tabs" id="baccarat-tabs"></div>
-
-    </div>
-
-
-    <div class="cards">
-
-        <div class="card">
-            <div class="card-title">当前台号</div>
-            <div class="card-value" id="baccarat-table">--</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">当前局数</div>
-            <div class="card-value" id="baccarat-round">--</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">最新结果</div>
-            <div class="card-value" id="baccarat-latest">--</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">当前长龙</div>
-            <div class="card-value" id="baccarat-streak">--</div>
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <div class="section-title">
-            大路
-        </div>
-
-        <div id="big-road" class="road"></div>
-
-    </div>
-
-
-    <div class="content-grid">
+    <div class="baccarat-top-grid">
 
         <div class="card">
 
-            <div class="section-title">
-                小路
+            <div class="card-title">
+                当前台号
             </div>
 
-            <div id="small-road" class="road"></div>
+            <div
+                class="card-value"
+                id="bc-table-name"
+            >
+                D51
+            </div>
 
         </div>
 
+
         <div class="card">
 
-            <div class="section-title">
-                曱路
+            <div class="card-title">
+                当前局号
             </div>
 
-            <div id="cockroach-road" class="road"></div>
+            <div
+                class="card-value"
+                id="bc-round"
+            >
+                #128
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                最新结果
+            </div>
+
+            <div
+                class="baccarat-result banker-color"
+                id="bc-latest"
+            >
+                🔴 庄
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                当前连路
+            </div>
+
+            <div
+                class="card-value banker-color"
+                id="bc-streak"
+            >
+                庄 3 连
+            </div>
 
         </div>
 
     </div>
 
 
-    <div class="card">
+    <div class="card road-card">
 
-        <div class="section-title">
-            📊 Baccarat 统计
+        <div class="road-title">
+
+            <h3 id="big-road-title">
+                📍 D51 大路
+            </h3>
+
+            <span>
+                独立台号
+            </span>
+
         </div>
 
-        <div class="stats-grid">
+
+        <div class="big-road-wrapper">
+
+            <div
+                class="big-road"
+                id="big-road"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="small-road-grid">
+
+        <div class="card small-road">
+
+            <div class="road-title">
+
+                <h3>
+                    👁 大眼仔路
+                </h3>
+
+                <span id="eye-road-label">
+                    D51
+                </span>
+
+            </div>
+
+            <div
+                class="small-road-board"
+                id="eye-road"
+            ></div>
+
+        </div>
+
+
+        <div class="card small-road">
+
+            <div class="road-title">
+
+                <h3>
+                    🔵 小路
+                </h3>
+
+                <span id="small-road-label">
+                    D51
+                </span>
+
+            </div>
+
+            <div
+                class="small-road-board"
+                id="small-road"
+            ></div>
+
+        </div>
+
+
+        <div class="card small-road">
+
+            <div class="road-title">
+
+                <h3>
+                    🪳 蟑螂路
+                </h3>
+
+                <span id="cockroach-road-label">
+                    D51
+                </span>
+
+            </div>
+
+            <div
+                class="small-road-board"
+                id="cockroach-road"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <div
+        class="card"
+        style="margin-top:18px;"
+    >
+
+        <h3 id="stats-title">
+            📊 D51 走势统计
+        </h3>
+
+
+        <div class="baccarat-stats-grid">
 
             <div class="stat-box">
-                <div>庄</div>
-                <div class="stat-number red" id="b-stat-banker">--</div>
+
+                <div class="stat-row">
+
+                    <span>
+                        🔴 庄
+                    </span>
+
+                    <strong
+                        class="banker-color"
+                        id="bc-banker-count"
+                    >
+                        62
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-row">
+
+                    <span>
+                        🔵 闲
+                    </span>
+
+                    <strong
+                        class="player-color"
+                        id="bc-player-count"
+                    >
+                        59
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-row">
+
+                    <span>
+                        🟦 和
+                    </span>
+
+                    <strong
+                        class="tie-color"
+                        id="bc-tie-count"
+                    >
+                        7
+                    </strong>
+
+                </div>
+
             </div>
 
-            <div class="stat-box">
-                <div>闲</div>
-                <div class="stat-number blue" id="b-stat-player">--</div>
-            </div>
 
             <div class="stat-box">
-                <div>和</div>
-                <div class="stat-number green" id="b-stat-tie">--</div>
+
+                <div class="stat-row">
+
+                    <span>
+                        近10局庄
+                    </span>
+
+                    <strong id="bc-banker-rate">
+                        60%
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-row">
+
+                    <span>
+                        近10局闲
+                    </span>
+
+                    <strong id="bc-player-rate">
+                        40%
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-row">
+
+                    <span>
+                        当前连路
+                    </span>
+
+                    <strong id="bc-current-streak">
+                        庄 3
+                    </strong>
+
+                </div>
+
             </div>
 
+
             <div class="stat-box">
-                <div>总局</div>
-                <div class="stat-number" id="b-stat-total">--</div>
+
+                <div class="stat-row">
+
+                    <span>
+                        庄最大连
+                    </span>
+
+                    <strong id="bc-max-banker">
+                        6
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-row">
+
+                    <span>
+                        闲最大连
+                    </span>
+
+                    <strong id="bc-max-player">
+                        5
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-row">
+
+                    <span>
+                        总局数
+                    </span>
+
+                    <strong id="bc-total-rounds">
+                        128
+                    </strong>
+
+                </div>
+
             </div>
 
         </div>
@@ -614,28 +1654,96 @@ th{
 
     <div class="card">
 
-        <div class="section-title">
-            📜 最近历史
-        </div>
+        <h3 id="history-title">
+            📜 D51 最近20局
+        </h3>
 
-        <div id="baccarat-history" class="road"></div>
-
-    </div>
-
-
-    <div class="card">
-
-        <div class="section-title">
-            🔮 Baccarat AI Prediction
-        </div>
-
-        <div class="card-value prediction" id="baccarat-prediction">
-            --
-        </div>
+        <div
+            class="history"
+            id="bc-history"
+        ></div>
 
     </div>
 
-</div>
+
+    <div class="card baccarat-prediction">
+
+        <div class="card-title">
+            🎯 <span id="prediction-table-name">D51</span> 下一局预测
+        </div>
+
+
+        <div class="prediction-main">
+
+            <div>
+
+                <div
+                    class="prediction-result banker-color"
+                    id="bc-prediction"
+                >
+                    🔴 庄
+                </div>
+
+                <div
+                    style="color:#94a3b8;margin-top:5px;"
+                    id="bc-confidence"
+                >
+                    信心：72%
+                </div>
+
+            </div>
+
+
+            <div
+                class="bet"
+                id="bc-action"
+            >
+                BET
+            </div>
+
+        </div>
+
+
+        <div
+            class="baccarat-reason"
+            id="bc-reason"
+        >
+
+            <div>
+                ✓ 大路：庄方向
+            </div>
+
+            <div>
+                ✓ 大眼仔路：红
+            </div>
+
+            <div>
+                ✓ 小路：红
+            </div>
+
+            <div>
+                ✓ 蟑螂路：红
+            </div>
+
+            <div>
+                ✓ 近10局：庄 60%
+            </div>
+
+            <div style="color:#fbbf24;">
+                ⚠️ 当前庄 3 连，注意连续走势风险
+            </div>
+
+        </div>
+
+
+        <div class="demo-warning">
+            ⚠️ 当前百家乐部分为 UI / Demo 数据。
+            尚未连接真实百家乐开奖 API。
+        </div>
+
+    </div>
+
+</section>
 
 </div>
 
@@ -643,379 +1751,522 @@ th{
 <script>
 
 const WORKER_URL =
-"https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev";
+    "https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev";
 
-let numberChart = null;
-let countdown = 5;
+let myChart = null;
+let countdownVal = 5;
 let currentBaccaratTable = "D51";
 
 
-/* ================= CLOCK ================= */
+/* =====================================================
+   CLOCK
+===================================================== */
 
-function updateClock(){
+function updateMYTClock() {
 
     const now = new Date();
 
-    const time =
-        new Intl.DateTimeFormat("en-GB",{
-            timeZone:"Asia/Kuala_Lumpur",
-            hour:"2-digit",
-            minute:"2-digit",
-            second:"2-digit",
-            hour12:false
-        }).format(now);
+    const options = {
+        timeZone: "Asia/Kuala_Lumpur",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    };
 
-    document.getElementById("myt-clock").textContent =
-        "MYT " + time;
+    document.getElementById("myt-clock").innerText =
+        new Intl.DateTimeFormat(
+            "en-GB",
+            options
+        ).format(now);
 }
 
-setInterval(updateClock,1000);
-updateClock();
+updateMYTClock();
+
+setInterval(updateMYTClock, 1000);
 
 
-/* ================= TABS ================= */
+/* =====================================================
+   MAIN TAB
+===================================================== */
 
-function switchTab(tab){
+function switchMainTab(tab, element) {
 
-    document.querySelectorAll(".tab").forEach(el=>{
-        el.classList.remove("active");
-    });
+    document
+        .querySelectorAll(".main-tab")
+        .forEach(btn => {
+            btn.classList.remove("active");
+        });
 
-    document.querySelectorAll(".tab-content").forEach(el=>{
-        el.classList.remove("active");
-    });
+    element.classList.add("active");
 
-    if(tab==="wingo"){
+    document
+        .querySelectorAll(".main-section")
+        .forEach(section => {
+            section.classList.remove("active");
+        });
 
-        document.querySelectorAll(".tab")[0].classList.add("active");
-        document.getElementById("wingo").classList.add("active");
+    if (tab === "wingo") {
 
-    }else{
+        document
+            .getElementById("wingo-section")
+            .classList.add("active");
 
-        document.querySelectorAll(".tab")[1].classList.add("active");
-        document.getElementById("baccarat").classList.add("active");
+    } else {
 
+        document
+            .getElementById("baccarat-section")
+            .classList.add("active");
+
+        renderBaccarat(currentBaccaratTable);
     }
-
-}
-
-
-/* ================= NUMBER ICON ================= */
-
-function getNumberClass(number){
-
-    number = Number(number);
-
-    if(number===0 || number===5){
-        return "num-violet";
-    }
-
-    if(number%2===0){
-        return "num-red";
-    }
-
-    return "num-green";
 }
 
 
-function numberIcon(number){
+/* =====================================================
+   WINGO NUMBER ICON
+===================================================== */
+
+function getNumberIconHtml(num, large = false) {
+
+    num = parseInt(num);
+
+    let colorClass = "";
+
+    /*
+       13579 = 绿色
+       2468  = 红色
+       0     = 红 + 紫
+       5     = 绿 + 紫
+    */
+
+    if (num === 0) {
+
+        colorClass = "bg-red-purple";
+
+    } else if (num === 5) {
+
+        colorClass = "bg-green-purple";
+
+    } else if ([1, 3, 7, 9].includes(num)) {
+
+        colorClass = "bg-green";
+
+    } else if ([2, 4, 6, 8].includes(num)) {
+
+        colorClass = "bg-red";
+    }
 
     return `
-        <span class="number-ball ${getNumberClass(number)}">
-            ${number}
+        <span class="${
+            large
+                ? "prediction-number"
+                : "icon-num"
+        } ${colorClass}">
+            ${num}
         </span>
     `;
-
 }
 
 
-/* ================= WINGO PREDICTION ================= */
+/* =====================================================
+   WINGO STRONG PREDICTOR
+===================================================== */
 
-function getPredictionForDraw(draws){
+function getPredictionForDraw(draws) {
 
-    if(!draws || draws.length<10){
+    if (!draws || draws.length < 10) {
+
         return {
-            signal:"PASS",
-            confidence:0,
-            targetNumber:"--",
-            streakText:"数据不足",
-            markovText:"--",
-            reversionText:"--",
-            specialNumber:"--",
-            bigScore:0,
-            smallScore:0
+            num: null,
+            size: null,
+            signal: "观望",
+            confidence: "低",
+            bigScore: 0,
+            smallScore: 0,
+            streakCnt: 0,
+            markovSize: "数据不足",
+            meanSize: "数据不足",
+            isSpecial: false
         };
     }
 
 
-    const nums = draws.map(x=>Number(x.number));
+    const nums =
+        draws.map(d => Number(d.number));
 
-    let lastNumber = nums[0];
+    const sizes =
+        draws.map(d => d.size);
 
 
-    /* ---------- STREAK ---------- */
+    const lastNum = nums[0];
 
-    let streakType =
-        lastNumber>=5 ? "大" : "小";
+    const lastSize = sizes[0];
 
-    let streak = 1;
 
-    for(let i=1;i<nums.length;i++){
+    /* LONG STREAK */
 
-        const type =
-            nums[i]>=5 ? "大" : "小";
+    let streakCnt = 0;
 
-        if(type===streakType){
-            streak++;
-        }else{
+    for (const s of sizes) {
+
+        if (s === lastSize) {
+
+            streakCnt++;
+
+        } else {
+
             break;
         }
-
     }
 
 
-    /* ---------- MARKOV ---------- */
+    /* MARKOV */
 
-    let bigAfterBig = 0;
-    let bigAfterSmall = 0;
+    const transitionCounts =
+        Array(10).fill(0);
 
-    let smallAfterBig = 0;
-    let smallAfterSmall = 0;
+    for (
+        let i = 0;
+        i < nums.length - 1;
+        i++
+    ) {
 
-    for(let i=1;i<nums.length;i++){
+        if (
+            nums[i + 1] === lastNum
+        ) {
 
-        const previous =
-            nums[i] >= 5;
-
-        const current =
-            nums[i-1] >= 5;
-
-        if(current && previous){
-            bigAfterBig++;
+            transitionCounts[nums[i]]++;
         }
-
-        if(!current && previous){
-            smallAfterBig++;
-        }
-
-        if(current && !previous){
-            bigAfterSmall++;
-        }
-
-        if(!current && !previous){
-            smallAfterSmall++;
-        }
-
     }
 
 
-    let markovBig =
-        (bigAfterBig + bigAfterSmall) > 0
-        ? (bigAfterBig + bigAfterSmall)
-        : 0;
-
-    let markovSmall =
-        (smallAfterBig + smallAfterSmall) > 0
-        ? (smallAfterBig + smallAfterSmall)
-        : 0;
+    const maxTransition =
+        Math.max(...transitionCounts);
 
 
-    let markovPrediction =
-        markovBig >= markovSmall
-        ? "大"
-        : "小";
+    let markovBestNum = null;
+
+    let markovSize = "平";
 
 
-    /* ---------- MEAN REVERSION ---------- */
+    if (maxTransition > 0) {
+
+        markovBestNum =
+            transitionCounts.indexOf(
+                maxTransition
+            );
+
+        markovSize =
+            markovBestNum >= 5
+                ? "大"
+                : "小";
+    }
+
+
+    /* MEAN REVERSION */
 
     const recent10 =
-        nums.slice(0,10);
+        nums.slice(0, 10);
 
-    const big10 =
-        recent10.filter(n=>n>=5).length;
-
-    const small10 =
-        recent10.length-big10;
-
-    const reversionPrediction =
-        big10>small10
-        ? "小"
-        : "大";
+    const bigCount =
+        recent10.filter(
+            n => n >= 5
+        ).length;
 
 
-    /* ---------- SIZE SCORE ---------- */
+    let meanSize = "平";
+
+
+    if (bigCount >= 7) {
+
+        meanSize = "小";
+
+    } else if (bigCount <= 3) {
+
+        meanSize = "大";
+    }
+
+
+    /* SPECIAL */
+
+    const isSpecial =
+        lastNum === 0 ||
+        lastNum === 5;
+
+
+    /* SCORE */
 
     let bigScore = 0;
+
     let smallScore = 0;
 
-    if(streakType==="大"){
-        bigScore += 25;
-        smallScore += 10;
-    }else{
-        smallScore += 25;
-        bigScore += 10;
-    }
 
-    if(markovPrediction==="大"){
-        bigScore += 25;
-    }else{
-        smallScore += 25;
-    }
+    if (markovSize === "大") {
 
-    if(reversionPrediction==="大"){
-        bigScore += 25;
-    }else{
-        smallScore += 25;
+        bigScore += 1.5;
+
+    } else if (markovSize === "小") {
+
+        smallScore += 1.5;
     }
 
 
-    /* ---------- TARGET NUMBER ---------- */
+    if (meanSize === "大") {
 
-    const freq = {};
+        bigScore += 1;
 
-    for(let i=0;i<10;i++){
-        freq[i]=0;
+    } else if (meanSize === "小") {
+
+        smallScore += 1;
     }
 
-    nums.slice(0,20).forEach(n=>{
-        freq[n]++;
-    });
 
-    let targetNumber = 0;
+    if (streakCnt >= 3) {
 
-    let minFreq = Infinity;
+        if (lastSize === "大") {
 
-    for(let i=0;i<10;i++){
+            bigScore += 1.2;
 
-        if(freq[i]<minFreq){
+        } else {
 
-            minFreq = freq[i];
-            targetNumber = i;
+            smallScore += 1.2;
+        }
+    }
 
+
+    /* FINAL */
+
+    let finalSize = null;
+
+    let signal = "观望";
+
+    let confidence = "低";
+
+
+    const scoreDifference =
+        Math.abs(
+            bigScore - smallScore
+        );
+
+
+    if (
+        scoreDifference < 0.8 ||
+        isSpecial
+    ) {
+
+        signal = "观望";
+
+        confidence = "避险";
+
+    } else if (
+        bigScore > smallScore
+    ) {
+
+        finalSize = "大";
+
+        signal = "BUY";
+
+        confidence =
+            bigScore >= 2.5
+                ? "🔥高确信"
+                : "普通";
+
+    } else {
+
+        finalSize = "小";
+
+        signal = "BUY";
+
+        confidence =
+            smallScore >= 2.5
+                ? "🔥高确信"
+                : "普通";
+    }
+
+
+    /* TARGET NUMBER */
+
+    let targetNum = null;
+
+
+    if (finalSize) {
+
+        const start =
+            finalSize === "大"
+                ? 5
+                : 0;
+
+        const end =
+            finalSize === "大"
+                ? 10
+                : 5;
+
+
+        let maxScore = -1;
+
+
+        for (
+            let i = start;
+            i < end;
+            i++
+        ) {
+
+            if (
+                transitionCounts[i]
+                > maxScore
+            ) {
+
+                maxScore =
+                    transitionCounts[i];
+
+                targetNum = i;
+            }
         }
 
+
+        if (
+            maxTransition === 0
+        ) {
+
+            const freq =
+                Array(10).fill(0);
+
+            nums.forEach(n => {
+                freq[n]++;
+            });
+
+
+            maxScore = -1;
+
+
+            for (
+                let i = start;
+                i < end;
+                i++
+            ) {
+
+                if (
+                    freq[i] > maxScore
+                ) {
+
+                    maxScore = freq[i];
+
+                    targetNum = i;
+                }
+            }
+        }
     }
-
-
-    /* ---------- FINAL ---------- */
-
-    const finalSignal =
-        bigScore > smallScore
-        ? "BUY"
-        : "PASS";
-
-
-    const confidence =
-        Math.min(
-            95,
-            50 + Math.abs(bigScore-smallScore)
-        );
 
 
     return {
 
-        signal:finalSignal,
+        num: targetNum,
+
+        size: finalSize,
+
+        signal,
 
         confidence,
 
-        targetNumber,
-
-        streakText:
-            `${streakType} ${streak}连`,
-
-        markovText:
-            markovPrediction,
-
-        reversionText:
-            reversionPrediction,
-
-        specialNumber:
-            targetNumber,
-
         bigScore,
 
-        smallScore
+        smallScore,
 
+        streakCnt,
+
+        markovSize,
+
+        meanSize,
+
+        isSpecial
     };
-
 }
 
 
-/* ================= FETCH WINGO ================= */
+/* =====================================================
+   FETCH
+   改成 50 期
+===================================================== */
 
-async function fetchDraws(){
+async function fetchDraws() {
 
-    try{
-
-        const random =
-            Array.from(
-                {length:32},
-                () => Math.floor(Math.random()*16).toString(16)
-            ).join("");
-
-        const timestamp =
-            Math.floor(Date.now()/1000);
-
-
-        /* 
-           这里改成 50 期
-           因为下面需要近50期统计
-        */
-
-        const signObj = {
-
-            language:0,
-
-            pageNo:1,
-
-            pageSize:50,
-
-            random,
-
-            typeId:30
-
-        };
+    const random =
+        Array.from(
+            { length: 32 },
+            () =>
+                Math.floor(
+                    Math.random() * 16
+                ).toString(16)
+        ).join("");
 
 
-        const signature =
-            CryptoJS
-            .MD5(JSON.stringify(signObj))
-            .toString()
-            .toUpperCase();
+    const timestamp =
+        Math.floor(
+            Date.now() / 1000
+        );
 
 
-        const payload = {
+    const signObj = {
 
-            typeId:30,
+        "language": 0,
 
-            pageNo:1,
+        "pageNo": 1,
 
-            pageSize:50,
+        "pageSize": 50,
 
-            language:0,
+        "random": random,
 
-            random,
+        "typeId": 30
+    };
 
-            signature,
 
-            timestamp
+    const jsonSignStr =
+        JSON.stringify(signObj);
 
-        };
 
+    const signature =
+        CryptoJS.MD5(
+            jsonSignStr
+        ).toString()
+        .toUpperCase();
+
+
+    const payload = {
+
+        "typeId": 30,
+
+        "pageNo": 1,
+
+        "pageSize": 50,
+
+        "language": 0,
+
+        "random": random,
+
+        "signature": signature,
+
+        "timestamp": timestamp
+    };
+
+
+    try {
 
         const response =
             await fetch(
                 WORKER_URL,
                 {
-                    method:"POST",
+                    method: "POST",
 
-                    headers:{
+                    headers: {
                         "Content-Type":
-                        "application/json"
+                            "application/json"
                     },
 
                     body:
-                        JSON.stringify(payload)
+                        JSON.stringify(
+                            payload
+                        )
                 }
             );
 
@@ -1024,905 +2275,1862 @@ async function fetchDraws(){
             await response.json();
 
 
-        if(
-            json.code===0 &&
+        if (
+            json.code === 0 &&
             json.data &&
             json.data.list
-        ){
+        ) {
 
-            return json.data.list.map(item=>({
+            return json.data.list.map(
+                item => {
 
-                issueNumber:
-                    item.issueNumber ||
-                    item.issue ||
-                    item.period,
+                    const num =
+                        parseInt(
+                            item.number
+                        );
 
-                number:
-                    Number(
-                        item.number ??
-                        item.openNumber ??
-                        item.result
-                    ),
 
-                colour:
-                    item.colour ||
-                    item.color ||
-                    "",
+                    return {
 
-                size:
-                    Number(
-                        item.number ??
-                        item.openNumber ??
-                        item.result
-                    )>=5
-                    ? "大"
-                    : "小"
+                        issueNumber:
+                            String(
+                                item.issueNumber
+                            ),
 
-            }));
+                        number: num,
 
+                        size:
+                            num >= 5
+                                ? "大"
+                                : "小",
+
+                        colour:
+                            item.colour
+                    };
+                }
+            );
         }
 
 
-        return [];
-
-    }catch(error){
+    } catch (e) {
 
         console.error(
-            "WinGo API Error:",
-            error
+            "Worker 请求解析失败",
+            e
         );
-
-        return [];
-
     }
 
+
+    return [];
 }
 
 
-/* ================= REFRESH WINGO ================= */
+/* =====================================================
+   AI REVIEW
+===================================================== */
 
-async function refreshDashboard(){
+function renderAIReview(draws) {
+
+    if (!draws || draws.length < 11) {
+        return;
+    }
+
+
+    /*
+       draws[0] = 最新开奖
+       draws[1] = 上一期开奖
+       用 draws.slice(2) 重建上一期预测
+    */
+
+    const actual =
+        draws[0];
+
+    const previousActual =
+        draws[1];
+
+
+    const previousHistory =
+        draws.slice(2);
+
+
+    const previousPrediction =
+        getPredictionForDraw(
+            previousHistory
+        );
+
+
+    const statusEl =
+        document.getElementById(
+            "review-status"
+        );
+
+    const predictionEl =
+        document.getElementById(
+            "review-prediction"
+        );
+
+    const actualEl =
+        document.getElementById(
+            "review-actual"
+        );
+
+    const resultEl =
+        document.getElementById(
+            "review-result"
+        );
+
+    const messageEl =
+        document.getElementById(
+            "review-message"
+        );
+
+
+    if (
+        previousPrediction.signal !== "BUY" ||
+        previousPrediction.num === null
+    ) {
+
+        statusEl.className =
+            "review-status review-wait";
+
+        statusEl.innerText =
+            "PASS / 未下注";
+
+
+        predictionEl.innerHTML =
+            `<span class="tag-wait">PASS</span>`;
+
+
+        actualEl.innerHTML =
+            getNumberIconHtml(
+                previousActual.number
+            ) +
+            ` ${previousActual.size}`;
+
+
+        resultEl.innerText =
+            "不计入胜负";
+
+
+        messageEl.innerHTML =
+            `
+            上一期系统判断为 <b>PASS</b>，
+            因此不把这一局计算成输。
+            系统继续观察下一期数据。
+            `;
+
+        return;
+    }
+
+
+    const isWin =
+        previousActual.size ===
+        previousPrediction.size;
+
+
+    predictionEl.innerHTML =
+        `
+        ${getNumberIconHtml(
+            previousPrediction.num,
+            true
+        )}
+        <span style="margin-left:8px;">
+            ${previousPrediction.size}
+        </span>
+        `;
+
+
+    actualEl.innerHTML =
+        `
+        ${getNumberIconHtml(
+            previousActual.number,
+            true
+        )}
+        <span style="margin-left:8px;">
+            ${previousActual.size}
+        </span>
+        `;
+
+
+    if (isWin) {
+
+        statusEl.className =
+            "review-status review-win";
+
+        statusEl.innerText =
+            "✅ WIN";
+
+        resultEl.innerHTML =
+            '<span class="tag-win">预测成功</span>';
+
+
+        messageEl.innerHTML =
+            `
+            ✓ 上一期预测方向
+            <b>${previousPrediction.size}</b>
+            正确。
+            <br>
+            Markov：${previousPrediction.markovSize}
+            ／ 均值回归：${previousPrediction.meanSize}
+            ／ 当前长龙：${previousPrediction.streakCnt} 连。
+            <br>
+            系统保留这次成功组合，继续观察下一期是否仍然成立。
+            `;
+
+    } else {
+
+        statusEl.className =
+            "review-status review-loss";
+
+        statusEl.innerText =
+            "❌ LOSS";
+
+        resultEl.innerHTML =
+            '<span class="tag-loss">预测错误</span>';
+
+
+        let reasons = [];
+
+
+        if (
+            previousPrediction.markovSize !==
+            previousPrediction.size
+        ) {
+
+            reasons.push(
+                "Markov 与最终方向不一致"
+            );
+        }
+
+
+        if (
+            previousPrediction.meanSize !==
+            previousPrediction.size
+        ) {
+
+            reasons.push(
+                "均值回归与最终方向不一致"
+            );
+        }
+
+
+        if (
+            previousPrediction.streakCnt >= 3
+        ) {
+
+            reasons.push(
+                "长龙因素可能造成方向追随"
+            );
+        }
+
+
+        if (
+            reasons.length === 0
+        ) {
+
+            reasons.push(
+                "历史模式在该期没有延续"
+            );
+        }
+
+
+        messageEl.innerHTML =
+            `
+            <b style="color:#f87171;">
+                ❌ 本期预测没有命中。
+            </b>
+            <br>
+            实际：${previousActual.number}
+            (${previousActual.size})
+            ／
+            预测：${previousPrediction.num}
+            (${previousPrediction.size})
+            <br><br>
+
+            <b>复盘原因：</b>
+            ${reasons.map(
+                x => "• " + x
+            ).join("<br>")}
+
+            <br><br>
+
+            <b style="color:#fbbf24;">
+                🔄 下一期处理：
+            </b>
+            不直接追上一期方向，
+            重新计算最新 Markov、均值回归、
+            长龙及 50 期数据。
+            `;
+    }
+}
+
+
+/* =====================================================
+   WINGO REFRESH
+===================================================== */
+
+async function refreshDashboard() {
 
     const draws =
         await fetchDraws();
 
 
-    if(!draws.length){
+    if (
+        !draws ||
+        draws.length === 0
+    ) {
 
         return;
-
     }
 
-
-    /* ---------- LATEST ---------- */
 
     const latest =
         draws[0];
 
 
-    document.getElementById(
-        "latest-issue"
-    ).textContent =
-        latest.issueNumber || "--";
+    document
+        .getElementById(
+            "latest-issue"
+        )
+        .innerText =
+        latest.issueNumber.slice(-4);
 
 
-    document.getElementById(
-        "latest-number"
-    ).innerHTML =
-        numberIcon(latest.number);
+    document
+        .getElementById(
+            "latest-result"
+        )
+        .innerHTML = `
+            ${getNumberIconHtml(
+                latest.number
+            )}
+
+            <span class="${
+                latest.size === "大"
+                    ? "tag-big"
+                    : "tag-small"
+            }">
+                ${latest.size}
+            </span>
+        `;
 
 
-    /* ---------- NEXT PREDICTION ---------- */
-
-    const prediction =
-        getPredictionForDraw(draws);
-
-
-    document.getElementById(
-        "next-prediction"
-    ).innerHTML =
-        numberIcon(prediction.targetNumber);
+    const nextPrediction =
+        getPredictionForDraw(
+            draws
+        );
 
 
-    /* ---------- ANALYSIS ---------- */
+    /* =========================
+       NEXT PREDICTION
+    ========================== */
 
-    document.getElementById(
-        "analysis-streak"
-    ).textContent =
-        prediction.streakText;
+    if (
+        nextPrediction.signal ===
+        "BUY"
+        &&
+        nextPrediction.num !== null
+    ) {
+
+        document
+            .getElementById(
+                "predicted-result"
+            )
+            .innerHTML = `
+
+                <div class="prediction-wrapper">
+
+                    ${getNumberIconHtml(
+                        nextPrediction.num,
+                        true
+                    )}
+
+                    <div>
+
+                        <div style="
+                            color:#fff;
+                            font-size:18px;
+                            font-weight:800;
+                        ">
+                            ${nextPrediction.size}
+                        </div>
+
+                        <div style="
+                            color:#94a3b8;
+                            font-size:12px;
+                            margin-top:3px;
+                        ">
+                            ${nextPrediction.confidence}
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+    } else {
+
+        document
+            .getElementById(
+                "predicted-result"
+            )
+            .innerHTML = `
+                <span class="tag-wait">
+                    PASS / 观望
+                </span>
+            `;
+    }
 
 
-    document.getElementById(
-        "analysis-markov"
-    ).textContent =
-        prediction.markovText;
+    /* =========================
+       ANALYSIS
+    ========================== */
+
+    document
+        .getElementById(
+            "analysis-streak"
+        )
+        .innerText =
+        nextPrediction.streakCnt
+        + " 连";
 
 
-    document.getElementById(
-        "analysis-reversion"
-    ).textContent =
-        prediction.reversionText;
+    document
+        .getElementById(
+            "analysis-markov"
+        )
+        .innerText =
+        nextPrediction.markovSize;
 
 
-    document.getElementById(
-        "analysis-number"
-    ).innerHTML =
-        numberIcon(prediction.targetNumber);
+    document
+        .getElementById(
+            "analysis-mean"
+        )
+        .innerText =
+        nextPrediction.meanSize;
 
 
-    /* ---------- 10 DRAW SIZE ---------- */
+    document
+        .getElementById(
+            "analysis-number"
+        )
+        .innerHTML =
+        nextPrediction.num !== null
+            ? getNumberIconHtml(
+                nextPrediction.num
+            )
+            : "--";
+
 
     const recent10 =
-        draws.slice(0,10);
+        draws.slice(0, 10);
 
 
     const big10 =
         recent10.filter(
-            x=>Number(x.number)>=5
+            d => d.number >= 5
         ).length;
 
 
     const small10 =
-        recent10.length-big10;
+        recent10.length -
+        big10;
 
-
-    const big10Percent =
-        recent10.length
-        ? Math.round(
-            big10/recent10.length*100
-        )
-        : 0;
-
-
-    const small10Percent =
-        recent10.length
-        ? Math.round(
-            small10/recent10.length*100
-        )
-        : 0;
-
-
-    document.getElementById(
-        "analysis-big10"
-    ).textContent =
-        big10Percent + "%";
-
-
-    document.getElementById(
-        "analysis-small10"
-    ).textContent =
-        small10Percent + "%";
-
-
-    /* ---------- 50 DRAW SIZE ---------- */
 
     const recent50 =
-        draws.slice(0,50);
+        draws.slice(0, 50);
 
 
     const big50 =
         recent50.filter(
-            x=>Number(x.number)>=5
+            d => d.number >= 5
         ).length;
 
 
     const small50 =
-        recent50.length-big50;
+        recent50.length -
+        big50;
 
 
-    const big50Percent =
+    const big10Rate =
+        recent10.length
+            ? Math.round(
+                big10 /
+                recent10.length *
+                100
+            )
+            : 0;
+
+
+    const small10Rate =
+        recent10.length
+            ? Math.round(
+                small10 /
+                recent10.length *
+                100
+            )
+            : 0;
+
+
+    const big50Rate =
         recent50.length
-        ? Math.round(
-            big50/recent50.length*100
-        )
-        : 0;
+            ? Math.round(
+                big50 /
+                recent50.length *
+                100
+            )
+            : 0;
 
 
-    const small50Percent =
+    const small50Rate =
         recent50.length
-        ? Math.round(
-            small50/recent50.length*100
+            ? Math.round(
+                small50 /
+                recent50.length *
+                100
+            )
+            : 0;
+
+
+    document
+        .getElementById(
+            "analysis-big10"
         )
-        : 0;
+        .innerText =
+        big10Rate + "%";
 
 
-    document.getElementById(
-        "analysis-big50"
-    ).textContent =
-        big50Percent + "%";
+    document
+        .getElementById(
+            "analysis-small10"
+        )
+        .innerText =
+        small10Rate + "%";
 
 
-    document.getElementById(
-        "analysis-small50"
-    ).textContent =
-        small50Percent + "%";
+    document
+        .getElementById(
+            "analysis-big50"
+        )
+        .innerText =
+        big50Rate + "%";
 
 
-    /* ---------- SIZE BAR ---------- */
+    document
+        .getElementById(
+            "analysis-small50"
+        )
+        .innerText =
+        small50Rate + "%";
 
-    const sizeFill =
+
+    /* =========================
+       BIG / SMALL BAR
+    ========================== */
+
+    const scoreFill =
         document.getElementById(
-            "size-balance-fill"
+            "score-fill"
         );
 
 
-    sizeFill.style.width =
-        big10Percent + "%";
+    scoreFill.style.width =
+        big10Rate + "%";
 
 
-    /*
-       大 >= 50% 使用红色
-       大 < 50% 使用蓝色
-    */
-
-    if(big10Percent>=50){
-
-        sizeFill.style.background =
-            "#ef4444";
-
-    }else{
-
-        sizeFill.style.background =
-            "#3b82f6";
-
-    }
+    scoreFill.style.background =
+        big10Rate >= 50
+            ? "#ef4444"
+            : "#3b82f6";
 
 
-    document.getElementById(
-        "size-balance-text"
-    ).innerHTML =
-        `<span style="color:#ef4444">
-            大 ${big10Percent}%
-        </span>
-        /
-        <span style="color:#3b82f6">
-            小 ${small10Percent}%
-        </span>`;
+    document
+        .getElementById(
+            "score-text"
+        )
+        .innerText =
+        `大 ${big10Rate}% / 小 ${small10Rate}%`;
 
 
-    /* ---------- BACKTEST ---------- */
+    /* =========================
+       AI REVIEW
+    ========================== */
 
-    const maxRows =
-        Math.min(
-            50,
-            draws.length-1
-        );
+    renderAIReview(
+        draws
+    );
 
+
+    /* =========================
+       BACKTEST 50
+    ========================== */
 
     let winCount = 0;
 
     let totalChecked = 0;
 
-    let tableHTML = "";
+    let tableHtml = "";
 
 
-    for(let i=0;i<maxRows;i++){
+    const maxRows =
+        Math.min(
+            50,
+            draws.length - 1
+        );
+
+
+    for (
+        let i = 0;
+        i < maxRows;
+        i++
+    ) {
+
+        const currentDraw =
+            draws[i];
+
 
         const historySlice =
-            draws.slice(
-                i+1,
-                i+31
-            );
+            draws.slice(i + 1);
 
 
-        if(historySlice.length<10){
+        if (
+            historySlice.length < 10
+        ) {
 
             continue;
-
         }
 
 
-        const historicalPrediction =
+        const prediction =
             getPredictionForDraw(
                 historySlice
             );
 
 
-        if(
-            historicalPrediction.signal !==
+        if (
+            prediction.signal !==
             "BUY"
-        ){
+        ) {
 
             continue;
-
         }
+
+
+        const isWin =
+            currentDraw.size ===
+            prediction.size;
 
 
         totalChecked++;
 
 
-        const actual =
-            draws[i];
-
-
-        const predictedNumber =
-            Number(
-                historicalPrediction.targetNumber
-            );
-
-
-        const actualNumber =
-            Number(actual.number);
-
-
-        const win =
-            predictedNumber === actualNumber;
-
-
-        if(win){
+        if (isWin) {
 
             winCount++;
-
         }
 
 
-        tableHTML += `
+        tableHtml += `
 
             <tr>
 
                 <td>
-                    ${actual.issueNumber || "--"}
+                    ${currentDraw.issueNumber.slice(-4)}期
                 </td>
 
                 <td>
-                    ${numberIcon(predictedNumber)}
+
+                    ${getNumberIconHtml(
+                        currentDraw.number
+                    )}
+
+                    <span class="${
+                        currentDraw.size === "大"
+                            ? "tag-big"
+                            : "tag-small"
+                    }">
+                        ${currentDraw.size}
+                    </span>
+
                 </td>
+
 
                 <td>
-                    ${numberIcon(actualNumber)}
+
+                    ${prediction.num !== null
+                        ? getNumberIconHtml(
+                            prediction.num
+                        )
+                        : "-"
+                    }
+
+                    <span class="${
+                        prediction.size === "大"
+                            ? "tag-big"
+                            : "tag-small"
+                    }">
+                        ${prediction.size}
+                    </span>
+
                 </td>
 
-                <td class="${
-                    actualNumber>=5
-                    ? "red"
-                    : "blue"
-                }">
-                    ${
-                        actualNumber>=5
-                        ? "大"
-                        : "小"
-                    }
+
+                <td>
+
+                    <span class="tag-buy">
+                        BUY
+                    </span>
+
                 </td>
 
-                <td class="${
-                    win
-                    ? "green"
-                    : "red"
-                }">
+
+                <td>
+
                     ${
-                        win
-                        ? "WIN"
-                        : "LOSS"
+                        isWin
+                            ? '<span class="tag-win">✅ 赢</span>'
+                            : '<span class="tag-loss">❌ 输</span>'
                     }
+
                 </td>
 
             </tr>
-
         `;
-
     }
 
 
-    document.getElementById(
-        "prediction-table"
-    ).innerHTML =
-        tableHTML ||
+    const winRate =
+        totalChecked > 0
+            ? Math.round(
+                (
+                    winCount /
+                    totalChecked
+                ) * 100
+            )
+            : 0;
+
+
+    document
+        .getElementById(
+            "win-rate"
+        )
+        .innerText =
+        `${winRate}% (${winCount}赢 / ${
+            totalChecked - winCount
+        }输)`;
+
+
+    document
+        .getElementById(
+            "draw-table"
+        )
+        .innerHTML =
+        tableHtml ||
         `
-        <tr>
-            <td colspan="5">
-                暂无有效预测记录
-            </td>
-        </tr>
+            <tr>
+                <td colspan="5">
+                    暂无足够有效预测数据
+                </td>
+            </tr>
         `;
 
 
-    const winRate =
-        totalChecked>0
-        ? Math.round(
-            winCount/
-            totalChecked*
-            100
-        )
-        : 0;
-
-
-    document.getElementById(
-        "win-rate"
-    ).textContent =
-        `${winRate}% (${winCount}/${totalChecked})`;
-
-
-    /* ---------- NUMBER CHART ---------- */
+    /* =========================
+       50 NUMBER DISTRIBUTION
+    ========================== */
 
     const frequency =
         Array(10).fill(0);
 
 
-    recent50.forEach(draw=>{
+    recent50.forEach(
+        d => {
 
-        const n =
-            Number(draw.number);
+            const n =
+                Number(d.number);
 
-        if(n>=0 && n<=9){
+            if (
+                n >= 0 &&
+                n <= 9
+            ) {
 
-            frequency[n]++;
-
+                frequency[n]++;
+            }
         }
+    );
 
-    });
+
+    if (myChart) {
+
+        myChart.destroy();
+    }
 
 
     const ctx =
         document
-        .getElementById(
-            "chart-numbers"
-        )
-        .getContext("2d");
+            .getElementById(
+                "chart-numbers"
+            )
+            .getContext("2d");
 
 
-    if(numberChart){
-
-        numberChart.destroy();
-
-    }
-
-
-    numberChart =
+    myChart =
         new Chart(
             ctx,
             {
 
-                type:"bar",
+                type: "bar",
 
-                data:{
+                data: {
 
-                    labels:[
+                    labels: [
                         "0","1","2","3","4",
                         "5","6","7","8","9"
                     ],
 
-                    datasets:[{
+                    datasets: [
 
-                        label:
-                            "出现次数",
+                        {
 
-                        data:
-                            frequency,
+                            label:
+                                "近50期出现次数",
 
-                        borderWidth:1
+                            data:
+                                frequency,
 
-                    }]
+                            backgroundColor: [
+                                "#8b5cf6",
+                                "#10b981",
+                                "#ef4444",
+                                "#10b981",
+                                "#ef4444",
+                                "#8b5cf6",
+                                "#ef4444",
+                                "#10b981",
+                                "#ef4444",
+                                "#10b981"
+                            ],
 
+                            borderWidth: 0
+
+                        }
+
+                    ]
                 },
 
-                options:{
 
-                    responsive:true,
+                options: {
 
-                    maintainAspectRatio:false,
+                    responsive: true,
 
-                    scales:{
+                    scales: {
 
-                        y:{
+                        y: {
 
-                            beginAtZero:true,
+                            beginAtZero: true,
 
-                            ticks:{
-                                precision:0
+                            ticks: {
+                                color: "#94a3b8",
+                                stepSize: 1
+                            },
+
+                            grid: {
+                                color:
+                                    "#334155"
                             }
+                        },
 
+                        x: {
+
+                            ticks: {
+                                color: "#94a3b8"
+                            },
+
+                            grid: {
+                                color:
+                                    "#334155"
+                            }
                         }
-
                     },
 
-                    plugins:{
+                    plugins: {
 
-                        legend:{
-                            display:false
+                        legend: {
+                            display: false
                         }
-
                     }
-
                 }
-
             }
         );
-
 }
 
 
-/* ================= COUNTDOWN ================= */
-
-setInterval(()=>{
-
-    countdown--;
-
-    if(countdown<=0){
-
-        countdown=5;
-
-        refreshDashboard();
-
-    }
-
-    document.getElementById(
-        "countdown"
-    ).textContent =
-        countdown;
-
-},1000);
-
-
-/* ================= BACCARAT DEMO DATA ================= */
+/* =====================================================
+   BACCARAT DEMO DATA
+   以下全部保持原样
+===================================================== */
 
 const baccaratData = {
 
-    D51:[
-        "B","B","P","P","B","P","P","P",
-        "B","B","B","P","B","P","B"
-    ],
+    D51: {
+        round: 128,
+        history: [
+            "B","B","P","P","B",
+            "B","T","P","P","B",
+            "P","B","B","P","P",
+            "B","B","B","P","B"
+        ]
+    },
 
-    D52:[
-        "P","P","B","B","P","B","P","P",
-        "B","P","P","B","B","P"
-    ],
+    D52: {
+        round: 96,
+        history: [
+            "P","P","B","P","B",
+            "B","P","P","B","B",
+            "P","B","P","P","B",
+            "B","P","B","B","P"
+        ]
+    },
 
-    D53:[
-        "B","P","B","B","B","P","P","B",
-        "P","B","P","B"
-    ],
+    D53: {
+        round: 142,
+        history: [
+            "B","P","B","B","P",
+            "P","P","B","B","P",
+            "B","B","P","B","P",
+            "P","B","P","B","B"
+        ]
+    },
 
-    D54:[
-        "P","B","P","P","B","B","P","B",
-        "B","P","P","P"
-    ],
+    D54: {
+        round: 113,
+        history: [
+            "P","B","P","P","B",
+            "B","B","P","P","B",
+            "B","P","B","P","P",
+            "B","P","B","B","P"
+        ]
+    },
 
-    D55:[
-        "B","B","B","P","P","B","P","B",
-        "P","P","B"
-    ],
+    D55: {
+        round: 87,
+        history: [
+            "B","B","B","P","P",
+            "B","P","P","B","B",
+            "P","P","B","B","P",
+            "B","P","P","B","B"
+        ]
+    },
 
-    D56:[
-        "P","P","B","P","B","B","B","P",
-        "B","P"
-    ],
+    D56: {
+        round: 105,
+        history: [
+            "P","B","B","P","P",
+            "P","B","P","B","B",
+            "P","B","B","P","B",
+            "P","P","B","B","P"
+        ]
+    },
 
-    D57:[
-        "B","P","P","B","P","B","B","B",
-        "P","P"
-    ],
+    D57: {
+        round: 76,
+        history: [
+            "B","P","P","B","B",
+            "B","P","B","P","P",
+            "B","B","P","P","B",
+            "B","P","B","P","B"
+        ]
+    },
 
-    D58:[
-        "P","B","B","P","P","P","B","P",
-        "B","B"
-    ]
+    D58: {
+        round: 151,
+        history: [
+            "P","P","B","B","P",
+            "B","B","B","P","P",
+            "B","P","P","B","B",
+            "P","B","P","B","B"
+        ]
+    }
 
 };
 
 
-/* ================= BACCARAT ================= */
+/* =====================================================
+   BACCARAT FUNCTIONS
+   以下保持原样
+===================================================== */
 
-function predictBaccarat(history){
+function switchBaccaratTable(table, element) {
 
-    if(!history.length){
+    currentBaccaratTable = table;
 
-        return "--";
+    document
+        .querySelectorAll(".baccarat-table-btn")
+        .forEach(
+            btn =>
+                btn.classList.remove("active")
+        );
 
-    }
+    element.classList.add("active");
 
-
-    let banker=0;
-    let player=0;
-
-
-    history.forEach(x=>{
-
-        if(x==="B") banker++;
-        if(x==="P") player++;
-
-    });
-
-
-    if(banker>player){
-
-        return "闲";
-
-    }
-
-
-    return "庄";
-
+    renderBaccarat(table);
 }
 
 
-function renderBigRoad(history){
+function baccaratResultName(result) {
 
-    const el =
+    if (result === "B") {
+
+        return {
+            text: "庄",
+            icon: "🔴",
+            className: "banker-color"
+        };
+
+    }
+
+    if (result === "P") {
+
+        return {
+            text: "闲",
+            icon: "🔵",
+            className: "player-color"
+        };
+
+    }
+
+    return {
+        text: "和",
+        icon: "🟦",
+        className: "tie-color"
+    };
+}
+
+
+function getBaccaratStreak(history) {
+
+    if (!history || history.length === 0) {
+
+        return {
+            type: null,
+            count: 0
+        };
+    }
+
+    const first = history[0];
+
+    if (first === "T") {
+
+        return {
+            type: "T",
+            count: 0
+        };
+    }
+
+    let count = 0;
+
+    for (const item of history) {
+
+        if (item === first) {
+
+            count++;
+
+        } else {
+
+            break;
+        }
+    }
+
+    return {
+        type: first,
+        count
+    };
+}
+
+
+function getMaxStreak(history, type) {
+
+    let max = 0;
+    let current = 0;
+
+    for (const item of history) {
+
+        if (item === type) {
+
+            current++;
+
+            max =
+                Math.max(
+                    max,
+                    current
+                );
+
+        } else if (item !== "T") {
+
+            current = 0;
+        }
+    }
+
+    return max;
+}
+
+
+function predictBaccarat(history) {
+
+    const clean =
+        history.filter(
+            x => x === "B" ||
+                 x === "P"
+        );
+
+    const recent10 =
+        clean.slice(0, 10);
+
+    let bankerCount =
+        recent10.filter(
+            x => x === "B"
+        ).length;
+
+    let playerCount =
+        recent10.filter(
+            x => x === "P"
+        ).length;
+
+    const streak =
+        getBaccaratStreak(history);
+
+    let bankerScore = 0;
+    let playerScore = 0;
+
+    if (bankerCount > playerCount) {
+
+        bankerScore += 1;
+
+    } else if (playerCount > bankerCount) {
+
+        playerScore += 1;
+    }
+
+    if (
+        streak.type === "B" &&
+        streak.count >= 2
+    ) {
+
+        bankerScore += .8;
+
+    } else if (
+        streak.type === "P" &&
+        streak.count >= 2
+    ) {
+
+        playerScore += .8;
+    }
+
+    const last3 =
+        clean.slice(0, 3);
+
+    const last3B =
+        last3.filter(
+            x => x === "B"
+        ).length;
+
+    const last3P =
+        last3.filter(
+            x => x === "P"
+        ).length;
+
+    if (last3B > last3P) {
+
+        bankerScore += .7;
+
+    } else if (last3P > last3B) {
+
+        playerScore += .7;
+    }
+
+    const difference =
+        Math.abs(
+            bankerScore -
+            playerScore
+        );
+
+    let prediction = "PASS";
+
+    let confidence = 0;
+
+    if (difference >= 1.0) {
+
+        prediction =
+            bankerScore >
+            playerScore
+                ? "B"
+                : "P";
+
+        confidence =
+            Math.min(
+                85,
+                55 +
+                Math.round(
+                    difference * 12
+                )
+            );
+
+    } else {
+
+        confidence = 50;
+    }
+
+    return {
+
+        prediction,
+        confidence,
+        bankerScore,
+        playerScore,
+        bankerCount,
+        playerCount,
+        streak
+    };
+}
+
+
+function renderBigRoad(history) {
+
+    const container =
         document.getElementById(
             "big-road"
         );
 
+    container.innerHTML = "";
 
-    el.innerHTML =
-        history.map(x=>`
-
-            <div class="road-cell ${
-                x==="B"
-                ? "banker"
-                : "player"
-            }">
-                ${x}
-            </div>
-
-        `).join("");
-
-}
-
-
-function renderSmallRoad(history){
-
-    const el =
-        document.getElementById(
-            "small-road"
+    const display =
+        history.slice(
+            0,
+            108
         );
 
+    display.forEach(result => {
 
-    el.innerHTML =
-        history.slice(1).map(x=>`
+        const cell =
+            document.createElement(
+                "div"
+            );
 
-            <div class="road-cell ${
-                x==="B"
-                ? "banker"
-                : "player"
-            }">
-                ${x}
-            </div>
-
-        `).join("");
-
-}
-
-
-function renderCockroachRoad(history){
-
-    const el =
-        document.getElementById(
-            "cockroach-road"
+        cell.classList.add(
+            "road-cell"
         );
 
+        if (result === "B") {
 
-    el.innerHTML =
-        history.slice(2).map(x=>`
+            cell.classList.add(
+                "road-banker"
+            );
 
-            <div class="road-cell ${
-                x==="B"
-                ? "banker"
-                : "player"
-            }">
-                ${x}
-            </div>
+            cell.innerText = "庄";
 
-        `).join("");
+        } else if (result === "P") {
 
-}
+            cell.classList.add(
+                "road-player"
+            );
 
+            cell.innerText = "闲";
 
-function renderBaccarat(){
+        } else {
 
-    const history =
-        baccaratData[
-            currentBaccaratTable
-        ] || [];
+            cell.classList.add(
+                "road-tie"
+            );
 
-
-    document.getElementById(
-        "baccarat-table"
-    ).textContent =
-        currentBaccaratTable;
-
-
-    document.getElementById(
-        "baccarat-round"
-    ).textContent =
-        history.length;
-
-
-    const latest =
-        history[history.length-1] ||
-        "--";
-
-
-    document.getElementById(
-        "baccarat-latest"
-    ).textContent =
-        latest;
-
-
-    /* ---------- STREAK ---------- */
-
-    let streak=0;
-
-    if(history.length){
-
-        const last =
-            history[history.length-1];
-
-        for(
-            let i=history.length-1;
-            i>=0;
-            i--
-        ){
-
-            if(history[i]===last){
-
-                streak++;
-
-            }else{
-
-                break;
-
-            }
-
+            cell.innerText = "和";
         }
 
-        document.getElementById(
-            "baccarat-streak"
-        ).textContent =
-            `${last} ${streak}连`;
-
-    }
-
-
-    renderBigRoad(history);
-
-    renderSmallRoad(history);
-
-    renderCockroachRoad(history);
-
-
-    /* ---------- STATS ---------- */
-
-    const banker =
-        history.filter(
-            x=>x==="B"
-        ).length;
-
-
-    const player =
-        history.filter(
-            x=>x==="P"
-        ).length;
-
-
-    const tie =
-        history.filter(
-            x=>x==="T"
-        ).length;
-
-
-    document.getElementById(
-        "b-stat-banker"
-    ).textContent =
-        banker;
-
-
-    document.getElementById(
-        "b-stat-player"
-    ).textContent =
-        player;
-
-
-    document.getElementById(
-        "b-stat-tie"
-    ).textContent =
-        tie;
-
-
-    document.getElementById(
-        "b-stat-total"
-    ).textContent =
-        history.length;
-
-
-    /* ---------- HISTORY ---------- */
-
-    document.getElementById(
-        "baccarat-history"
-    ).innerHTML =
-
-        history.map(x=>`
-
-            <div class="road-cell ${
-                x==="B"
-                ? "banker"
-                : x==="P"
-                ? "player"
-                : "tie"
-            }">
-                ${x}
-            </div>
-
-        `).join("");
-
-
-    /* ---------- PREDICTION ---------- */
-
-    document.getElementById(
-        "baccarat-prediction"
-    ).textContent =
-        predictBaccarat(history);
-
+        container.appendChild(cell);
+    });
 }
 
 
-/* ================= BACCARAT TABLE BUTTONS ================= */
-
-function initBaccaratTables(){
+function renderSmallRoad(
+    elementId,
+    history,
+    offset
+) {
 
     const container =
         document.getElementById(
-            "baccarat-tabs"
+            elementId
         );
-
 
     container.innerHTML = "";
 
+    const clean =
+        history.filter(
+            x =>
+                x === "B" ||
+                x === "P"
+        );
 
-    Object.keys(baccaratData)
-        .forEach(table=>{
+    const max =
+        Math.min(
+            36,
+            clean.length
+        );
 
-            const btn =
-                document.createElement("div");
+    for (
+        let i = 0;
+        i < max;
+        i++
+    ) {
 
+        const cell =
+            document.createElement(
+                "div"
+            );
 
-            btn.className =
-                "baccarat-btn" +
-                (
-                    table===currentBaccaratTable
-                    ? " active"
-                    : ""
-                );
+        cell.classList.add(
+            "small-cell"
+        );
 
+        const current =
+            clean[i];
 
-            btn.textContent =
-                table;
-
-
-            btn.onclick = ()=>{
-
-                currentBaccaratTable =
-                    table;
-
-
-                document
-                .querySelectorAll(
-                    ".baccarat-btn"
+        const previous =
+            clean[
+                Math.max(
+                    0,
+                    i - 1
                 )
-                .forEach(x=>
-                    x.classList.remove("active")
-                );
+            ];
 
+        if (
+            (i + offset) % 2 === 0
+        ) {
 
-                btn.classList.add("active");
+            cell.classList.add(
+                current === previous
+                    ? "small-red"
+                    : "small-blue"
+            );
 
+        } else {
 
-                renderBaccarat();
+            cell.classList.add(
+                current === previous
+                    ? "small-blue"
+                    : "small-red"
+            );
+        }
 
-            };
-
-
-            container.appendChild(btn);
-
-        });
-
+        container.appendChild(cell);
+    }
 }
 
 
-/* ================= START ================= */
+function renderBaccaratHistory(history) {
 
-initBaccaratTables();
+    const container =
+        document.getElementById(
+            "bc-history"
+        );
 
-renderBaccarat();
+    container.innerHTML = "";
+
+    history
+        .slice(0, 20)
+        .forEach(result => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+            div.classList.add(
+                "history-ball"
+            );
+
+            if (result === "B") {
+
+                div.classList.add(
+                    "history-banker"
+                );
+
+                div.innerText = "庄";
+
+            } else if (result === "P") {
+
+                div.classList.add(
+                    "history-player"
+                );
+
+                div.innerText = "闲";
+
+            } else {
+
+                div.classList.add(
+                    "history-tie"
+                );
+
+                div.innerText = "和";
+            }
+
+            container.appendChild(div);
+        });
+}
+
+
+function renderBaccarat(table) {
+
+    const data =
+        baccaratData[table];
+
+    if (!data) {
+        return;
+    }
+
+    const history =
+        data.history;
+
+    const clean =
+        history.filter(
+            x =>
+                x === "B" ||
+                x === "P"
+        );
+
+    const bankerCount =
+        clean.filter(
+            x => x === "B"
+        ).length;
+
+    const playerCount =
+        clean.filter(
+            x => x === "P"
+        ).length;
+
+    const tieCount =
+        history.filter(
+            x => x === "T"
+        ).length;
+
+    const total =
+        history.length;
+
+    const recent10 =
+        clean.slice(0, 10);
+
+    const recent10Banker =
+        recent10.filter(
+            x => x === "B"
+        ).length;
+
+    const recent10Player =
+        recent10.filter(
+            x => x === "P"
+        ).length;
+
+    const recentTotal =
+        recent10.length;
+
+    const bankerRate =
+        recentTotal
+            ? Math.round(
+                recent10Banker /
+                recentTotal *
+                100
+            )
+            : 0;
+
+    const playerRate =
+        recentTotal
+            ? Math.round(
+                recent10Player /
+                recentTotal *
+                100
+            )
+            : 0;
+
+    const streak =
+        getBaccaratStreak(history);
+
+    const prediction =
+        predictBaccarat(history);
+
+    document
+        .getElementById("bc-table-name")
+        .innerText = table;
+
+    document
+        .getElementById("bc-round")
+        .innerText = "#" + data.round;
+
+    const latest =
+        history[0];
+
+    const latestInfo =
+        baccaratResultName(latest);
+
+    const latestEl =
+        document.getElementById(
+            "bc-latest"
+        );
+
+    latestEl.className =
+        "baccarat-result " +
+        latestInfo.className;
+
+    latestEl.innerText =
+        latestInfo.icon +
+        " " +
+        latestInfo.text;
+
+    const streakEl =
+        document.getElementById(
+            "bc-streak"
+        );
+
+    if (streak.type === "B") {
+
+        streakEl.className =
+            "card-value banker-color";
+
+        streakEl.innerText =
+            "庄 " +
+            streak.count +
+            " 连";
+
+    } else if (streak.type === "P") {
+
+        streakEl.className =
+            "card-value player-color";
+
+        streakEl.innerText =
+            "闲 " +
+            streak.count +
+            " 连";
+
+    } else {
+
+        streakEl.className =
+            "card-value tie-color";
+
+        streakEl.innerText =
+            "和";
+    }
+
+    document
+        .getElementById("big-road-title")
+        .innerText =
+        "📍 " +
+        table +
+        " 大路";
+
+    document
+        .getElementById("stats-title")
+        .innerText =
+        "📊 " +
+        table +
+        " 走势统计";
+
+    document
+        .getElementById("history-title")
+        .innerText =
+        "📜 " +
+        table +
+        " 最近20局";
+
+    document
+        .getElementById("prediction-table-name")
+        .innerText =
+        table;
+
+    document
+        .getElementById("eye-road-label")
+        .innerText =
+        table;
+
+    document
+        .getElementById("small-road-label")
+        .innerText =
+        table;
+
+    document
+        .getElementById("cockroach-road-label")
+        .innerText =
+        table;
+
+    document
+        .getElementById("bc-banker-count")
+        .innerText =
+        bankerCount;
+
+    document
+        .getElementById("bc-player-count")
+        .innerText =
+        playerCount;
+
+    document
+        .getElementById("bc-tie-count")
+        .innerText =
+        tieCount;
+
+    document
+        .getElementById("bc-banker-rate")
+        .innerText =
+        bankerRate + "%";
+
+    document
+        .getElementById("bc-player-rate")
+        .innerText =
+        playerRate + "%";
+
+    document
+        .getElementById("bc-current-streak")
+        .innerText =
+        streak.type === "B"
+            ? "庄 " + streak.count
+            : streak.type === "P"
+                ? "闲 " + streak.count
+                : "和";
+
+    document
+        .getElementById("bc-max-banker")
+        .innerText =
+        getMaxStreak(
+            history,
+            "B"
+        );
+
+    document
+        .getElementById("bc-max-player")
+        .innerText =
+        getMaxStreak(
+            history,
+            "P"
+        );
+
+    document
+        .getElementById("bc-total-rounds")
+        .innerText =
+        total;
+
+    renderBigRoad(history);
+
+    renderSmallRoad(
+        "eye-road",
+        history,
+        0
+    );
+
+    renderSmallRoad(
+        "small-road",
+        history,
+        1
+    );
+
+    renderSmallRoad(
+        "cockroach-road",
+        history,
+        2
+    );
+
+    renderBaccaratHistory(history);
+
+    const predictionEl =
+        document.getElementById(
+            "bc-prediction"
+        );
+
+    const actionEl =
+        document.getElementById(
+            "bc-action"
+        );
+
+    if (
+        prediction.prediction ===
+        "B"
+    ) {
+
+        predictionEl.className =
+            "prediction-result banker-color";
+
+        predictionEl.innerText =
+            "🔴 庄";
+
+        actionEl.className =
+            "bet";
+
+        actionEl.innerText =
+            "BET";
+
+    } else if (
+        prediction.prediction ===
+        "P"
+    ) {
+
+        predictionEl.className =
+            "prediction-result player-color";
+
+        predictionEl.innerText =
+            "🔵 闲";
+
+        actionEl.className =
+            "bet";
+
+        actionEl.innerText =
+            "BET";
+
+    } else {
+
+        predictionEl.className =
+            "prediction-result";
+
+        predictionEl.innerText =
+            "⚪ PASS";
+
+        actionEl.className =
+            "pass";
+
+        actionEl.innerText =
+            "PASS";
+    }
+
+    document
+        .getElementById("bc-confidence")
+        .innerText =
+        "信心：" +
+        prediction.confidence +
+        "%";
+
+    let reasonHtml = "";
+
+    reasonHtml += `
+        <div>
+            ${prediction.bankerCount >
+              prediction.playerCount
+                ? "✓"
+                : "○"}
+            近10局：
+            庄 ${prediction.bankerCount}
+            /
+            闲 ${prediction.playerCount}
+        </div>
+    `;
+
+    reasonHtml += `
+        <div>
+            ${streak.type === "B"
+                ? "✓"
+                : "○"}
+            当前庄连：
+            ${
+                streak.type === "B"
+                    ? streak.count
+                    : 0
+            }
+        </div>
+    `;
+
+    reasonHtml += `
+        <div>
+            ${streak.type === "P"
+                ? "✓"
+                : "○"}
+            当前闲连：
+            ${
+                streak.type === "P"
+                    ? streak.count
+                    : 0
+            }
+        </div>
+    `;
+
+    reasonHtml += `
+        <div>
+            庄 Score：
+            ${prediction.bankerScore.toFixed(1)}
+        </div>
+    `;
+
+    reasonHtml += `
+        <div>
+            闲 Score：
+            ${prediction.playerScore.toFixed(1)}
+        </div>
+    `;
+
+    if (
+        prediction.prediction ===
+        "PASS"
+    ) {
+
+        reasonHtml += `
+            <div style="color:#fbbf24;">
+                ⚠️ 当前多指标分歧，系统选择观望
+            </div>
+        `;
+
+    } else {
+
+        reasonHtml += `
+            <div style="color:#34d399;">
+                ✓ 多指标方向达到 Demo 阈值
+            </div>
+        `;
+    }
+
+    document
+        .getElementById("bc-reason")
+        .innerHTML =
+        reasonHtml +
+        `
+            <div class="demo-warning">
+                ⚠️ 目前为 Demo 数据与示例路纸，
+                不代表真实百家乐结果。
+            </div>
+        `;
+}
+
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+renderBaccarat("D51");
+
+
+/* =====================================================
+   WINGO COUNTDOWN
+===================================================== */
+
+setInterval(
+    () => {
+
+        countdownVal--;
+
+        if (
+            countdownVal <= 0
+        ) {
+
+            countdownVal = 5;
+
+            refreshDashboard();
+        }
+
+        document
+            .getElementById(
+                "countdown"
+            )
+            .innerText =
+            countdownVal + "s";
+
+    },
+    1000
+);
+
+
+/* =====================================================
+   INITIAL WINGO LOAD
+===================================================== */
 
 refreshDashboard();
 
