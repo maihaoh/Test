@@ -1,2151 +1,1253 @@
-/* =========================================================
-   WIN GO + BACCARAT AI DASHBOARD
-   Complete Responsive Style
-========================================================= */
+<!DOCTYPE html>
+<html lang="zh-CN">
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+<head>
 
-html {
-    scroll-behavior: smooth;
-}
+    <meta charset="UTF-8">
 
-body {
-    font-family:
-        "Segoe UI",
-        "Microsoft YaHei",
-        Arial,
-        sans-serif;
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    background:
-        radial-gradient(
-            circle at 15% 0%,
-            #172554 0%,
-            #0f172a 34%,
-            #020617 100%
-        );
+    <title>WinGo & Baccarat AI Dashboard</title>
 
-    color: #e5e7eb;
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    min-height: 100vh;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-    line-height: 1.5;
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
-    overflow-x: hidden;
-}
+</head>
 
 
-/* =========================================================
-   GLOBAL
-========================================================= */
+<body>
 
-button,
-input,
-select,
-textarea {
-    font: inherit;
-}
+<div class="container">
 
-button {
-    -webkit-tap-highlight-color: transparent;
-}
 
-::selection {
-    background: rgba(99, 102, 241, 0.35);
-    color: #ffffff;
-}
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
+    <header class="header">
 
-/* =========================================================
-   CONTAINER
-========================================================= */
+        <div>
 
-.container {
-    width: 100%;
-    max-width: 1500px;
+            <h1>
+                🎯 AI GAMING DASHBOARD
+            </h1>
 
-    margin: 0 auto;
+            <div class="subtitle">
+                WinGo + Baccarat 独立分析系统
+            </div>
 
-    padding: 20px;
-}
+        </div>
 
 
-/* =========================================================
-   HEADER
-========================================================= */
+        <div class="header-info">
 
-.header {
-    display: flex;
+            <div class="time-box">
 
-    align-items: center;
-    justify-content: space-between;
+                <span>MYT</span>
 
-    gap: 20px;
+                <strong id="myt-clock">
+                    --:--:--
+                </strong>
 
-    width: 100%;
+            </div>
 
-    padding: 20px 24px;
 
-    margin-bottom: 16px;
+            <div class="countdown-box">
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(15, 23, 42, 0.96),
-            rgba(15, 23, 42, 0.82)
-        );
+                <span>NEXT</span>
 
-    border: 1px solid rgba(148, 163, 184, 0.14);
+                <strong id="countdown">
+                    5s
+                </strong>
 
-    border-radius: 18px;
+            </div>
 
-    box-shadow:
-        0 18px 45px rgba(0, 0, 0, 0.28),
-        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        </div>
 
-    backdrop-filter: blur(14px);
-}
+    </header>
 
-.header h1 {
-    color: #f8fafc;
 
-    font-size: 25px;
-    font-weight: 900;
 
-    letter-spacing: 0.2px;
-}
+    <!-- =====================================================
+         MAIN TAB
+    ====================================================== -->
 
-.subtitle {
-    margin-top: 4px;
+    <div class="main-tabs">
 
-    color: #94a3b8;
+        <button
+            class="main-tab active"
+            onclick="switchMainTab('wingo', this)"
+        >
+            🎯 WinGo AI
+        </button>
 
-    font-size: 13px;
-}
 
-.header-info {
-    display: flex;
+        <button
+            class="main-tab"
+            onclick="switchMainTab('baccarat', this)"
+        >
+            🃏 Baccarat
+        </button>
 
-    align-items: center;
+    </div>
 
-    gap: 10px;
 
-    flex-shrink: 0;
-}
 
-.time-box,
-.countdown-box {
-    min-width: 108px;
+    <!-- =====================================================
+         WINGO
+    ====================================================== -->
 
-    padding: 10px 14px;
+    <section
+        id="wingo-section"
+        class="main-section active"
+    >
 
-    text-align: center;
 
-    background:
-        rgba(30, 41, 59, 0.72);
+        <!-- TOP -->
 
-    border: 1px solid rgba(148, 163, 184, 0.1);
+        <div class="grid-cards">
 
-    border-radius: 12px;
-}
 
-.time-box span,
-.countdown-box span {
-    display: block;
+            <div class="card latest-card">
 
-    margin-bottom: 2px;
+                <div class="card-title">
+                    🎯 最新开奖
+                </div>
 
-    color: #64748b;
+                <div
+                    id="latest-issue"
+                    class="card-value"
+                >
+                    ----
+                </div>
 
-    font-size: 10px;
-    font-weight: 800;
+                <div
+                    id="latest-result"
+                    class="result-box"
+                >
+                    --
+                </div>
 
-    letter-spacing: 0.5px;
-}
+            </div>
 
-.time-box strong,
-.countdown-box strong {
-    display: block;
 
-    color: #f8fafc;
 
-    font-size: 16px;
-    font-weight: 800;
+            <div class="card prediction-card">
 
-    white-space: nowrap;
-}
+                <div class="card-title">
+                    🔮 下一期预测
+                </div>
 
+                <div
+                    id="predicted-result"
+                    class="prediction-box"
+                >
+                    <span class="tag-wait">
+                        等待数据
+                    </span>
+                </div>
 
-/* =========================================================
-   MAIN TABS
-========================================================= */
+            </div>
 
-.main-tabs {
-    display: grid;
 
-    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    gap: 10px;
+            <div class="card winrate-card">
 
-    width: 100%;
+                <div class="card-title">
+                    📈 AI 胜率
+                </div>
 
-    margin-bottom: 16px;
-}
+                <div
+                    id="win-rate"
+                    class="win-rate-box"
+                >
 
-.main-tab {
-    width: 100%;
+                    <div
+                        style="
+                            font-size:2rem;
+                            font-weight:800;
+                            color:#34d399;
+                        "
+                    >
+                        --%
+                    </div>
 
-    padding: 13px 18px;
+                    <div
+                        style="
+                            font-size:.8rem;
+                            color:#94a3b8;
+                            margin-top:4px;
+                        "
+                    >
+                        最近 50 局
+                    </div>
 
-    border: 1px solid rgba(148, 163, 184, 0.14);
+                </div>
 
-    border-radius: 12px;
+            </div>
 
-    background:
-        rgba(15, 23, 42, 0.82);
+        </div>
 
-    color: #94a3b8;
 
-    font-size: 14px;
-    font-weight: 800;
 
-    cursor: pointer;
+        <!-- =================================================
+             MARKET ANALYSIS
+        ================================================== -->
 
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-}
+        <div class="section-card market-analysis-card">
 
-.main-tab:hover {
-    color: #ffffff;
+            <div class="section-title">
+                📊 WinGo 市场分析
+            </div>
 
-    background:
-        rgba(30, 41, 59, 0.9);
 
-    transform: translateY(-1px);
-}
+            <div class="analysis-grid">
 
-.main-tab:active {
-    transform: translateY(0);
-}
 
-.main-tab.active {
-    color: #ffffff;
+                <div class="analysis-item blue-item">
 
-    background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #7c3aed
-        );
+                    <div class="analysis-label">
+                        🔥 当前长龙
+                    </div>
 
-    border-color:
-        rgba(129, 140, 248, 0.5);
+                    <div
+                        id="analysis-streak"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
 
-    box-shadow:
-        0 8px 25px rgba(79, 70, 229, 0.28);
-}
+                </div>
 
 
-/* =========================================================
-   MAIN SECTION
-========================================================= */
+                <div class="analysis-item purple-item">
 
-.main-section {
-    display: none;
+                    <div class="analysis-label">
+                        🧠 Markov
+                    </div>
 
-    width: 100%;
-}
+                    <div
+                        id="analysis-markov"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
 
-.main-section.active {
-    display: block;
-}
+                </div>
 
 
-/* =========================================================
-   SECTION CARD
-========================================================= */
+                <div class="analysis-item orange-item">
 
-.section-card {
-    width: 100%;
+                    <div class="analysis-label">
+                        📉 均值回归
+                    </div>
 
-    margin-bottom: 14px;
+                    <div
+                        id="analysis-mean"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
 
-    padding: 20px;
+                </div>
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(15, 23, 42, 0.96),
-            rgba(15, 23, 42, 0.82)
-        );
 
-    border: 1px solid rgba(148, 163, 184, 0.13);
+                <div class="analysis-item cyan-item">
 
-    border-radius: 16px;
+                    <div class="analysis-label">
+                        🎯 目标号码
+                    </div>
 
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.015);
-}
+                    <div
+                        id="analysis-number"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
 
-.section-title {
-    display: flex;
+                </div>
 
-    align-items: center;
 
-    gap: 8px;
+                <div class="analysis-item green-item">
 
-    min-width: 0;
+                    <div class="analysis-label">
+                        大 10
+                    </div>
 
-    margin-bottom: 16px;
+                    <div
+                        id="analysis-big10"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
 
-    color: #f8fafc;
+                </div>
 
-    font-size: 16px;
-    font-weight: 850;
-}
 
-.section-title > span {
-    color: #94a3b8;
+                <div class="analysis-item red-item">
 
-    font-size: 12px;
-    font-weight: 700;
-}
+                    <div class="analysis-label">
+                        小 10
+                    </div>
 
+                    <div
+                        id="analysis-small10"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
 
-/* =========================================================
-   TOP CARDS
-========================================================= */
+                </div>
 
-.grid-cards {
-    display: grid;
 
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+                <div class="analysis-item teal-item">
 
-    gap: 14px;
+                    <div class="analysis-label">
+                        大 50
+                    </div>
 
-    width: 100%;
+                    <div
+                        id="analysis-big50"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
 
-    margin-bottom: 14px;
-}
+                </div>
 
-.card {
-    position: relative;
 
-    min-width: 0;
-    min-height: 145px;
+                <div class="analysis-item yellow-item">
 
-    padding: 20px;
+                    <div class="analysis-label">
+                        小 50
+                    </div>
 
-    overflow: hidden;
+                    <div
+                        id="analysis-small50"
+                        class="analysis-value"
+                    >
+                        --%
+                    </div>
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(15, 23, 42, 0.97),
-            rgba(15, 23, 42, 0.82)
-        );
+                </div>
 
-    border: 1px solid rgba(148, 163, 184, 0.13);
+            </div>
 
-    border-radius: 16px;
 
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.015);
-}
+            <div class="score-section">
 
-.latest-card {
-    border-top: 3px solid #38bdf8;
-}
+                <div class="score-header">
 
-.prediction-card {
-    border-top: 3px solid #a78bfa;
-}
+                    <span>
+                        大 / 小 分布
+                    </span>
 
-.winrate-card {
-    border-top: 3px solid #34d399;
-}
+                    <strong id="score-text">
+                        大 --% / 小 --%
+                    </strong>
 
-.card-title {
-    margin-bottom: 10px;
+                </div>
 
-    color: #94a3b8;
 
-    font-size: 13px;
-    font-weight: 750;
+                <div class="score-bar">
 
-    white-space: nowrap;
-}
+                    <div
+                        id="score-fill"
+                        class="score-fill"
+                    ></div>
 
-.card-value {
-    color: #f8fafc;
+                </div>
 
-    font-size: 27px;
-    font-weight: 900;
+            </div>
 
-    line-height: 1.25;
+        </div>
 
-    overflow-wrap: anywhere;
-}
 
-.card-subvalue {
-    margin-top: 4px;
 
-    color: #64748b;
+        <!-- =================================================
+             AI REVIEW
+        ================================================== -->
 
-    font-size: 12px;
-}
+        <div class="section-card ai-review-card">
 
-.result-box {
-    display: inline-flex;
+            <div class="section-title">
 
-    align-items: center;
-    justify-content: center;
+                🤖 AI 智能复盘
 
-    min-height: 45px;
+                <span
+                    id="review-status"
+                    class="review-status review-wait"
+                >
+                    等待
+                </span>
 
-    max-width: 100%;
+            </div>
 
-    margin-top: 2px;
 
-    padding: 7px 16px;
+            <div class="review-grid">
 
-    border-radius: 12px;
 
-    background:
-        rgba(14, 116, 144, 0.15);
+                <div class="review-item review-prediction">
 
-    border: 1px solid rgba(34, 211, 238, 0.08);
+                    <div class="review-label">
+                        🔮 上一期预测
+                    </div>
 
-    color: #67e8f9;
+                    <div
+                        id="review-prediction"
+                        class="review-value"
+                    >
+                        --
+                    </div>
 
-    font-size: 24px;
-    font-weight: 900;
+                </div>
 
-    overflow-wrap: anywhere;
-}
 
-.prediction-box {
-    display: flex;
+                <div class="review-item review-actual">
 
-    align-items: center;
+                    <div class="review-label">
+                        🎯 实际结果
+                    </div>
 
-    min-height: 55px;
+                    <div
+                        id="review-actual"
+                        class="review-value"
+                    >
+                        --
+                    </div>
 
-    min-width: 0;
-}
+                </div>
 
-.tag-wait {
-    display: inline-flex;
 
-    align-items: center;
-    justify-content: center;
+                <div class="review-item review-result">
 
-    padding: 7px 14px;
+                    <div class="review-label">
+                        📌 结果
+                    </div>
 
-    border-radius: 999px;
+                    <div
+                        id="review-result"
+                        class="review-value"
+                    >
+                        --
+                    </div>
 
-    background:
-        rgba(100, 116, 139, 0.16);
+                </div>
 
-    color: #94a3b8;
 
-    font-size: 13px;
-    font-weight: 750;
-}
+                <div class="review-item review-learning">
 
+                    <div class="review-label">
+                        🧠 AI 动作
+                    </div>
 
-/* =========================================================
-   MARKET ANALYSIS
-========================================================= */
+                    <div
+                        id="review-message"
+                        class="review-value review-action-text"
+                    >
+                        等待复盘
+                    </div>
 
-.market-analysis-card {
-    border-top: 3px solid #38bdf8;
-}
+                </div>
 
-.analysis-grid {
-    display: grid;
+            </div>
 
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
+        </div>
 
-    gap: 10px;
 
-    width: 100%;
-}
 
-.analysis-item {
-    min-width: 0;
-    min-height: 82px;
+        <!-- =================================================
+             AI SMART LEARNING
+        ================================================== -->
 
-    padding: 14px;
+        <div class="section-card ai-learning-card">
 
-    background:
-        rgba(2, 6, 23, 0.45);
+            <div class="section-title">
 
-    border:
-        1px solid rgba(148, 163, 184, 0.1);
+                🤖 AI 智能学习
 
-    border-radius: 11px;
+                <span
+                    id="ai-learning-status"
+                    class="ai-status"
+                >
+                    学习中
+                </span>
 
-    overflow: hidden;
-}
+            </div>
 
-.blue-item {
-    border-left: 3px solid #3b82f6;
-}
 
-.purple-item {
-    border-left: 3px solid #a855f7;
-}
+            <!-- STATUS -->
 
-.orange-item {
-    border-left: 3px solid #f97316;
-}
+            <div class="ai-learning-grid">
 
-.cyan-item {
-    border-left: 3px solid #06b6d4;
-}
 
-.green-item {
-    border-left: 3px solid #22c55e;
-}
+                <div class="ai-learning-item state-item">
 
-.red-item {
-    border-left: 3px solid #ef4444;
-}
+                    <div class="ai-learning-label">
+                        🧠 AI 状态
+                    </div>
 
-.teal-item {
-    border-left: 3px solid #14b8a6;
-}
+                    <div
+                        id="ai-state"
+                        class="ai-learning-value"
+                    >
+                        初始化
+                    </div>
 
-.yellow-item {
-    border-left: 3px solid #eab308;
-}
+                </div>
 
-.analysis-label {
-    margin-bottom: 5px;
 
-    color: #94a3b8;
+                <div class="ai-learning-item count-item">
 
-    font-size: 11px;
-    font-weight: 750;
+                    <div class="ai-learning-label">
+                        📚 学习次数
+                    </div>
 
-    white-space: nowrap;
+                    <div
+                        id="ai-learning-count"
+                        class="ai-learning-value"
+                    >
+                        0
+                    </div>
 
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+                </div>
 
-.analysis-value {
-    color: #f8fafc;
 
-    font-size: 19px;
-    font-weight: 900;
+                <div class="ai-learning-item win-item">
 
-    line-height: 1.3;
+                    <div class="ai-learning-label">
+                        ✅ WIN
+                    </div>
 
-    overflow-wrap: anywhere;
-}
+                    <div
+                        id="ai-learning-win"
+                        class="ai-learning-value"
+                    >
+                        0
+                    </div>
 
+                </div>
 
-/* =========================================================
-   SCORE
-========================================================= */
 
-.score-section {
-    margin-top: 16px;
-}
+                <div class="ai-learning-item loss-item">
 
-.score-header {
-    display: flex;
+                    <div class="ai-learning-label">
+                        ❌ LOSS
+                    </div>
 
-    align-items: center;
-    justify-content: space-between;
+                    <div
+                        id="ai-learning-loss"
+                        class="ai-learning-value"
+                    >
+                        0
+                    </div>
 
-    gap: 12px;
+                </div>
 
-    margin-bottom: 8px;
 
-    color: #94a3b8;
+                <div class="ai-learning-item pass-item">
 
-    font-size: 12px;
-}
+                    <div class="ai-learning-label">
+                        ⚪ PASS
+                    </div>
 
-.score-header strong {
-    color: #e2e8f0;
+                    <div
+                        id="ai-learning-pass"
+                        class="ai-learning-value"
+                    >
+                        0
+                    </div>
 
-    white-space: nowrap;
-}
+                </div>
 
-.score-bar {
-    width: 100%;
-    height: 12px;
 
-    overflow: hidden;
+                <div class="ai-learning-item quality-item">
 
-    background:
-        linear-gradient(
-            90deg,
-            rgba(239, 68, 68, 0.35),
-            rgba(30, 41, 59, 0.8),
-            rgba(34, 197, 94, 0.35)
-        );
+                    <div class="ai-learning-label">
+                        🎯 PASS 判断
+                    </div>
 
-    border-radius: 999px;
-}
+                    <div
+                        id="ai-pass-quality"
+                        class="ai-learning-value"
+                    >
+                        --%
+                    </div>
 
-.score-fill {
-    height: 100%;
+                </div>
 
-    width: 0%;
+            </div>
 
-    background:
-        linear-gradient(
-            90deg,
-            #ef4444,
-            #f59e0b,
-            #22c55e
-        );
 
-    border-radius: 999px;
 
-    transition: width 0.4s ease;
-}
+            <!-- WEIGHTS -->
 
+            <div class="ai-factor-title">
+                📊 当前学习权重
+            </div>
 
-/* =========================================================
-   AI REVIEW
-========================================================= */
 
-.ai-review-card {
-    border-top: 3px solid #f59e0b;
+            <div class="ai-factor-grid">
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(69, 45, 15, 0.25),
-            rgba(15, 23, 42, 0.95)
-        );
-}
 
-.review-grid {
-    display: grid;
+                <div class="ai-factor markov-factor">
 
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
+                    <span>
+                        🧠 Markov
+                    </span>
 
-    gap: 10px;
+                    <strong id="ai-weight-markov">
+                        1.00
+                    </strong>
 
-    width: 100%;
-}
+                </div>
 
-.review-item {
-    min-width: 0;
 
-    padding: 14px;
+                <div class="ai-factor mean-factor">
 
-    background:
-        rgba(2, 6, 23, 0.48);
+                    <span>
+                        📉 均值回归
+                    </span>
 
-    border:
-        1px solid rgba(148, 163, 184, 0.08);
+                    <strong id="ai-weight-mean">
+                        1.00
+                    </strong>
 
-    border-radius: 11px;
+                </div>
 
-    overflow: hidden;
-}
 
-.review-prediction {
-    border-left: 3px solid #a78bfa;
-}
+                <div class="ai-factor streak-factor">
 
-.review-actual {
-    border-left: 3px solid #38bdf8;
-}
+                    <span>
+                        🔥 长龙
+                    </span>
 
-.review-result {
-    border-left: 3px solid #f59e0b;
-}
+                    <strong id="ai-weight-streak">
+                        0.80
+                    </strong>
 
-.review-learning {
-    border-left: 3px solid #34d399;
-}
+                </div>
 
-.review-label {
-    margin-bottom: 5px;
 
-    color: #64748b;
+                <div class="ai-factor frequency-factor">
 
-    font-size: 11px;
-    font-weight: 750;
-}
+                    <span>
+                        📊 频率
+                    </span>
 
-.review-value {
-    color: #f8fafc;
+                    <strong id="ai-weight-frequency">
+                        0.70
+                    </strong>
 
-    font-size: 16px;
-    font-weight: 850;
+                </div>
 
-    overflow-wrap: anywhere;
-}
 
-.review-action-text {
-    color: #34d399;
-}
+                <div class="ai-factor balance-factor">
 
-.review-status {
-    display: inline-flex;
+                    <span>
+                        ⚖️ 平衡
+                    </span>
 
-    align-items: center;
-    justify-content: center;
+                    <strong id="ai-weight-balance">
+                        0.60
+                    </strong>
 
-    margin-left: auto;
+                </div>
 
-    padding: 4px 10px;
 
-    border-radius: 999px;
+                <div class="ai-factor threshold-factor">
 
-    font-size: 11px;
-    font-weight: 850;
+                    <span>
+                        🎯 PASS 阈值
+                    </span>
 
-    white-space: nowrap;
-}
+                    <strong id="ai-pass-threshold">
+                        0.80
+                    </strong>
 
-.review-wait {
-    background:
-        rgba(100, 116, 139, 0.15);
+                </div>
 
-    color: #94a3b8;
-}
+            </div>
 
-.review-win {
-    background:
-        rgba(34, 197, 94, 0.15);
 
-    color: #4ade80;
-}
 
-.review-loss {
-    background:
-        rgba(239, 68, 68, 0.15);
+            <!-- LAST LEARNING -->
 
-    color: #f87171;
-}
+            <div class="ai-learning-message">
 
-.review-pass {
-    background:
-        rgba(234, 179, 8, 0.15);
+                <div class="ai-learning-label">
+                    🔄 最近一次 AI 复盘
+                </div>
 
-    color: #facc15;
-}
+                <div
+                    id="ai-last-learning"
+                    class="ai-learning-text"
+                >
+                    等待第一笔复盘数据……
+                </div>
 
+            </div>
 
-/* =========================================================
-   AI SMART LEARNING
-========================================================= */
+        </div>
 
-.ai-learning-card {
-    border-top: 3px solid #8b5cf6;
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(49, 28, 93, 0.35),
-            rgba(15, 23, 42, 0.95)
-        );
-}
 
-.ai-status {
-    display: inline-flex;
+        <!-- =================================================
+             HISTORY
+        ================================================== -->
 
-    align-items: center;
-    justify-content: center;
+        <div class="section-card">
 
-    margin-left: auto;
+            <div class="section-title">
+                📜 WinGo 最近 50 局
+            </div>
 
-    padding: 5px 11px;
 
-    border-radius: 999px;
+            <div class="table-wrapper">
 
-    background:
-        rgba(20, 184, 166, 0.15);
+                <table>
 
-    border:
-        1px solid rgba(45, 212, 191, 0.3);
+                    <thead>
 
-    color: #2dd4bf;
+                        <tr>
 
-    font-size: 11px;
-    font-weight: 850;
+                            <th>期号</th>
 
-    white-space: nowrap;
-}
+                            <th>实际</th>
 
-.ai-learning-grid {
-    display: grid;
+                            <th>AI预测</th>
 
-    grid-template-columns:
-        repeat(6, minmax(0, 1fr));
+                            <th>信号</th>
 
-    gap: 10px;
+                            <th>结果</th>
 
-    width: 100%;
+                        </tr>
 
-    margin-bottom: 20px;
-}
+                    </thead>
 
-.ai-learning-item {
-    min-width: 0;
-    min-height: 80px;
 
-    padding: 13px;
+                    <tbody id="draw-table">
 
-    background:
-        rgba(2, 6, 23, 0.5);
+                        <tr>
 
-    border:
-        1px solid rgba(148, 163, 184, 0.1);
+                            <td colspan="5">
+                                等待数据……
+                            </td>
 
-    border-radius: 12px;
+                        </tr>
 
-    overflow: hidden;
-}
+                    </tbody>
 
-.state-item {
-    border-top: 3px solid #2dd4bf;
-}
+                </table>
 
-.count-item {
-    border-top: 3px solid #60a5fa;
-}
+            </div>
 
-.win-item {
-    border-top: 3px solid #22c55e;
+        </div>
 
-    background:
-        rgba(22, 101, 52, 0.14);
-}
 
-.loss-item {
-    border-top: 3px solid #ef4444;
 
-    background:
-        rgba(127, 29, 29, 0.14);
-}
+        <!-- =================================================
+             CHART
+        ================================================== -->
 
-.pass-item {
-    border-top: 3px solid #eab308;
+        <div class="section-card">
 
-    background:
-        rgba(113, 63, 18, 0.14);
-}
+            <div class="section-title">
+                📈 WinGo 数字走势
+            </div>
 
-.quality-item {
-    border-top: 3px solid #c084fc;
 
-    background:
-        rgba(88, 28, 135, 0.14);
-}
+            <div class="chart-container">
 
-.ai-learning-label {
-    margin-bottom: 5px;
+                <canvas id="chart-numbers"></canvas>
 
-    color: #94a3b8;
+            </div>
 
-    font-size: 11px;
-    font-weight: 750;
+        </div>
 
-    white-space: nowrap;
 
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+    </section>
 
-.ai-learning-value {
-    color: #f8fafc;
 
-    font-size: 20px;
-    font-weight: 900;
 
-    line-height: 1.3;
+    <!-- =====================================================
+         BACCARAT
+    ====================================================== -->
 
-    overflow-wrap: anywhere;
-}
+    <section
+        id="baccarat-section"
+        class="main-section"
+    >
 
-.win-item .ai-learning-value {
-    color: #4ade80;
-}
 
-.loss-item .ai-learning-value {
-    color: #f87171;
-}
+        <div class="section-card">
 
-.pass-item .ai-learning-value {
-    color: #facc15;
-}
+            <div class="section-title">
+                🃏 Baccarat 台选择
+            </div>
 
-.quality-item .ai-learning-value {
-    color: #d8b4fe;
-}
 
+            <div class="baccarat-table-buttons">
 
-/* =========================================================
-   AI FACTORS
-========================================================= */
 
-.ai-factor-title {
-    margin-bottom: 10px;
+                <button
+                    class="baccarat-table-btn active"
+                    onclick="switchBaccaratTable('D51', this)"
+                >
+                    D51
+                </button>
 
-    color: #cbd5e1;
 
-    font-size: 13px;
-    font-weight: 850;
-}
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D52', this)"
+                >
+                    D52
+                </button>
 
-.ai-factor-grid {
-    display: grid;
 
-    grid-template-columns:
-        repeat(6, minmax(0, 1fr));
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D53', this)"
+                >
+                    D53
+                </button>
 
-    gap: 10px;
 
-    width: 100%;
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D54', this)"
+                >
+                    D54
+                </button>
 
-    margin-bottom: 16px;
-}
 
-.ai-factor {
-    display: flex;
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D55', this)"
+                >
+                    D55
+                </button>
 
-    align-items: center;
-    justify-content: space-between;
 
-    gap: 8px;
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D56', this)"
+                >
+                    D56
+                </button>
 
-    min-width: 0;
 
-    padding: 12px;
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D57', this)"
+                >
+                    D57
+                </button>
 
-    background:
-        rgba(2, 6, 23, 0.48);
 
-    border:
-        1px solid rgba(148, 163, 184, 0.1);
+                <button
+                    class="baccarat-table-btn"
+                    onclick="switchBaccaratTable('D58', this)"
+                >
+                    D58
+                </button>
 
-    border-radius: 10px;
+            </div>
 
-    overflow: hidden;
-}
+        </div>
 
-.ai-factor span {
-    min-width: 0;
 
-    color: #cbd5e1;
 
-    font-size: 11px;
+        <div class="grid-cards">
 
-    white-space: nowrap;
+            <div class="card">
 
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+                <div class="card-title">
+                    🎰 当前台
+                </div>
 
-.ai-factor strong {
-    flex-shrink: 0;
+                <div
+                    id="bc-table-name"
+                    class="card-value"
+                >
+                    D51
+                </div>
 
-    font-size: 14px;
-}
+                <div
+                    id="bc-round"
+                    class="card-subvalue"
+                >
+                    #128
+                </div>
 
-.markov-factor {
-    border-left: 3px solid #3b82f6;
-}
+            </div>
 
-.markov-factor strong {
-    color: #60a5fa;
-}
 
-.mean-factor {
-    border-left: 3px solid #a855f7;
-}
+            <div class="card">
 
-.mean-factor strong {
-    color: #c084fc;
-}
+                <div class="card-title">
+                    🎯 最新结果
+                </div>
 
-.streak-factor {
-    border-left: 3px solid #f97316;
-}
+                <div
+                    id="bc-latest"
+                    class="baccarat-result"
+                >
+                    --
+                </div>
 
-.streak-factor strong {
-    color: #fb923c;
-}
+            </div>
 
-.frequency-factor {
-    border-left: 3px solid #06b6d4;
-}
 
-.frequency-factor strong {
-    color: #22d3ee;
-}
+            <div class="card">
 
-.balance-factor {
-    border-left: 3px solid #22c55e;
-}
+                <div class="card-title">
+                    🔥 当前走势
+                </div>
 
-.balance-factor strong {
-    color: #4ade80;
-}
+                <div
+                    id="bc-streak"
+                    class="card-value"
+                >
+                    --
+                </div>
 
-.threshold-factor {
-    border-left: 3px solid #eab308;
-}
+            </div>
 
-.threshold-factor strong {
-    color: #facc15;
-}
+        </div>
 
 
-/* =========================================================
-   LAST LEARNING
-========================================================= */
 
-.ai-learning-message {
-    width: 100%;
+        <div class="section-card">
 
-    padding: 14px 15px;
+            <div
+                id="big-road-title"
+                class="section-title"
+            >
+                📍 D51 大路
+            </div>
 
-    background:
-        rgba(2, 6, 23, 0.48);
+            <div
+                id="big-road"
+                class="big-road"
+            ></div>
 
-    border-left: 3px solid #8b5cf6;
+        </div>
 
-    border-radius: 9px;
-}
 
-.ai-learning-text {
-    color: #cbd5e1;
 
-    font-size: 12px;
+        <div class="road-grid">
 
-    line-height: 1.7;
 
-    overflow-wrap: anywhere;
-}
+            <div class="section-card">
 
+                <div class="section-title">
 
-/* =========================================================
-   WIN RATE
-========================================================= */
+                    👁️ 眼路
 
-.win-rate-box {
-    min-width: 0;
-}
+                    <span id="eye-road-label">
+                        D51
+                    </span>
 
-.win-rate-box > div:first-child {
-    color: #34d399 !important;
+                </div>
 
-    line-height: 1.1;
-}
+                <div
+                    id="eye-road"
+                    class="small-road"
+                ></div>
 
-.win-rate-box > div:last-child {
-    color: #94a3b8 !important;
-}
+            </div>
 
 
-/* =========================================================
-   TABLE
-========================================================= */
+            <div class="section-card">
 
-.table-wrapper {
-    width: 100%;
+                <div class="section-title">
 
-    overflow-x: auto;
-    overflow-y: hidden;
+                    🔴 小路
 
-    -webkit-overflow-scrolling: touch;
+                    <span id="small-road-label">
+                        D51
+                    </span>
 
-    border-radius: 10px;
-}
+                </div>
 
-.table-wrapper table {
-    min-width: 620px;
-}
+                <div
+                    id="small-road"
+                    class="small-road"
+                ></div>
 
-table {
-    width: 100%;
+            </div>
 
-    border-collapse: collapse;
 
-    font-size: 12px;
-}
+            <div class="section-card">
 
-thead th {
-    padding: 11px 10px;
+                <div class="section-title">
 
-    text-align: left;
+                    🪳 蟑螂路
 
-    color: #94a3b8;
+                    <span id="cockroach-road-label">
+                        D51
+                    </span>
 
-    background:
-        rgba(2, 6, 23, 0.65);
+                </div>
 
-    border-bottom:
-        1px solid rgba(148, 163, 184, 0.1);
+                <div
+                    id="cockroach-road"
+                    class="small-road"
+                ></div>
 
-    font-size: 11px;
+            </div>
 
-    font-weight: 800;
+        </div>
 
-    white-space: nowrap;
-}
 
-tbody td {
-    padding: 10px;
 
-    border-top:
-        1px solid rgba(148, 163, 184, 0.08);
+        <div class="section-card">
 
-    color: #cbd5e1;
+            <div
+                id="stats-title"
+                class="section-title"
+            >
+                📊 D51 走势统计
+            </div>
 
-    white-space: nowrap;
-}
 
-tbody tr {
-    transition:
-        background 0.15s ease;
-}
+            <div class="analysis-grid">
 
-tbody tr:hover {
-    background:
-        rgba(51, 65, 85, 0.18);
-}
 
+                <div class="analysis-item banker-item">
 
-/* =========================================================
-   NUMBER ICONS
-========================================================= */
+                    <div class="analysis-label">
+                        庄
+                    </div>
 
-.number-icon {
-    display: inline-flex;
+                    <div
+                        id="bc-banker-count"
+                        class="analysis-value banker-color"
+                    >
+                        0
+                    </div>
 
-    align-items: center;
-    justify-content: center;
+                </div>
 
-    width: 30px;
-    height: 30px;
 
-    border-radius: 50%;
+                <div class="analysis-item player-item">
 
-    font-size: 13px;
-    font-weight: 900;
-}
+                    <div class="analysis-label">
+                        闲
+                    </div>
 
-.number-red {
-    background:
-        rgba(239, 68, 68, 0.15);
+                    <div
+                        id="bc-player-count"
+                        class="analysis-value player-color"
+                    >
+                        0
+                    </div>
 
-    border:
-        1px solid rgba(248, 113, 113, 0.3);
+                </div>
 
-    color: #f87171;
-}
 
-.number-green {
-    background:
-        rgba(34, 197, 94, 0.15);
+                <div class="analysis-item tie-item">
 
-    border:
-        1px solid rgba(74, 222, 128, 0.3);
+                    <div class="analysis-label">
+                        和
+                    </div>
 
-    color: #4ade80;
-}
+                    <div
+                        id="bc-tie-count"
+                        class="analysis-value tie-color"
+                    >
+                        0
+                    </div>
 
+                </div>
 
-/* =========================================================
-   CHART
-========================================================= */
 
-.chart-container {
-    position: relative;
+                <div class="analysis-item">
 
-    width: 100%;
+                    <div class="analysis-label">
+                        庄率
+                    </div>
 
-    height: 320px;
+                    <div
+                        id="bc-banker-rate"
+                        class="analysis-value banker-color"
+                    >
+                        0%
+                    </div>
 
-    min-height: 240px;
-}
+                </div>
 
-.chart-container canvas {
-    display: block;
 
-    width: 100% !important;
-    height: 100% !important;
-}
+                <div class="analysis-item">
 
+                    <div class="analysis-label">
+                        闲率
+                    </div>
 
-/* =========================================================
-   BACCARAT TABLE BUTTONS
-========================================================= */
+                    <div
+                        id="bc-player-rate"
+                        class="analysis-value player-color"
+                    >
+                        0%
+                    </div>
 
-.baccarat-table-buttons {
-    display: grid;
+                </div>
 
-    grid-template-columns:
-        repeat(8, minmax(0, 1fr));
 
-    gap: 8px;
+                <div class="analysis-item">
 
-    width: 100%;
-}
+                    <div class="analysis-label">
+                        当前连
+                    </div>
 
-.baccarat-table-btn {
-    min-width: 0;
+                    <div
+                        id="bc-current-streak"
+                        class="analysis-value"
+                    >
+                        --
+                    </div>
 
-    padding: 10px 8px;
+                </div>
 
-    border:
-        1px solid rgba(148, 163, 184, 0.14);
 
-    border-radius: 10px;
+                <div class="analysis-item">
 
-    background:
-        rgba(30, 41, 59, 0.75);
+                    <div class="analysis-label">
+                        最大庄连
+                    </div>
 
-    color: #94a3b8;
+                    <div
+                        id="bc-max-banker"
+                        class="analysis-value banker-color"
+                    >
+                        0
+                    </div>
 
-    font-size: 13px;
-    font-weight: 850;
+                </div>
 
-    cursor: pointer;
 
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.2s ease;
-}
+                <div class="analysis-item">
 
-.baccarat-table-btn:hover {
-    color: #ffffff;
+                    <div class="analysis-label">
+                        最大闲连
+                    </div>
 
-    background:
-        rgba(51, 65, 85, 0.8);
+                    <div
+                        id="bc-max-player"
+                        class="analysis-value player-color"
+                    >
+                        0
+                    </div>
 
-    transform: translateY(-1px);
-}
+                </div>
 
-.baccarat-table-btn:active {
-    transform: translateY(0);
-}
 
-.baccarat-table-btn.active {
-    color: #ffffff;
+                <div class="analysis-item">
 
-    background:
-        linear-gradient(
-            135deg,
-            #7c3aed,
-            #ec4899
-        );
+                    <div class="analysis-label">
+                        总局数
+                    </div>
 
-    border-color:
-        rgba(192, 132, 252, 0.5);
+                    <div
+                        id="bc-total-rounds"
+                        class="analysis-value"
+                    >
+                        0
+                    </div>
 
-    box-shadow:
-        0 6px 18px rgba(139, 92, 246, 0.18);
-}
+                </div>
 
+            </div>
 
-/* =========================================================
-   BACCARAT RESULT
-========================================================= */
+        </div>
 
-.baccarat-result {
-    font-size: 28px;
 
-    font-weight: 950;
 
-    line-height: 1.2;
+        <div class="section-card">
 
-    overflow-wrap: anywhere;
-}
+            <div
+                id="history-title"
+                class="section-title"
+            >
+                📜 D51 最近20局
+            </div>
 
-.banker-color {
-    color: #f87171 !important;
-}
+            <div
+                id="bc-history"
+                class="history-list"
+            ></div>
 
-.player-color {
-    color: #60a5fa !important;
-}
+        </div>
 
-.tie-color {
-    color: #34d399 !important;
-}
 
-.banker-item {
-    border-left: 3px solid #ef4444;
-}
 
-.player-item {
-    border-left: 3px solid #3b82f6;
-}
+        <div class="section-card baccarat-prediction-card">
 
-.tie-item {
-    border-left: 3px solid #22c55e;
-}
+            <div class="section-title">
 
+                🔮 Baccarat AI 预测
 
-/* =========================================================
-   BACCARAT ROADS
-========================================================= */
+                <span id="prediction-table-name">
+                    D51
+                </span>
 
-.road-grid {
-    display: grid;
+            </div>
 
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
 
-    gap: 14px;
+            <div class="baccarat-prediction">
 
-    width: 100%;
-}
+                <div
+                    id="bc-prediction"
+                    class="prediction-result"
+                >
+                    ⚪ PASS
+                </div>
 
-.road-grid .section-card {
-    min-width: 0;
-}
 
-.big-road {
-    display: flex;
+                <div
+                    id="bc-confidence"
+                    class="prediction-confidence"
+                >
+                    信心：50%
+                </div>
 
-    align-items: flex-start;
 
-    width: 100%;
+                <div
+                    id="bc-action"
+                    class="pass"
+                >
+                    PASS
+                </div>
 
-    min-height: 180px;
+            </div>
 
-    padding: 14px;
 
-    overflow-x: auto;
-    overflow-y: hidden;
+            <div
+                id="bc-reason"
+                class="prediction-reason"
+            ></div>
 
-    background:
-        rgba(2, 6, 23, 0.48);
+        </div>
 
-    border:
-        1px solid rgba(148, 163, 184, 0.06);
 
-    border-radius: 10px;
+    </section>
 
-    -webkit-overflow-scrolling: touch;
-}
+</div>
 
-.small-road {
-    width: 100%;
 
-    min-height: 100px;
+<script src="script.js"></script>
 
-    padding: 10px;
+</body>
 
-    overflow-x: auto;
-    overflow-y: hidden;
-
-    background:
-        rgba(2, 6, 23, 0.48);
-
-    border:
-        1px solid rgba(148, 163, 184, 0.06);
-
-    border-radius: 10px;
-
-    -webkit-overflow-scrolling: touch;
-}
-
-
-/* =========================================================
-   BACCARAT HISTORY
-========================================================= */
-
-.history-list {
-    display: flex;
-
-    flex-wrap: wrap;
-
-    align-items: center;
-
-    gap: 8px;
-
-    width: 100%;
-}
-
-.history-item {
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    flex: 0 0 auto;
-
-    width: 36px;
-    height: 36px;
-
-    border-radius: 50%;
-
-    font-size: 12px;
-    font-weight: 900;
-}
-
-.history-item.banker {
-    background:
-        rgba(239, 68, 68, 0.15);
-
-    border:
-        1px solid rgba(248, 113, 113, 0.35);
-
-    color: #f87171;
-}
-
-.history-item.player {
-    background:
-        rgba(59, 130, 246, 0.15);
-
-    border:
-        1px solid rgba(96, 165, 250, 0.35);
-
-    color: #60a5fa;
-}
-
-.history-item.tie {
-    background:
-        rgba(16, 185, 129, 0.15);
-
-    border:
-        1px solid rgba(52, 211, 153, 0.35);
-
-    color: #34d399;
-}
-
-
-/* =========================================================
-   BACCARAT PREDICTION
-========================================================= */
-
-.baccarat-prediction-card {
-    text-align: center;
-
-    border-top: 3px solid #ec4899;
-}
-
-.baccarat-prediction-card .section-title {
-    justify-content: center;
-}
-
-.baccarat-prediction {
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    gap: 8px;
-
-    padding: 20px 10px;
-}
-
-.prediction-result {
-    font-size: 34px;
-
-    font-weight: 950;
-
-    line-height: 1.2;
-
-    overflow-wrap: anywhere;
-}
-
-.prediction-confidence {
-    color: #94a3b8;
-
-    font-size: 13px;
-}
-
-#bc-action {
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    min-width: 70px;
-
-    padding: 7px 18px;
-
-    border-radius: 999px;
-
-    font-size: 12px;
-    font-weight: 900;
-}
-
-#bc-action.pass {
-    background:
-        rgba(250, 204, 21, 0.12);
-
-    color: #facc15;
-}
-
-#bc-action.banker {
-    background:
-        rgba(239, 68, 68, 0.12);
-
-    color: #f87171;
-}
-
-#bc-action.player {
-    background:
-        rgba(59, 130, 246, 0.12);
-
-    color: #60a5fa;
-}
-
-.prediction-reason {
-    width: 100%;
-
-    margin-top: 8px;
-
-    padding: 12px 15px;
-
-    color: #94a3b8;
-
-    background:
-        rgba(2, 6, 23, 0.35);
-
-    border:
-        1px solid rgba(148, 163, 184, 0.06);
-
-    border-radius: 9px;
-
-    font-size: 12px;
-
-    line-height: 1.7;
-
-    overflow-wrap: anywhere;
-}
-
-
-/* =========================================================
-   BACCARAT SPECIAL
-========================================================= */
-
-#big-road-title,
-#stats-title,
-#history-title {
-    overflow-wrap: anywhere;
-}
-
-#bc-round {
-    white-space: nowrap;
-}
-
-
-/* =========================================================
-   SCROLLBAR
-========================================================= */
-
-::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
-}
-
-::-webkit-scrollbar-track {
-    background: #0f172a;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #475569;
-
-    border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}
-
-
-/* =========================================================
-   LARGE LAPTOP
-========================================================= */
-
-@media (max-width: 1200px) {
-
-    .container {
-        max-width: 1200px;
-
-        padding: 16px;
-    }
-
-    .analysis-grid {
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-    }
-
-    .ai-learning-grid {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-    }
-
-    .ai-factor-grid {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-    }
-
-    .baccarat-table-buttons {
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-    }
-}
-
-
-/* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 900px) {
-
-    .container {
-        padding: 12px;
-    }
-
-    .header {
-        padding: 17px 18px;
-    }
-
-    .header h1 {
-        font-size: 22px;
-    }
-
-    .analysis-grid {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-    }
-
-    .review-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .road-grid {
-        grid-template-columns:
-            1fr 1fr;
-    }
-
-    .road-grid .section-card:last-child {
-        grid-column: 1 / -1;
-    }
-
-    .chart-container {
-        height: 300px;
-    }
-}
-
-
-/* =========================================================
-   SMALL TABLET / LARGE PHONE
-========================================================= */
-
-@media (max-width: 700px) {
-
-    .container {
-        padding: 10px;
-    }
-
-    .header {
-        flex-direction: column;
-
-        align-items: stretch;
-
-        gap: 14px;
-    }
-
-    .header-info {
-        display: grid;
-
-        grid-template-columns:
-            1fr 1fr;
-
-        width: 100%;
-    }
-
-    .time-box,
-    .countdown-box {
-        min-width: 0;
-
-        width: 100%;
-    }
-
-    .section-card {
-        padding: 16px;
-    }
-
-    .analysis-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .ai-learning-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .ai-factor-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .road-grid {
-        grid-template-columns:
-            1fr;
-    }
-
-    .road-grid .section-card:last-child {
-        grid-column: auto;
-    }
-
-    .baccarat-table-buttons {
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-    }
-
-    .chart-container {
-        height: 280px;
-    }
-}
-
-
-/* =========================================================
-   PHONE
-========================================================= */
-
-@media (max-width: 550px) {
-
-    .container {
-        padding: 8px;
-    }
-
-    .header {
-        padding: 15px;
-
-        border-radius: 15px;
-    }
-
-    .header h1 {
-        font-size: 19px;
-    }
-
-    .subtitle {
-        font-size: 12px;
-    }
-
-    .main-tabs {
-        gap: 6px;
-
-        margin-bottom: 12px;
-    }
-
-    .main-tab {
-        padding: 11px 8px;
-
-        font-size: 12px;
-    }
-
-    /* -----------------------------------------------------
-       KEEP TOP 3 CARDS IN ONE ROW
-    ----------------------------------------------------- */
-
-    .grid-cards {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        gap: 7px;
-    }
-
-    .grid-cards .card {
-        min-width: 0;
-
-        min-height: 125px;
-
-        padding: 12px;
-    }
-
-    .grid-cards .card-title {
-        margin-bottom: 8px;
-
-        font-size: 10px;
-
-        white-space: nowrap;
-    }
-
-    .grid-cards .card-value {
-        font-size: 18px;
-    }
-
-    .grid-cards .result-box {
-        min-height: 36px;
-
-        padding: 5px 8px;
-
-        font-size: 17px;
-    }
-
-    .grid-cards .prediction-box {
-        min-height: 40px;
-    }
-
-    .grid-cards .tag-wait {
-        padding: 6px 8px;
-
-        font-size: 10px;
-    }
-
-    .grid-cards .win-rate-box > div:first-child {
-        font-size: 1.35rem !important;
-    }
-
-    .grid-cards .win-rate-box > div:last-child {
-        font-size: 0.68rem !important;
-    }
-
-    /* -----------------------------------------------------
-       GENERAL CARD
-    ----------------------------------------------------- */
-
-    .card {
-        padding: 14px;
-    }
-
-    .section-card {
-        padding: 14px;
-
-        margin-bottom: 10px;
-
-        border-radius: 14px;
-    }
-
-    .section-title {
-        margin-bottom: 12px;
-
-        font-size: 14px;
-    }
-
-    .section-title > span {
-        font-size: 10px;
-    }
-
-    /* -----------------------------------------------------
-       ANALYSIS
-    ----------------------------------------------------- */
-
-    .analysis-grid {
-        grid-template-columns:
-            1fr 1fr;
-
-        gap: 8px;
-    }
-
-    .analysis-item {
-        min-height: 70px;
-
-        padding: 11px;
-    }
-
-    .analysis-label {
-        font-size: 10px;
-    }
-
-    .analysis-value {
-        font-size: 16px;
-    }
-
-    /* -----------------------------------------------------
-       SCORE
-    ----------------------------------------------------- */
-
-    .score-header {
-        font-size: 10px;
-    }
-
-    .score-header strong {
-        font-size: 10px;
-    }
-
-    .score-bar {
-        height: 10px;
-    }
-
-    /* -----------------------------------------------------
-       REVIEW
-    ----------------------------------------------------- */
-
-    .review-grid {
-        grid-template-columns:
-            1fr 1fr;
-
-        gap: 8px;
-    }
-
-    .review-item {
-        padding: 11px;
-    }
-
-    .review-label {
-        font-size: 10px;
-    }
-
-    .review-value {
-        font-size: 14px;
-    }
-
-    .review-status {
-        padding: 3px 8px;
-
-        font-size: 9px;
-    }
-
-    /* -----------------------------------------------------
-       AI LEARNING
-    ----------------------------------------------------- */
-
-    .ai-learning-grid {
-        grid-template-columns:
-            1fr 1fr;
-
-        gap: 8px;
-    }
-
-    .ai-learning-item {
-        min-height: 70px;
-
-        padding: 11px;
-    }
-
-    .ai-learning-label {
-        font-size: 10px;
-    }
-
-    .ai-learning-value {
-        font-size: 17px;
-    }
-
-    .ai-factor-grid {
-        grid-template-columns:
-            1fr 1fr;
-
-        gap: 8px;
-    }
-
-    .ai-factor {
-        padding: 10px;
-    }
-
-    .ai-factor span {
-        font-size: 10px;
-    }
-
-    .ai-factor strong {
-        font-size: 13px;
-    }
-
-    .ai-learning-text {
-        font-size: 11px;
-    }
-
-    /* -----------------------------------------------------
-       BACCARAT BUTTONS
-    ----------------------------------------------------- */
-
-    .baccarat-table-buttons {
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-
-        gap: 6px;
-    }
-
-    .baccarat-table-btn {
-        padding: 8px 4px;
-
-        font-size: 11px;
-    }
-
-    /* -----------------------------------------------------
-       BACCARAT
-    ----------------------------------------------------- */
-
-    .baccarat-result {
-        font-size: 23px;
-    }
-
-    .prediction-result {
-        font-size: 28px;
-    }
-
-    .prediction-confidence {
-        font-size: 11px;
-    }
-
-    #bc-action {
-        padding: 6px 15px;
-
-        font-size: 11px;
-    }
-
-    .prediction-reason {
-        padding: 10px 12px;
-
-        font-size: 11px;
-    }
-
-    .big-road {
-        min-height: 150px;
-
-        padding: 10px;
-    }
-
-    .small-road {
-        min-height: 85px;
-
-        padding: 8px;
-    }
-
-    .history-item {
-        width: 32px;
-        height: 32px;
-
-        font-size: 11px;
-    }
-
-    .chart-container {
-        height: 250px;
-    }
-}
-
-
-/* =========================================================
-   VERY SMALL PHONE
-========================================================= */
-
-@media (max-width: 380px) {
-
-    .container {
-        padding: 6px;
-    }
-
-    .header {
-        padding: 13px;
-    }
-
-    .header h1 {
-        font-size: 17px;
-    }
-
-    .header-info {
-        gap: 6px;
-    }
-
-    .time-box,
-    .countdown-box {
-        padding: 8px 6px;
-    }
-
-    .time-box strong,
-    .countdown-box strong {
-        font-size: 14px;
-    }
-
-    .grid-cards {
-        gap: 5px;
-    }
-
-    .grid-cards .card {
-        padding: 9px;
-
-        min-height: 115px;
-    }
-
-    .grid-cards .card-title {
-        font-size: 9px;
-    }
-
-    .grid-cards .card-value {
-        font-size: 16px;
-    }
-
-    .grid-cards .result-box {
-        font-size: 15px;
-
-        padding: 4px 6px;
-    }
-
-    .grid-cards .win-rate-box > div:first-child {
-        font-size: 1.15rem !important;
-    }
-
-    .grid-cards .win-rate-box > div:last-child {
-        font-size: 0.6rem !important;
-    }
-
-    .section-card {
-        padding: 12px;
-    }
-
-    .analysis-item {
-        padding: 9px;
-    }
-
-    .analysis-value {
-        font-size: 14px;
-    }
-
-    .baccarat-table-btn {
-        font-size: 10px;
-
-        padding: 7px 3px;
-    }
-}
-
-
-/* =========================================================
-   TOUCH DEVICES
-========================================================= */
-
-@media (hover: none) {
-
-    .main-tab:hover,
-    .baccarat-table-btn:hover {
-        transform: none;
-    }
-}
-
-
-/* =========================================================
-   REDUCED MOTION
-========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-
-    *,
-    *::before,
-    *::after {
-        scroll-behavior: auto !important;
-
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-    }
-}
+</html>
