@@ -3859,90 +3859,54 @@ function renderNumberChart(
 ========================================================= */
 
 async function refreshDashboard() {
+    try {
+        const draws = await fetchDraws();
 
-    const draws =
-        await fetchDraws();
+        if (!draws || !draws.length) {
+            console.log("WinGo 暂无开奖数据");
+            return;
+        }
 
-
-    if (
-        !draws.length
-    ) {
-
-        console.warn(
-            "refreshDashboard: 没有取得 WinGo 数据"
+        draws.sort((a, b) =>
+            String(b.issue).localeCompare(String(a.issue))
         );
 
-        return;
+        // AI 自动复盘 / 学习
+        reviewNewOutcome(draws);
+
+        // 下一期 AI 预测
+        const prediction = getLearnedPrediction(draws);
+
+        // 最新开奖
+        const latest = draws[0];
+
+        updateLatestCard(latest);
+
+        // 下一期预测
+        updatePredictionCard(prediction);
+
+        // 市场分析
+        updateMarketAnalysis(draws, prediction);
+
+        // AI 智能复盘
+        renderAIReview(draws);
+
+        // AI 智能学习状态
+        updateAILearningDashboard();
+
+        // AI 胜率
+        const backtest = runBacktest(draws);
+        updateWinRate(backtest);
+
+        // 最近 50 局
+        renderDrawTable(draws);
+
+        // 已删除 WinGo 数字走势 Chart
+        // renderNumberChart(draws);
+
+    } catch (error) {
+        console.error("WinGo Dashboard Refresh Error:", error);
     }
-
-
-    draws.sort(
-        (a, b) =>
-            String(b.issue)
-                .localeCompare(
-                    String(a.issue)
-                )
-    );
-
-
-    reviewNewOutcome(
-        draws
-    );
-
-
-    const prediction =
-        getLearnedPrediction(
-            draws
-        );
-
-
-    const latest =
-        draws[0];
-
-
-    updateLatestCard(
-        latest
-    );
-
-
-    updatePredictionCard(
-        prediction
-    );
-
-
-    updateMarketAnalysis(
-        draws,
-        prediction
-    );
-
-
-    renderAIReview(
-        draws
-    );
-
-
-    updateAILearningDashboard();
-
-
-    const backtest =
-        runBacktest(
-            draws
-        );
-
-
-    updateWinRate(
-        backtest
-    );
-
-
-    renderDrawTable(
-        draws
-    );
-
-
-    renderNumberChart(
-        draws
-    );
 }
 
 
