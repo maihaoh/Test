@@ -23,29 +23,672 @@
     "big50": "55%",
     "small50": "45%"
   },
-  "updated_at": 0,
+  "updated_at": 1790488748,
   "wingo": {
     "stats": {
-      "streak_val": "-",
-      "streak_cnt": 0,
-      "big_cnt": 0,
-      "small_cnt": 0
+      "streak_val": "大",
+      "streak_cnt": 2,
+      "big_cnt": 47,
+      "small_cnt": 60
     },
     "prediction": {
-      "num": 5,
-      "size": "大",
-      "signal": "观望",
-      "confidence": "低",
-      "big_score": 0,
-      "small_score": 0,
-      "difference": 0,
-      "markov_num": 5,
-      "markov_size": "大",
+      "num": 0,
+      "size": "小",
+      "signal": "SELL",
+      "confidence": "普通",
+      "big_score": 0.0,
+      "small_score": 1.5,
+      "difference": 1.5,
+      "markov_num": 0,
+      "markov_size": "小",
       "mean_size": "平",
-      "streak": 0,
+      "streak": 2,
       "special": false
     },
-    "draws": []
+    "draws": [
+      {
+        "issueNumber": "20260927100050718",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050717",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050716",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050715",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050714",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050713",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050712",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050711",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050710",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050709",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050708",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050707",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050706",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050705",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050704",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050703",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050702",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050701",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050700",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050699",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050698",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050697",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050696",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050695",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050694",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050693",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050692",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050691",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050690",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050689",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050688",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050687",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050686",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050685",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050684",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050683",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050682",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050681",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050680",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050679",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050678",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050677",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050676",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050675",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050674",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050673",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050672",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050671",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050670",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050669",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050668",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050667",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050666",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050665",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050664",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050663",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050662",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050661",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050660",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050659",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050658",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050657",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050656",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050655",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050654",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050653",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050652",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050651",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050650",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050649",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050648",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050647",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050646",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050645",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050644",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050643",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050642",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050641",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050640",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050639",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050638",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050637",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050636",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050635",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050634",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050633",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050632",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050631",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050630",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050629",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050628",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050627",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050626",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050625",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050624",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050623",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050622",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050621",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050620",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050619",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050618",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050617",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050616",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050615",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20260927100050614",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050613",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20260927100050612",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      }
+    ]
   },
   "baccarat": {
     "current_room": "D51",
