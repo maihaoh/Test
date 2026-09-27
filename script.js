@@ -4888,3 +4888,81 @@ try {
 } catch (error) {
     console.error("WinGo Dashboard Init Error:", error);
 }
+document.addEventListener('DOMContentLoaded', () => {
+    let countdownValue = 180;
+    const countdownEl = document.getElementById('countdown');
+    const updateTimeEl = document.getElementById('update-time');
+    let chartInstance = null;
+
+    setInterval(() => {
+        countdownValue--;
+        if (countdownValue <= 0) {
+            countdownValue = 180;
+            loadData();
+        }
+        if (countdownEl) countdownEl.textContent = countdownValue;
+    }, 1000);
+
+    async function loadData() {
+        try {
+            const response = await fetch('data.json?t=' + new Date().getTime());
+            if (!response.ok) throw new Error('Data fetch failed');
+            const data = await response.json();
+            renderDashboard(data);
+        } catch (error) {
+            console.error('Data loading error:', error);
+        }
+    }
+
+    function renderDashboard(data) {
+        if (updateTimeEl && data.update_time) updateTimeEl.textContent = data.update_time;
+
+        if (data.price_history && document.getElementById('priceChart')) {
+            renderChart(data.price_history);
+        }
+
+        if (data.ai_learning && document.getElementById('ai-weights')) {
+            document.getElementById('ai-weights').textContent = JSON.stringify(data.ai_learning.weights || {}, null, 2);
+        }
+
+        if (data.market_analysis) {
+            const ma = data.market_analysis;
+            setElementText('big10', ma.big10 ?? 'N/A');
+            setElementText('small10', ma.small10 ?? 'N/A');
+            setElementText('big50', ma.big50 ?? 'N/A');
+            setElementText('small50', ma.small50 ?? 'N/A');
+        }
+    }
+
+    function setElementText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+
+    function renderChart(history) {
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const labels = history.map(item => item.time);
+        const prices = history.map(item => item.price);
+
+        if (chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Price',
+                    data: prices,
+                    borderColor: '#00ff88',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    loadData();
+});
