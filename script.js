@@ -3876,101 +3876,228 @@ async function refreshDashboard() {
     );
 }
 
-
-/* =========================================================
-   BACCARAT DATA
-========================================================= */
+// ============================================================
+// Baccarat Real Data
+// ============================================================
 
 const baccaratData = {
-
     D51: {
-        round: 128,
-
-        history: [
-            "B","B","P","P","B",
-            "B","T","P","P","B",
-            "P","B","B","P","P",
-            "B","B","B","P","B"
-        ]
+        round: 0,
+        history: []
     },
-
     D52: {
-        round: 96,
-
-        history: [
-            "P","P","B","P","B",
-            "B","P","P","B","B",
-            "P","B","P","P","B",
-            "B","P","B","B","P"
-        ]
+        round: 0,
+        history: []
     },
-
     D53: {
-        round: 142,
-
-        history: [
-            "B","P","B","B","P",
-            "P","P","B","B","P",
-            "B","B","P","B","P",
-            "P","B","P","B","B"
-        ]
+        round: 0,
+        history: []
     },
-
     D54: {
-        round: 113,
-
-        history: [
-            "P","B","P","P","B",
-            "B","B","P","P","B",
-            "B","P","B","P","P",
-            "B","P","B","B","P"
-        ]
+        round: 0,
+        history: []
     },
-
     D55: {
-        round: 87,
-
-        history: [
-            "B","B","B","P","P",
-            "B","P","P","B","B",
-            "P","P","B","B","P",
-            "B","P","P","B","B"
-        ]
+        round: 0,
+        history: []
     },
-
     D56: {
-        round: 105,
-
-        history: [
-            "P","B","B","P","P",
-            "P","B","P","B","B",
-            "P","B","B","P","B",
-            "P","P","B","B","P"
-        ]
+        round: 0,
+        history: []
     },
-
     D57: {
-        round: 76,
-
-        history: [
-            "B","P","P","B","B",
-            "B","P","B","P","P",
-            "B","B","P","P","B",
-            "B","P","B","P","B"
-        ]
+        round: 0,
+        history: []
     },
-
     D58: {
-        round: 151,
-
-        history: [
-            "P","P","B","B","P",
-            "B","B","B","P","P",
-            "B","P","P","B","B",
-            "P","B","P","B","B"
-        ]
+        round: 0,
+        history: []
     }
 };
+
+
+// ============================================================
+// Baccarat data.json loader
+// ============================================================
+
+function baccaratResultToCode(result) {
+
+    const value = String(
+        result ?? ""
+    ).trim().toLowerCase();
+
+    if (
+        value === "庄" ||
+        value === "banker" ||
+        value === "b"
+    ) {
+        return "B";
+    }
+
+    if (
+        value === "闲" ||
+        value === "player" ||
+        value === "p"
+    ) {
+        return "P";
+    }
+
+    if (
+        value === "和" ||
+        value === "tie" ||
+        value === "t"
+    ) {
+        return "T";
+    }
+
+    return null;
+}
+
+
+function normalizeBaccaratRoomHistory(
+    roomHistory
+) {
+
+    if (!Array.isArray(roomHistory)) {
+        return [];
+    }
+
+    const result = roomHistory
+        .map(item => {
+
+            if (
+                typeof item === "string"
+            ) {
+                return baccaratResultToCode(
+                    item
+                );
+            }
+
+            if (
+                item &&
+                typeof item === "object"
+            ) {
+                return baccaratResultToCode(
+                    item.result
+                );
+            }
+
+            return null;
+        })
+        .filter(Boolean);
+
+    /*
+     * bot.py 最新结果放在 index 0。
+     *
+     * 但现有 renderBaccarat /
+     * predictBaccarat 的 history
+     * 是按照：
+     *
+     * oldest -> newest
+     *
+     * 来处理。
+     *
+     * 所以这里反转一次。
+     */
+
+    return result.reverse();
+}
+
+
+async function fetchBaccaratData() {
+
+    try {
+
+        const response = await fetch(
+            `./data.json?t=${Date.now()}`,
+            {
+                cache: "no-store"
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        if (
+            !data ||
+            !data.baccarat ||
+            !data.baccarat.rooms
+        ) {
+            return;
+        }
+
+        const rooms =
+            data.baccarat.rooms;
+
+        Object.keys(
+            baccaratData
+        ).forEach(room => {
+
+            const source =
+                rooms[room];
+
+            if (!Array.isArray(source)) {
+                return;
+            }
+
+            const history =
+                normalizeBaccaratRoomHistory(
+                    source
+                );
+
+            let round = 0;
+
+            if (source.length > 0) {
+
+                const latest =
+                    source[0];
+
+                if (
+                    latest &&
+                    typeof latest === "object"
+                ) {
+
+                    round =
+                        Number(
+                            latest.game
+                            ??
+                            latest.round
+                            ??
+                            0
+                        );
+
+                    if (
+                        !Number.isFinite(
+                            round
+                        )
+                    ) {
+                        round = 0;
+                    }
+                }
+            }
+
+            baccaratData[room] = {
+                round,
+                history
+            };
+        });
+
+        renderBaccarat(
+            currentBaccaratTable
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Baccarat data.json 读取失败:",
+            error
+        );
+    }
+}
 
 
 /* =========================================================
@@ -4628,6 +4755,15 @@ setInterval(
     1000
 );
 
+// ============================================================
+// Baccarat realtime refresh
+// ============================================================
+
+setInterval(
+    fetchBaccaratData,
+    2000
+);
+
 
 /* =========================================================
    INIT
@@ -4641,13 +4777,8 @@ setInterval(
 
 updateMYTClock();
 
-
-renderBaccarat(
-    "D51"
-);
-
+fetchBaccaratData();
 
 updateAILearningDashboard();
-
 
 refreshDashboard();
