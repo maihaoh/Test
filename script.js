@@ -4897,10 +4897,30 @@ setInterval(
 );
 
 
-updateMYTClock();
+/* =========================================================
+   SAFE INIT
+========================================================= */
 
-fetchBaccaratData();
+try {
+    updateMYTClock();
+} catch (error) {
+    console.error("MYT Clock Init Error:", error);
+}
 
-updateAILearningDashboard();
+try {
+    updateAILearningDashboard();
+} catch (error) {
+    console.error("AI Dashboard Init Error:", error);
+}
 
-refreshDashboard();
+try {
+    fetchBaccaratData();
+} catch (error) {
+    console.error("Baccarat Init Error:", error);
+}
+
+try {
+    refreshDashboard();
+} catch (error) {
+    console.error("WinGo Dashboard Init Error:", error);
+}
