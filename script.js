@@ -1498,7 +1498,7 @@ function getPassReason(
         threshold * 1.18
     ) {
 
-        return "近期预测连续失误，AI 自动降低下注信心";
+        return "近期预测连续失误，AI 自动降低判断信心";
     }
 
     if (
@@ -1639,6 +1639,7 @@ function getForcedCounterfactual(
 
 /* =========================================================
    LEARNING ENGINE
+   WIN / LOSS ONLY BASED ON SIZE
 ========================================================= */
 
 function learnFromReview(
@@ -1655,6 +1656,19 @@ function learnFromReview(
             review.actualSize
         );
 
+
+    /*
+     * =====================================================
+     * 这里明确：
+     *
+     * WIN / LOSS 只来自：
+     *
+     * predictionSize === actualSize
+     *
+     * 预测号码不会参与
+     * 颜色不会参与
+     * =====================================================
+     */
 
     if (
         review.outcome === "WIN" ||
@@ -1784,8 +1798,8 @@ function learnFromReview(
 
         aiLearning.lastLearningMessage =
             correct
-                ? `Result ${review.actualNum} 与 AI 判断一致，AI 提高了本次有效判断因素的权重。`
-                : `Result ${review.actualNum} 与 AI 判断相反，AI 已降低近期失效判断因素的权重。`;
+                ? `实际大小 ${review.actualSize} 与 AI 大小判断一致，AI 强化有效因素。`
+                : `实际大小 ${review.actualSize} 与 AI 大小判断相反，AI 降低近期失效因素权重。`;
     }
 
 
@@ -1806,7 +1820,7 @@ function learnFromReview(
                 0.025;
 
             aiLearning.lastLearningMessage =
-                "本次 PASS 如果强制判断会 WIN，AI 会稍微降低 PASS 门槛。";
+                "本次 PASS 如果强制判断大小会 WIN，AI 稍微降低 PASS 门槛。";
 
         } else if (
             review.counterfactual === "LOSS"
@@ -1818,12 +1832,12 @@ function learnFromReview(
                 0.025;
 
             aiLearning.lastLearningMessage =
-                "本次 PASS 避开了错误判断，AI 保持更谨慎。";
+                "本次 PASS 避开了错误大小判断，AI 保持更谨慎。";
 
         } else {
 
             aiLearning.lastLearningMessage =
-                "本次 PASS 没有足够方向，AI 保持观察。";
+                "本次 PASS 没有足够大小方向，AI 保持观察。";
         }
 
 
@@ -1865,6 +1879,7 @@ function learnFromReview(
 
 /* =========================================================
    REVIEW NEW RESULT
+   ONLY SIZE DECIDES WIN / LOSS
 ========================================================= */
 
 function reviewNewOutcome(
@@ -1926,6 +1941,12 @@ function reviewNewOutcome(
         "NONE";
 
 
+    /*
+     * =====================================================
+     * PASS
+     * =====================================================
+     */
+
     if (
         prediction.size === "PASS"
     ) {
@@ -1947,6 +1968,17 @@ function reviewNewOutcome(
 
     } else {
 
+        /*
+         * =================================================
+         * 核心：
+         *
+         * 只比较 SIZE
+         *
+         * 号码不同没关系
+         * 颜色不同没关系
+         * =================================================
+         */
+
         outcome =
             prediction.size ===
                 actualSize
@@ -1963,6 +1995,10 @@ function reviewNewOutcome(
         predictionSize:
             prediction.size,
 
+        /*
+         * 预测号码只是记录
+         * 不参与 WIN / LOSS
+         */
         predictedNum:
             prediction.num,
 
@@ -2215,6 +2251,8 @@ function updateAILearningDashboard() {
 
 /* =========================================================
    AI REVIEW DISPLAY
+   PREDICTED NUMBER IS DISPLAY ONLY
+   WIN / LOSS = SIZE ONLY
 ========================================================= */
 
 function renderAIReview(
@@ -2243,6 +2281,15 @@ function renderAIReview(
         );
 
 
+    if (
+        !prediction ||
+        !actual
+    ) {
+
+        return;
+    }
+
+
     const status =
         document.getElementById(
             "review-status"
@@ -2269,14 +2316,46 @@ function renderAIReview(
         );
 
 
+    /*
+     * =====================================================
+     * 预测显示
+     *
+     * 号码 / 大小 / 信心
+     *
+     * 例如：
+     * 7 / 大 / 72%
+     *
+     * 注意：
+     * 号码只是显示
+     * 不参与 WIN / LOSS
+     * =====================================================
+     */
+
     if (predEl) {
 
-        predEl.textContent =
+        if (
             prediction.size === "PASS"
-                ? "PASS"
-                : `${prediction.size} / ${prediction.confidence}%`;
+        ) {
+
+            predEl.textContent =
+                `PASS / ${prediction.confidence}%`;
+
+        } else {
+
+            predEl.textContent =
+                `${prediction.num ?? "-"} / ${prediction.size} / ${prediction.confidence}%`;
+        }
     }
 
+
+    /*
+     * =====================================================
+     * 实际开奖
+     *
+     * 例如：
+     * 8 / 大
+     * =====================================================
+     */
 
     if (actualEl) {
 
@@ -2284,6 +2363,12 @@ function renderAIReview(
             `${actual.number} / ${actual.size}`;
     }
 
+
+    /*
+     * =====================================================
+     * PASS
+     * =====================================================
+     */
 
     if (
         prediction.size === "PASS"
@@ -2295,13 +2380,26 @@ function renderAIReview(
             );
 
 
-        const counter =
-            forced &&
-            forced.size === actual.size
-                ? "PASS → 如果强制判断：WIN"
-                : forced
-                    ? "PASS → 如果强制判断：LOSS"
-                    : "PASS";
+        let counter =
+            "PASS";
+
+
+        if (forced) {
+
+            if (
+                forced.size ===
+                actual.size
+            ) {
+
+                counter =
+                    "PASS → 强制大小判断：WIN";
+
+            } else {
+
+                counter =
+                    "PASS → 强制大小判断：LOSS";
+            }
+        }
 
 
         if (status) {
@@ -2318,54 +2416,85 @@ function renderAIReview(
 
             resultEl.textContent =
                 counter;
+
+            resultEl.className =
+                "review-result review-pass";
         }
 
 
         if (messageEl) {
 
             messageEl.textContent =
-                `AI 选择观察。${
+                `AI 本期选择 PASS。${
                     prediction.passReason ||
                     ""
                 }`;
         }
 
-    } else {
 
-        const win =
-            prediction.size ===
-            actual.size;
+        return;
+    }
 
 
-        if (status) {
+    /*
+     * =====================================================
+     * WIN / LOSS
+     *
+     * 只比较：
+     *
+     * prediction.size
+     * VS
+     * actual.size
+     *
+     * 号码不参与
+     * 颜色不参与
+     * =====================================================
+     */
 
-            status.textContent =
-                win
-                    ? "WIN"
-                    : "LOSS";
-
-            status.className =
-                win
-                    ? "review-status review-win"
-                    : "review-status review-loss";
-        }
-
-
-        if (resultEl) {
-
-            resultEl.textContent =
-                win
-                    ? "✓ 判断正确"
-                    : "✕ 判断错误";
-        }
+    const win =
+        prediction.size ===
+        actual.size;
 
 
-        if (messageEl) {
+    if (status) {
+
+        status.textContent =
+            win
+                ? "WIN"
+                : "LOSS";
+
+        status.className =
+            win
+                ? "review-status review-win"
+                : "review-status review-loss";
+    }
+
+
+    if (resultEl) {
+
+        resultEl.textContent =
+            win
+                ? "✓ 大小判断正确"
+                : "✕ 大小判断错误";
+
+        resultEl.className =
+            win
+                ? "review-result review-win"
+                : "review-result review-loss";
+    }
+
+
+    if (messageEl) {
+
+        if (win) {
 
             messageEl.textContent =
-                win
-                    ? "真实 Result 与 AI 判断一致，本次使用的有效因素会得到强化。"
-                    : "真实 Result 与 AI 判断相反，AI 会降低近期失效因素的权重。";
+                `预测 ${prediction.num ?? "-"} / ${prediction.size} → 实际 ${actual.number} / ${actual.size}，本期 WIN（只计算大小）。`;
+
+        } else {
+
+            messageEl.textContent =
+                `预测 ${prediction.num ?? "-"} / ${prediction.size} → 实际 ${actual.number} / ${actual.size}，本期 LOSS（只计算大小）。`;
         }
     }
 }
@@ -2455,10 +2584,6 @@ async function fetchDraws() {
                 signObj
             );
 
-
-        /*
-         * DEBUG
-         */
 
         console.log(
             "========== Signature 原始内容 =========="
@@ -2609,10 +2734,6 @@ async function fetchDraws() {
         );
 
 
-        /*
-         * 如果 API 回传错误
-         */
-
         if (
             json?.code !== undefined &&
             Number(json.code) !== 0
@@ -2667,10 +2788,6 @@ async function fetchDraws() {
         let list = null;
 
 
-        /*
-         * data.list
-         */
-
         if (
             Array.isArray(
                 json?.data?.list
@@ -2681,11 +2798,6 @@ async function fetchDraws() {
                 json.data.list;
 
         }
-
-
-        /*
-         * data.records
-         */
 
         else if (
             Array.isArray(
@@ -2698,11 +2810,6 @@ async function fetchDraws() {
 
         }
 
-
-        /*
-         * data.rows
-         */
-
         else if (
             Array.isArray(
                 json?.data?.rows
@@ -2713,11 +2820,6 @@ async function fetchDraws() {
                 json.data.rows;
 
         }
-
-
-        /*
-         * data.data
-         */
 
         else if (
             Array.isArray(
@@ -2730,11 +2832,6 @@ async function fetchDraws() {
 
         }
 
-
-        /*
-         * data 本身就是数组
-         */
-
         else if (
             Array.isArray(
                 json?.data
@@ -2745,11 +2842,6 @@ async function fetchDraws() {
                 json.data;
 
         }
-
-
-        /*
-         * result.list
-         */
 
         else if (
             Array.isArray(
@@ -2762,11 +2854,6 @@ async function fetchDraws() {
 
         }
 
-
-        /*
-         * result.records
-         */
-
         else if (
             Array.isArray(
                 json?.result?.records
@@ -2777,11 +2864,6 @@ async function fetchDraws() {
                 json.result.records;
 
         }
-
-
-        /*
-         * result.rows
-         */
 
         else if (
             Array.isArray(
@@ -2794,11 +2876,6 @@ async function fetchDraws() {
 
         }
 
-
-        /*
-         * result 本身就是数组
-         */
-
         else if (
             Array.isArray(
                 json?.result
@@ -2809,11 +2886,6 @@ async function fetchDraws() {
                 json.result;
 
         }
-
-
-        /*
-         * payload.list
-         */
 
         else if (
             Array.isArray(
@@ -2826,11 +2898,6 @@ async function fetchDraws() {
 
         }
 
-
-        /*
-         * payload.records
-         */
-
         else if (
             Array.isArray(
                 json?.payload?.records
@@ -2841,11 +2908,6 @@ async function fetchDraws() {
                 json.payload.records;
 
         }
-
-
-        /*
-         * payload.rows
-         */
 
         else if (
             Array.isArray(
@@ -2858,11 +2920,6 @@ async function fetchDraws() {
 
         }
 
-
-        /*
-         * list
-         */
-
         else if (
             Array.isArray(
                 json?.list
@@ -2873,11 +2930,6 @@ async function fetchDraws() {
                 json.list;
 
         }
-
-
-        /*
-         * records
-         */
 
         else if (
             Array.isArray(
@@ -2890,11 +2942,6 @@ async function fetchDraws() {
 
         }
 
-
-        /*
-         * rows
-         */
-
         else if (
             Array.isArray(
                 json?.rows
@@ -2905,10 +2952,6 @@ async function fetchDraws() {
                 json.rows;
         }
 
-
-        /*
-         * 找不到开奖数组
-         */
 
         if (
             !Array.isArray(list)
@@ -2962,10 +3005,6 @@ async function fetchDraws() {
         );
 
 
-        /*
-         * 转换开奖资料
-         */
-
         const parsed =
             list
                 .map(
@@ -2980,10 +3019,6 @@ async function fetchDraws() {
                             return null;
                         }
 
-
-                        /*
-                         * Number
-                         */
 
                         const rawNumber =
                             item?.number ??
@@ -3000,10 +3035,6 @@ async function fetchDraws() {
                             );
 
 
-                        /*
-                         * Issue
-                         */
-
                         const issue =
                             String(
                                 item?.issueNumber ??
@@ -3017,10 +3048,6 @@ async function fetchDraws() {
                             );
 
 
-                        /*
-                         * Colour
-                         */
-
                         const colour =
                             item?.colour ??
                             item?.color ??
@@ -3028,10 +3055,6 @@ async function fetchDraws() {
                             item?.colorName ??
                             "";
 
-
-                        /*
-                         * Size
-                         */
 
                         let size =
                             item?.size ??
@@ -3156,6 +3179,7 @@ function updateLatestCard(
 
 /* =========================================================
    UPDATE PREDICTION CARD
+   预测号码 + 大小 + 信心
 ========================================================= */
 
 function updatePredictionCard(
@@ -3173,13 +3197,15 @@ function updatePredictionCard(
     }
 
 
-    if (
-        prediction.size === "PASS"
-    ) {
+    if (!prediction) {
 
         el.innerHTML = `
-            <span class="tag-wait">
-                ⏸ PASS
+            <strong>
+                ---
+            </strong>
+
+            <span>
+                等待数据
             </span>
         `;
 
@@ -3187,9 +3213,43 @@ function updatePredictionCard(
     }
 
 
+    /*
+     * PASS
+     */
+
+    if (
+        prediction.size === "PASS"
+    ) {
+
+        el.innerHTML = `
+            <strong>
+                ⏸ PASS
+            </strong>
+
+            <span>
+                ${prediction.confidence}%
+            </span>
+        `;
+
+        return;
+    }
+
+
+    /*
+     * 正常预测
+     *
+     * 例如：
+     * 7 / 大
+     * 72%
+     *
+     * 注意：
+     * 号码只是显示
+     * WIN / LOSS 仍然只看大小
+     */
+
     el.innerHTML = `
         <strong>
-            ${prediction.size}
+            ${prediction.num ?? "-"} / ${prediction.size}
         </strong>
 
         <span>
@@ -3381,6 +3441,7 @@ function updateMarketAnalysis(
 
 /* =========================================================
    BACKTEST
+   ONLY SIZE DECIDES WIN / LOSS
 ========================================================= */
 
 function runBacktest(
@@ -3462,9 +3523,17 @@ function runBacktest(
             currentDraw.size
         ) {
 
+            /*
+             * 只比较大小
+             */
+
             win++;
 
         } else {
+
+            /*
+             * 只比较大小
+             */
 
             loss++;
         }
@@ -3876,39 +3945,48 @@ async function refreshDashboard() {
     );
 }
 
-// ============================================================
-// Baccarat Real Data
-// ============================================================
+
+/* ============================================================
+   BACCARAT REAL DATA
+============================================================ */
 
 const baccaratData = {
+
     D51: {
         round: 0,
         history: []
     },
+
     D52: {
         round: 0,
         history: []
     },
+
     D53: {
         round: 0,
         history: []
     },
+
     D54: {
         round: 0,
         history: []
     },
+
     D55: {
         round: 0,
         history: []
     },
+
     D56: {
         round: 0,
         history: []
     },
+
     D57: {
         round: 0,
         history: []
     },
+
     D58: {
         round: 0,
         history: []
@@ -3916,11 +3994,13 @@ const baccaratData = {
 };
 
 
-// ============================================================
-// Baccarat data.json loader
-// ============================================================
+/* ============================================================
+   BACCARAT DATA.JSON LOADER
+============================================================ */
 
-function baccaratResultToCode(result) {
+function baccaratResultToCode(
+    result
+) {
 
     const value = String(
         result ?? ""
@@ -3931,6 +4011,7 @@ function baccaratResultToCode(result) {
         value === "banker" ||
         value === "b"
     ) {
+
         return "B";
     }
 
@@ -3939,6 +4020,7 @@ function baccaratResultToCode(result) {
         value === "player" ||
         value === "p"
     ) {
+
         return "P";
     }
 
@@ -3947,6 +4029,7 @@ function baccaratResultToCode(result) {
         value === "tie" ||
         value === "t"
     ) {
+
         return "T";
     }
 
@@ -3962,40 +4045,48 @@ function normalizeBaccaratRoomHistory(
         return [];
     }
 
-    const result = roomHistory
-        .map(item => {
+    const result =
+        roomHistory
+            .map(
+                item => {
 
-            if (
-                typeof item === "string"
-            ) {
-                return baccaratResultToCode(
-                    item
-                );
-            }
+                    if (
+                        typeof item ===
+                        "string"
+                    ) {
 
-            if (
-                item &&
-                typeof item === "object"
-            ) {
-                return baccaratResultToCode(
-                    item.result
-                );
-            }
+                        return baccaratResultToCode(
+                            item
+                        );
+                    }
 
-            return null;
-        })
-        .filter(Boolean);
+                    if (
+                        item &&
+                        typeof item ===
+                        "object"
+                    ) {
+
+                        return baccaratResultToCode(
+                            item.result
+                        );
+                    }
+
+                    return null;
+                }
+            )
+            .filter(
+                Boolean
+            );
+
 
     /*
      * bot.py 最新结果放在 index 0。
      *
      * 但现有 renderBaccarat /
      * predictBaccarat 的 history
-     * 是按照：
+     * 是：
      *
      * oldest -> newest
-     *
-     * 来处理。
      *
      * 所以这里反转一次。
      */
@@ -4008,83 +4099,112 @@ async function fetchBaccaratData() {
 
     try {
 
-        const response = await fetch(
-            `./data.json?t=${Date.now()}`,
-            {
-                cache: "no-store"
-            }
-        );
+        const response =
+            await fetch(
+                `./data.json?t=${Date.now()}`,
+                {
+                    cache:
+                        "no-store"
+                }
+            );
+
 
         if (!response.ok) {
             return;
         }
 
+
         const data =
             await response.json();
+
 
         if (
             !data ||
             !data.baccarat ||
             !data.baccarat.rooms
         ) {
+
             return;
         }
+
 
         const rooms =
             data.baccarat.rooms;
 
+
         Object.keys(
             baccaratData
-        ).forEach(room => {
+        ).forEach(
+            room => {
 
-            const source =
-                rooms[room];
+                const source =
+                    rooms[room];
 
-            if (!Array.isArray(source)) {
-                return;
-            }
-
-            const history =
-                normalizeBaccaratRoomHistory(
-                    source
-                );
-
-            let round = 0;
-
-            if (source.length > 0) {
-
-                const latest =
-                    source[0];
 
                 if (
-                    latest &&
-                    typeof latest === "object"
+                    !Array.isArray(
+                        source
+                    )
                 ) {
 
-                    round =
-                        Number(
-                            latest.game
-                            ??
-                            latest.round
-                            ??
-                            0
-                        );
+                    return;
+                }
+
+
+                const history =
+                    normalizeBaccaratRoomHistory(
+                        source
+                    );
+
+
+                let round = 0;
+
+
+                if (
+                    source.length > 0
+                ) {
+
+                    const latest =
+                        source[0];
+
 
                     if (
-                        !Number.isFinite(
-                            round
-                        )
+                        latest &&
+                        typeof latest ===
+                        "object"
                     ) {
-                        round = 0;
+
+                        round =
+                            Number(
+                                latest.game
+                                ??
+                                latest.round
+                                ??
+                                0
+                            );
+
+
+                        if (
+                            !Number.isFinite(
+                                round
+                            )
+                        ) {
+
+                            round = 0;
+                        }
                     }
                 }
-            }
 
-            baccaratData[room] = {
-                round,
-                history
-            };
-        });
+
+                baccaratData[room] = {
+
+                    round,
+
+                    history
+                };
+            }
+        );
+
 
         renderBaccarat(
             currentBaccaratTable
@@ -4110,6 +4230,7 @@ function switchBaccaratTable(
 
     currentBaccaratTable =
         table;
+
 
     renderBaccarat(
         table
@@ -4755,9 +4876,10 @@ setInterval(
     1000
 );
 
-// ============================================================
-// Baccarat realtime refresh
-// ============================================================
+
+/* =========================================================
+   BACCARAT REALTIME REFRESH
+========================================================= */
 
 setInterval(
     fetchBaccaratData,
