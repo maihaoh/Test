@@ -4,7 +4,8 @@ import hashlib
 import json
 import random
 import threading
-import struct
+import os
+import tempfile
 from collections import Counter
 import websocket
 
@@ -13,14 +14,30 @@ import websocket
 # WinGo 配置
 # ============================================================
 
-WINGO_API_URL = "https://mzplayapi.com/api/webapi/GetNoaverageEmerdList"
+WINGO_API_URL = (
+    "https://mzplayapi.com/api/webapi/GetNoaverageEmerdList"
+)
+
 WINGO_ORIGIN = "https://mzplay0.com"
 WINGO_REFERER = "https://mzplay0.com/"
+
 TYPE_ID = 30
 LANGUAGE = 0
 
+# 正常实时检查间隔
 POLL_INTERVAL = 10
-INIT_SCAN_PAGES = 5
+
+# 启动时扫描页数
+INIT_SCAN_PAGES = 10
+
+# 每页数量
+WINGO_PAGE_SIZE = 10
+
+# 最大保存期数
+WINGO_MAX_HISTORY = 300
+
+# API 请求重试次数
+WINGO_RETRIES = 3
 
 
 # ============================================================
@@ -41,6 +58,26 @@ BACCARAT_ROOMS = {
     "D57",
     "D58"
 }
+
+# Baccarat 每个房间最大保存局数
+BACCARAT_MAX_HISTORY = 200
+
+# WS 断线重连时间
+BACCARAT_RECONNECT_DELAY = 5
+
+
+# ============================================================
+# 文件配置
+# ============================================================
+
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+DATA_FILE = os.path.join(
+    BASE_DIR,
+    "data.json"
+)
 
 
 # ============================================================
@@ -69,6 +106,7 @@ global_data = {
             "markov_num": 5,
             "markov_size": "大",
             "mean_size": "平",
+            "streak": 0,
             "special": False
         },
 
@@ -79,6 +117,7 @@ global_data = {
         "current_room": "D51",
         "shoe_no": "01",
         "game_no": "01",
+
         "latest_result": "--",
         "predicted_result": "--",
 
@@ -103,7 +142,16 @@ global_data = {
 }
 
 
-data_lock = threading.Lock()
+# ============================================================
+# Lock
+# ============================================================
+
+data_lock = threading.RLock()
+
+
+# ============================================================
+# HTTP Session
+# ============================================================
 
 session = requests.Session()
 
@@ -113,19 +161,26 @@ session.headers.update({
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/153.0.0.0 Safari/537.36",
 
-    "Content-Type": "application/json;charset=UTF-8",
-    "Origin": WINGO_ORIGIN,
-    "Referer": WINGO_REFERER,
+    "Content-Type":
+        "application/json;charset=UTF-8",
+
+    "Origin":
+        WINGO_ORIGIN,
+
+    "Referer":
+        WINGO_REFERER,
+
+    "Accept":
+        "application/json, text/plain, */*"
 })
 
 
 # ============================================================
-# 工具
+# 基础工具
 # ============================================================
 
 def generate_random(length=32):
-
-    return ''.join(
+    return "".join(
         random.choices(
             "0123456789abcdef",
             k=length
@@ -134,6 +189,15 @@ def generate_random(length=32):
 
 
 def generate_signature(data):
+    """
+    保留目前已经验证过的 WinGo Signature 逻辑。
+
+    不加入：
+    signature
+    timestamp
+    track
+    xosoBettingData
+    """
 
     sign_data = {
         k: v
@@ -160,10 +224,37 @@ def generate_signature(data):
 
 
 def get_wingo_size(number):
+    try:
+        number = int(number)
+    except Exception:
+        return "小"
 
-    number = int(number)
+    return (
+        "小"
+        if 0 <= number <= 4
+        else "大"
+    )
 
-    return "小" if 0 <= number <= 4 else "大"
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def issue_sort_key(item):
+    try:
+        return int(
+            str(
+                item.get(
+                    "issueNumber",
+                    "0"
+                )
+            )
+        )
+    except Exception:
+        return 0
 
 
 # ============================================================
@@ -173,7 +264,6 @@ def get_wingo_size(number):
 def predict_wingo_next(draws):
 
     if not draws or len(draws) < 10:
-
         return {
             "num": 5,
             "size": "大",
@@ -195,14 +285,22 @@ def predict_wingo_next(draws):
     for d in draws:
 
         try:
-            nums.append(int(d["number"]))
-            sizes.append(d["size"])
+            number = int(
+                d["number"]
+            )
+
+            size = d.get(
+                "size",
+                get_wingo_size(number)
+            )
+
+            nums.append(number)
+            sizes.append(size)
 
         except Exception:
             continue
 
     if len(nums) < 10:
-
         return {
             "num": 5,
             "size": "大",
@@ -221,6 +319,10 @@ def predict_wingo_next(draws):
     last_num = nums[0]
     last_size = sizes[0]
 
+    # --------------------------------------------------------
+    # 当前长龙
+    # --------------------------------------------------------
+
     streak_cnt = 0
 
     for size in sizes:
@@ -231,9 +333,15 @@ def predict_wingo_next(draws):
         else:
             break
 
+    # --------------------------------------------------------
+    # Markov-like transition
+    # --------------------------------------------------------
+
     transition_counts = [0] * 10
 
-    for i in range(len(nums) - 1):
+    for i in range(
+        len(nums) - 1
+    ):
 
         current_num = nums[i]
         previous_num = nums[i + 1]
@@ -241,7 +349,9 @@ def predict_wingo_next(draws):
         if previous_num == last_num:
 
             if 0 <= current_num <= 9:
-                transition_counts[current_num] += 1
+                transition_counts[
+                    current_num
+                ] += 1
 
     max_transition = max(
         transition_counts
@@ -249,8 +359,10 @@ def predict_wingo_next(draws):
 
     if max_transition > 0:
 
-        markov_best_num = transition_counts.index(
-            max_transition
+        markov_best_num = (
+            transition_counts.index(
+                max_transition
+            )
         )
 
     else:
@@ -262,6 +374,10 @@ def predict_wingo_next(draws):
         if markov_best_num >= 5
         else "小"
     )
+
+    # --------------------------------------------------------
+    # 最近 10 期
+    # --------------------------------------------------------
 
     recent10 = nums[:10]
 
@@ -283,38 +399,39 @@ def predict_wingo_next(draws):
 
         mean_size = "平"
 
+    # --------------------------------------------------------
+    # 特殊数字
+    # --------------------------------------------------------
+
     is_special_num = (
         last_num == 0
         or last_num == 5
     )
 
+    # --------------------------------------------------------
+    # Score
+    # --------------------------------------------------------
+
     big_score = 0.0
     small_score = 0.0
 
     if markov_size == "大":
-
         big_score += 1.5
-
     else:
-
         small_score += 1.5
 
     if mean_size == "大":
-
         big_score += 1.0
 
     elif mean_size == "小":
-
         small_score += 1.0
 
     if streak_cnt >= 3:
 
         if last_size == "大":
-
             big_score += 1.2
 
         else:
-
             small_score += 1.2
 
     difference = abs(
@@ -347,6 +464,7 @@ def predict_wingo_next(draws):
 
         if big_score >= 2.5:
             confidence = "🔥高确信"
+
         else:
             confidence = "普通"
 
@@ -357,8 +475,13 @@ def predict_wingo_next(draws):
 
         if small_score >= 2.5:
             confidence = "🔥高确信"
+
         else:
             confidence = "普通"
+
+    # --------------------------------------------------------
+    # 目标数字
+    # --------------------------------------------------------
 
     if final_size == "大":
 
@@ -374,11 +497,20 @@ def predict_wingo_next(draws):
 
     max_num_score = -1
 
-    for i in range(start_num, end_num):
+    for i in range(
+        start_num,
+        end_num
+    ):
 
-        if transition_counts[i] > max_num_score:
+        if (
+            transition_counts[i]
+            > max_num_score
+        ):
 
-            max_num_score = transition_counts[i]
+            max_num_score = (
+                transition_counts[i]
+            )
+
             target_num = i
 
     if max_transition == 0:
@@ -428,29 +560,362 @@ def predict_wingo_next(draws):
 
 
 # ============================================================
-# 保存 data.json
+# 加载已有 data.json
+# ============================================================
+
+def load_existing_data():
+
+    global global_data
+
+    if not os.path.exists(
+        DATA_FILE
+    ):
+        print(
+            "ℹ️ [DATA] "
+            "没有旧 data.json，开始建立新数据。"
+        )
+        return
+
+    try:
+
+        with open(
+            DATA_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            old_data = json.load(f)
+
+        if not isinstance(
+            old_data,
+            dict
+        ):
+            return
+
+        with data_lock:
+
+            # ------------------------------------------------
+            # WinGo
+            # ------------------------------------------------
+
+            old_wingo = old_data.get(
+                "wingo"
+            )
+
+            if isinstance(
+                old_wingo,
+                dict
+            ):
+
+                old_draws = old_wingo.get(
+                    "draws",
+                    []
+                )
+
+                if isinstance(
+                    old_draws,
+                    list
+                ):
+
+                    clean_draws = []
+
+                    for item in old_draws:
+
+                        if not isinstance(
+                            item,
+                            dict
+                        ):
+                            continue
+
+                        issue = str(
+                            item.get(
+                                "issueNumber",
+                                ""
+                            )
+                        ).strip()
+
+                        if not issue:
+                            continue
+
+                        number = safe_int(
+                            item.get(
+                                "number"
+                            ),
+                            -1
+                        )
+
+                        if not 0 <= number <= 9:
+                            continue
+
+                        clean_draws.append({
+                            "issueNumber":
+                                issue,
+
+                            "number":
+                                number,
+
+                            "colour":
+                                str(
+                                    item.get(
+                                        "colour",
+                                        ""
+                                    )
+                                ),
+
+                            "size":
+                                get_wingo_size(
+                                    number
+                                )
+                        })
+
+                    clean_draws = dedupe_wingo_draws(
+                        clean_draws
+                    )
+
+                    clean_draws.sort(
+                        key=issue_sort_key,
+                        reverse=True
+                    )
+
+                    global_data[
+                        "wingo"
+                    ][
+                        "draws"
+                    ] = clean_draws[
+                        :WINGO_MAX_HISTORY
+                    ]
+
+            # ------------------------------------------------
+            # Baccarat
+            # ------------------------------------------------
+
+            old_baccarat = old_data.get(
+                "baccarat"
+            )
+
+            if isinstance(
+                old_baccarat,
+                dict
+            ):
+
+                for room in BACCARAT_ROOMS:
+
+                    old_rooms = (
+                        old_baccarat
+                        .get(
+                            "rooms",
+                            {}
+                        )
+                    )
+
+                    history = (
+                        old_rooms
+                        .get(
+                            room,
+                            []
+                        )
+                        if isinstance(
+                            old_rooms,
+                            dict
+                        )
+                        else []
+                    )
+
+                    if not isinstance(
+                        history,
+                        list
+                    ):
+                        continue
+
+                    clean_history = []
+
+                    seen_ids = set()
+
+                    for item in history:
+
+                        if not isinstance(
+                            item,
+                            dict
+                        ):
+                            continue
+
+                        game_id = str(
+                            item.get(
+                                "game_id",
+                                ""
+                            )
+                        ).strip()
+
+                        if not game_id:
+                            continue
+
+                        if game_id in seen_ids:
+                            continue
+
+                        seen_ids.add(
+                            game_id
+                        )
+
+                        clean_history.append(
+                            item
+                        )
+
+                    global_data[
+                        "baccarat"
+                    ][
+                        "rooms"
+                    ][
+                        room
+                    ] = clean_history[
+                        :BACCARAT_MAX_HISTORY
+                    ]
+
+                # 当前房间
+                current_room = normalize_room(
+                    old_baccarat.get(
+                        "current_room"
+                    )
+                )
+
+                if current_room:
+                    global_data[
+                        "baccarat"
+                    ][
+                        "current_room"
+                    ] = current_room
+
+        print(
+            f"💾 [DATA] "
+            f"已读取旧数据 | "
+            f"WinGo:{len(global_data['wingo']['draws'])}期"
+        )
+
+    except Exception as e:
+
+        print(
+            f"⚠️ [DATA] "
+            f"读取旧 data.json 失败: {e}"
+        )
+
+
+# ============================================================
+# WinGo 去重
+# ============================================================
+
+def dedupe_wingo_draws(draws):
+
+    result = []
+    seen = set()
+
+    for item in draws:
+
+        issue = str(
+            item.get(
+                "issueNumber",
+                ""
+            )
+        ).strip()
+
+        if not issue:
+            continue
+
+        if issue in seen:
+            continue
+
+        seen.add(issue)
+
+        result.append(
+            item
+        )
+
+    return result
+
+
+# ============================================================
+# 安全保存 data.json
 # ============================================================
 
 def save_data_json():
 
-    with data_lock:
+    try:
 
-        global_data["updated_at"] = int(
-            time.time()
+        with data_lock:
+
+            global_data[
+                "updated_at"
+            ] = int(
+                time.time()
+            )
+
+            # 深复制，避免写文件过程中其他线程修改
+            snapshot = json.loads(
+                json.dumps(
+                    global_data,
+                    ensure_ascii=False
+                )
+            )
+
+        directory = os.path.dirname(
+            DATA_FILE
         )
 
-        with open(
-            "data.json",
-            "w",
-            encoding="utf-8"
-        ) as f:
+        os.makedirs(
+            directory,
+            exist_ok=True
+        )
 
-            json.dump(
-                global_data,
-                f,
-                ensure_ascii=False,
-                indent=2
+        fd, temp_path = (
+            tempfile.mkstemp(
+                prefix=".data_",
+                suffix=".tmp",
+                dir=directory
             )
+        )
+
+        try:
+
+            with os.fdopen(
+                fd,
+                "w",
+                encoding="utf-8"
+            ) as f:
+
+                json.dump(
+                    snapshot,
+                    f,
+                    ensure_ascii=False,
+                    indent=2
+                )
+
+                f.flush()
+                os.fsync(
+                    f.fileno()
+                )
+
+            os.replace(
+                temp_path,
+                DATA_FILE
+            )
+
+        finally:
+
+            if os.path.exists(
+                temp_path
+            ):
+
+                try:
+                    os.remove(
+                        temp_path
+                    )
+                except Exception:
+                    pass
+
+    except Exception as e:
+
+        print(
+            f"❌ [DATA] "
+            f"保存 data.json 失败: {e}"
+        )
 
 
 # ============================================================
@@ -459,116 +924,252 @@ def save_data_json():
 
 def fetch_wingo_draw_page(
     page_no=1,
-    page_size=10
+    page_size=WINGO_PAGE_SIZE
 ):
 
     payload = {
-        "pageSize": page_size,
-        "pageNo": page_no,
-        "typeId": TYPE_ID,
-        "language": LANGUAGE,
-        "random": generate_random()
+        "pageSize":
+            page_size,
+
+        "pageNo":
+            page_no,
+
+        "typeId":
+            TYPE_ID,
+
+        "language":
+            LANGUAGE,
+
+        "random":
+            generate_random()
     }
 
-    payload["signature"] = generate_signature(
+    # --------------------------------------------------------
+    # Signature 必须在 timestamp 加入前生成
+    # 保持你目前已经验证成功的方式
+    # --------------------------------------------------------
+
+    payload[
+        "signature"
+    ] = generate_signature(
         payload
     )
 
-    payload["timestamp"] = int(
+    payload[
+        "timestamp"
+    ] = int(
         time.time()
     )
 
-    try:
+    for attempt in range(
+        1,
+        WINGO_RETRIES + 1
+    ):
 
-        response = session.post(
-            WINGO_API_URL,
-            json=payload,
-            timeout=15
-        )
+        try:
 
-        data = response.json()
+            response = session.post(
+                WINGO_API_URL,
+                json=payload,
+                timeout=15
+            )
 
-        if data.get("code") != 0:
-            return []
+            response.raise_for_status()
 
-        result = []
+            data = response.json()
 
-        for item in data.get(
-            "data",
-            {}
-        ).get(
-            "list",
-            []
-        ):
+            if not isinstance(
+                data,
+                dict
+            ):
 
-            try:
-
-                number = int(
-                    item["number"]
+                raise ValueError(
+                    "API 返回不是 JSON Object"
                 )
 
-                result.append({
+            code = data.get(
+                "code"
+            )
 
-                    "issueNumber":
-                        str(
-                            item[
-                                "issueNumber"
-                            ]
-                        ),
+            if code != 0:
 
-                    "number":
-                        number,
+                msg = data.get(
+                    "msg",
+                    "Unknown"
+                )
 
-                    "colour":
-                        str(
-                            item[
-                                "colour"
-                            ]
-                        ),
+                print(
+                    f"⚠️ [WinGo API] "
+                    f"第{page_no}页 "
+                    f"code={code} "
+                    f"msg={msg}"
+                )
 
-                    "size":
-                        get_wingo_size(
-                            number
-                        )
-                })
+                return []
 
-            except Exception:
-                continue
+            data_block = data.get(
+                "data",
+                {}
+            )
 
-        return result
+            if not isinstance(
+                data_block,
+                dict
+            ):
+                return []
 
-    except Exception as e:
+            raw_list = data_block.get(
+                "list",
+                []
+            )
 
-        print(
-            f"⚠️ [WinGo API] 请求错误: {e}"
-        )
+            if not isinstance(
+                raw_list,
+                list
+            ):
+                return []
 
-        return []
+            result = []
+
+            for item in raw_list:
+
+                if not isinstance(
+                    item,
+                    dict
+                ):
+                    continue
+
+                try:
+
+                    issue = str(
+                        item[
+                            "issueNumber"
+                        ]
+                    ).strip()
+
+                    number = int(
+                        item[
+                            "number"
+                        ]
+                    )
+
+                    if (
+                        not issue
+                        or not 0 <= number <= 9
+                    ):
+                        continue
+
+                    result.append({
+                        "issueNumber":
+                            issue,
+
+                        "number":
+                            number,
+
+                        "colour":
+                            str(
+                                item.get(
+                                    "colour",
+                                    ""
+                                )
+                            ),
+
+                        "size":
+                            get_wingo_size(
+                                number
+                            )
+                    })
+
+                except Exception:
+                    continue
+
+            return result
+
+        except requests.RequestException as e:
+
+            print(
+                f"⚠️ [WinGo API] "
+                f"第{page_no}页 "
+                f"请求失败 "
+                f"({attempt}/{WINGO_RETRIES}): "
+                f"{e}"
+            )
+
+        except ValueError as e:
+
+            print(
+                f"⚠️ [WinGo API] "
+                f"第{page_no}页 "
+                f"数据错误: {e}"
+            )
+
+            return []
+
+        except Exception as e:
+
+            print(
+                f"⚠️ [WinGo API] "
+                f"第{page_no}页 "
+                f"未知错误: {e}"
+            )
+
+        if attempt < WINGO_RETRIES:
+
+            time.sleep(
+                1.5 * attempt
+            )
+
+    return []
 
 
 # ============================================================
 # 更新 WinGo
 # ============================================================
 
-def update_wingo_data(draws):
+def update_wingo_data(
+    draws,
+    save=True
+):
 
     if not draws:
         return
 
-    streak_val = draws[0]["size"]
+    draws = dedupe_wingo_draws(
+        draws
+    )
+
+    draws.sort(
+        key=issue_sort_key,
+        reverse=True
+    )
+
+    draws = draws[
+        :WINGO_MAX_HISTORY
+    ]
+
+    streak_val = draws[0].get(
+        "size",
+        "-"
+    )
 
     streak_cnt = 0
 
     for d in draws:
 
-        if d["size"] == streak_val:
+        if d.get(
+            "size"
+        ) == streak_val:
+
             streak_cnt += 1
 
         else:
+
             break
 
     sizes = [
-        d["size"]
+        d.get(
+            "size"
+        )
         for d in draws
     ]
 
@@ -576,13 +1177,17 @@ def update_wingo_data(draws):
         sizes
     )
 
-    prediction = predict_wingo_next(
-        draws
+    prediction = (
+        predict_wingo_next(
+            draws
+        )
     )
 
     with data_lock:
 
-        global_data["wingo"] = {
+        global_data[
+            "wingo"
+        ] = {
 
             "stats": {
 
@@ -612,7 +1217,8 @@ def update_wingo_data(draws):
                 draws
         }
 
-    save_data_json()
+    if save:
+        save_data_json()
 
     print(
         f"✅ [WinGo] "
@@ -630,12 +1236,50 @@ def update_wingo_data(draws):
 
 def wingo_loop():
 
-    memory_draws = []
-    seen_issues = set()
+    # --------------------------------------------------------
+    # 先从 data.json 读取旧数据
+    # --------------------------------------------------------
+
+    with data_lock:
+
+        memory_draws = list(
+            global_data[
+                "wingo"
+            ].get(
+                "draws",
+                []
+            )
+        )
+
+    memory_draws = dedupe_wingo_draws(
+        memory_draws
+    )
+
+    memory_draws.sort(
+        key=issue_sort_key,
+        reverse=True
+    )
+
+    seen_issues = {
+        str(
+            item.get(
+                "issueNumber"
+            )
+        )
+        for item in memory_draws
+        if item.get(
+            "issueNumber"
+        )
+    }
+
+    # --------------------------------------------------------
+    # 首次同步
+    # --------------------------------------------------------
 
     print(
         f"🔍 [WinGo] "
-        f"扫描最近 {INIT_SCAN_PAGES} 页..."
+        f"首次扫描最近 "
+        f"{INIT_SCAN_PAGES} 页..."
     )
 
     for page in range(
@@ -643,87 +1287,201 @@ def wingo_loop():
         INIT_SCAN_PAGES + 1
     ):
 
-        page_data = fetch_wingo_draw_page(
-            page_no=page,
-            page_size=10
+        page_data = (
+            fetch_wingo_draw_page(
+                page_no=page,
+                page_size=WINGO_PAGE_SIZE
+            )
         )
 
-        for item in page_data:
+        if page_data:
 
-            issue = item[
-                "issueNumber"
-            ]
+            for item in page_data:
 
-            if issue not in seen_issues:
-
-                seen_issues.add(issue)
-
-                memory_draws.append(
-                    item
+                issue = str(
+                    item.get(
+                        "issueNumber",
+                        ""
+                    )
                 )
 
-        time.sleep(0.3)
+                if (
+                    issue
+                    and issue not in seen_issues
+                ):
 
-    memory_draws.sort(
-        key=lambda x:
-            int(
-                x["issueNumber"]
-            ),
-        reverse=True
-    )
+                    seen_issues.add(
+                        issue
+                    )
 
-    update_wingo_data(
+                    memory_draws.append(
+                        item
+                    )
+
+        else:
+
+            print(
+                f"⚠️ [WinGo] "
+                f"第 {page} 页没有数据"
+            )
+
+        time.sleep(
+            0.3
+        )
+
+    memory_draws = dedupe_wingo_draws(
         memory_draws
     )
 
+    memory_draws.sort(
+        key=issue_sort_key,
+        reverse=True
+    )
+
+    memory_draws = memory_draws[
+        :WINGO_MAX_HISTORY
+    ]
+
+    seen_issues = {
+        str(
+            item.get(
+                "issueNumber"
+            )
+        )
+        for item in memory_draws
+    }
+
+    if memory_draws:
+
+        update_wingo_data(
+            memory_draws
+        )
+
+    else:
+
+        print(
+            "⚠️ [WinGo] "
+            "首次同步没有取得数据，"
+            "继续等待实时 API..."
+        )
+
+    # --------------------------------------------------------
+    # 实时循环
+    # --------------------------------------------------------
+
     while True:
 
-        time.sleep(
-            POLL_INTERVAL
-        )
+        try:
 
-        latest_page = fetch_wingo_draw_page(
-            page_no=1,
-            page_size=10
-        )
+            time.sleep(
+                POLL_INTERVAL
+            )
 
-        new_items = []
+            latest_page = (
+                fetch_wingo_draw_page(
+                    page_no=1,
+                    page_size=WINGO_PAGE_SIZE
+                )
+            )
 
-        for item in latest_page:
+            if not latest_page:
 
-            issue = item[
-                "issueNumber"
-            ]
-
-            if issue not in seen_issues:
-
-                seen_issues.add(issue)
-
-                new_items.append(
-                    item
+                print(
+                    "⏳ [WinGo] "
+                    "本次没有取得最新开奖，"
+                    "保留旧数据。"
                 )
 
-        if new_items:
+                continue
 
-            new_items.sort(
-                key=lambda x:
-                    int(
-                        x["issueNumber"]
-                    ),
-                reverse=True
+            new_items = []
+
+            for item in latest_page:
+
+                issue = str(
+                    item.get(
+                        "issueNumber",
+                        ""
+                    )
+                )
+
+                if not issue:
+                    continue
+
+                if issue not in seen_issues:
+
+                    new_items.append(
+                        item
+                    )
+
+            if new_items:
+
+                new_items.sort(
+                    key=issue_sort_key,
+                    reverse=True
+                )
+
+                memory_draws = (
+                    new_items
+                    + memory_draws
+                )
+
+                memory_draws = (
+                    dedupe_wingo_draws(
+                        memory_draws
+                    )
+                )
+
+                memory_draws.sort(
+                    key=issue_sort_key,
+                    reverse=True
+                )
+
+                memory_draws = (
+                    memory_draws[
+                        :WINGO_MAX_HISTORY
+                    ]
+                )
+
+                seen_issues = {
+                    str(
+                        item.get(
+                            "issueNumber"
+                        )
+                    )
+                    for item in memory_draws
+                }
+
+                update_wingo_data(
+                    memory_draws
+                )
+
+                print(
+                    f"🆕 [WinGo] "
+                    f"新增 {len(new_items)} 期"
+                )
+
+            else:
+
+                # ------------------------------------------------
+                # 如果没有新数据，定期再检查一次历史第一页
+                # 防止临时 API 异常后漏掉数据
+                # ------------------------------------------------
+
+                print(
+                    "⏳ [WinGo] "
+                    "等待下一期开奖..."
+                )
+
+        except Exception as e:
+
+            print(
+                f"❌ [WinGo LOOP] "
+                f"{e}"
             )
 
-            memory_draws = (
-                new_items
-                + memory_draws
-            )
-
-            memory_draws = (
-                memory_draws[:200]
-            )
-
-            update_wingo_data(
-                memory_draws
+            time.sleep(
+                3
             )
 
 
@@ -731,8 +1489,9 @@ def wingo_loop():
 # Baccarat 预测
 # ============================================================
 
-# ⚠️ 保留原来的 Baccarat 算法，不修改
-def predict_baccarat_next(history):
+def predict_baccarat_next(
+    history
+):
 
     if not history:
         return "庄"
@@ -742,13 +1501,17 @@ def predict_baccarat_next(history):
     banker_cnt = sum(
         1
         for h in recent
-        if h.get("result") == "庄"
+        if h.get(
+            "result"
+        ) == "庄"
     )
 
     player_cnt = sum(
         1
         for h in recent
-        if h.get("result") == "闲"
+        if h.get(
+            "result"
+        ) == "闲"
     )
 
     if banker_cnt >= 6:
@@ -761,37 +1524,100 @@ def predict_baccarat_next(history):
 
 
 # ============================================================
+# Baccarat 预测准确率
+# ============================================================
+
+def calculate_baccarat_win_rate(
+    history
+):
+
+    checked = 0
+    correct = 0
+
+    for item in history:
+
+        predicted = item.get(
+            "predict"
+        )
+
+        actual = item.get(
+            "result"
+        )
+
+        # 和局不计算为庄/闲预测输赢
+        if actual == "和":
+            continue
+
+        if predicted not in (
+            "庄",
+            "闲"
+        ):
+            continue
+
+        checked += 1
+
+        if predicted == actual:
+            correct += 1
+
+    if checked <= 0:
+        return 0
+
+    return round(
+        correct
+        / checked
+        * 100,
+        2
+    )
+
+
+# ============================================================
 # Baccarat 二进制工具
 # ============================================================
 
-def bytes_to_hex(data):
+def bytes_to_hex(
+    data
+):
 
     if not isinstance(
         data,
-        (bytes, bytearray)
+        (
+            bytes,
+            bytearray
+        )
     ):
         return ""
 
-    return bytes(data).hex().upper()
+    return bytes(
+        data
+    ).hex().upper()
 
 
-def safe_ascii(data):
+def safe_ascii(
+    data
+):
 
     try:
+
         return data.decode(
             "utf-8",
             errors="ignore"
         )
+
     except Exception:
+
         return ""
 
 
-def normalize_room(text):
+def normalize_room(
+    text
+):
 
     if not text:
         return None
 
-    text = str(text).upper()
+    text = str(
+        text
+    ).upper().strip()
 
     # D051 -> D51
     if (
@@ -799,7 +1625,10 @@ def normalize_room(text):
         and len(text) >= 4
     ):
 
-        room = "D" + text[2:4]
+        room = (
+            "D"
+            + text[2:4]
+        )
 
         if room in BACCARAT_ROOMS:
             return room
@@ -814,17 +1643,35 @@ def normalize_room(text):
 # Choice 房间代码
 # ============================================================
 
-def room_to_choice_code(room):
+def room_to_choice_code(
+    room
+):
 
     mapping = {
-        "D51": b"D051",
-        "D52": b"D052",
-        "D53": b"D053",
-        "D54": b"D054",
-        "D55": b"D055",
-        "D56": b"D056",
-        "D57": b"D057",
-        "D58": b"D058"
+
+        "D51":
+            b"D051",
+
+        "D52":
+            b"D052",
+
+        "D53":
+            b"D053",
+
+        "D54":
+            b"D054",
+
+        "D55":
+            b"D055",
+
+        "D56":
+            b"D056",
+
+        "D57":
+            b"D057",
+
+        "D58":
+            b"D058"
     }
 
     return mapping.get(
@@ -836,19 +1683,22 @@ def room_to_choice_code(room):
 # ============================================================
 # Choice Baccarat 房间订阅封包
 #
-# 已抓到实际 Choice 封包：
+# 已确认格式：
 #
-# 00061003000000190000000044303531000000000000000100
+# 000610030000001900000000
+# + D051
+# + 000000000000000100
 #
-# D051 位于：
-#
-# 44 30 35 31
 # ============================================================
 
-def build_baccarat_room_packet(room):
+def build_baccarat_room_packet(
+    room
+):
 
-    room_code = room_to_choice_code(
-        room
+    room_code = (
+        room_to_choice_code(
+            room
+        )
     )
 
     packet = bytearray(
@@ -867,14 +1717,18 @@ def build_baccarat_room_packet(room):
         )
     )
 
-    return bytes(packet)
+    return bytes(
+        packet
+    )
 
 
 # ============================================================
 # Choice Baccarat 房间订阅
 # ============================================================
 
-def subscribe_baccarat_rooms(ws):
+def subscribe_baccarat_rooms(
+    ws
+):
 
     print(
         "📡 [Choice百家乐] "
@@ -887,13 +1741,18 @@ def subscribe_baccarat_rooms(ws):
 
         try:
 
-            packet = build_baccarat_room_packet(
-                room
+            packet = (
+                build_baccarat_room_packet(
+                    room
+                )
             )
 
             ws.send(
                 packet,
-                opcode=websocket.ABNF.OPCODE_BINARY
+                opcode=(
+                    websocket.ABNF
+                    .OPCODE_BINARY
+                )
             )
 
             print(
@@ -910,14 +1769,15 @@ def subscribe_baccarat_rooms(ws):
 
             print(
                 f"⚠️ [百家乐] "
-                f"{room} 订阅失败: {e}"
+                f"{room} "
+                f"订阅失败: {e}"
             )
 
 
 # ============================================================
-# 从 Choice Binary Packet 寻找 Baccarat Result
+# Baccarat Binary Result Parser
 #
-# 已确认 BacGameResultResp：
+# BacGameResultResp:
 #
 # vid   = 4 bytes
 # res   = 1 byte
@@ -930,15 +1790,22 @@ def subscribe_baccarat_rooms(ws):
 # Payload = 13 bytes
 # ============================================================
 
-def parse_bac_result_candidates(raw):
+def parse_bac_result_candidates(
+    raw
+):
 
     if not isinstance(
         raw,
-        (bytes, bytearray)
+        (
+            bytes,
+            bytearray
+        )
     ):
         return []
 
-    data = bytes(raw)
+    data = bytes(
+        raw
+    )
 
     candidates = []
 
@@ -948,7 +1815,7 @@ def parse_bac_result_candidates(raw):
         return candidates
 
     # --------------------------------------------------------
-    # 寻找 D051-D058
+    # 搜索 D051-D058
     # --------------------------------------------------------
 
     for room in BACCARAT_ROOMS:
@@ -980,86 +1847,98 @@ def parse_bac_result_candidates(raw):
                     pos:end
                 ]
 
-                res = chunk[4]
+                try:
 
-                code_raw = chunk[
-                    5:9
-                ]
+                    res = chunk[4]
 
-                bval = chunk[9]
-                pval = chunk[10]
-                num = chunk[11]
-                pair = chunk[12]
+                    code_raw = chunk[
+                        5:9
+                    ]
 
-                # ------------------------------------------------
-                # Baccarat 点数范围
-                # ------------------------------------------------
+                    bval = chunk[9]
+                    pval = chunk[10]
+                    num = chunk[11]
+                    pair = chunk[12]
 
-                valid_points = (
-                    0 <= bval <= 9
-                    and
-                    0 <= pval <= 9
-                )
+                    # ------------------------------------------------
+                    # Baccarat 正常点数
+                    # ------------------------------------------------
 
-                valid_num = (
-                    0 <= num <= 20
-                )
-
-                if (
-                    valid_points
-                    and valid_num
-                ):
-
-                    if bval > pval:
-
-                        result = "庄"
-
-                    elif pval > bval:
-
-                        result = "闲"
-
-                    else:
-
-                        result = "和"
-
-                    code = safe_ascii(
-                        code_raw
-                    ).strip(
-                        "\x00 "
+                    valid_points = (
+                        0 <= bval <= 9
+                        and
+                        0 <= pval <= 9
                     )
 
-                    candidates.append({
+                    valid_num = (
+                        0 <= num <= 20
+                    )
 
-                        "room":
-                            room,
+                    valid_pair = (
+                        0 <= pair <= 3
+                    )
 
-                        "result":
-                            result,
+                    if (
+                        valid_points
+                        and valid_num
+                        and valid_pair
+                    ):
 
-                        "bval":
-                            bval,
+                        if bval > pval:
 
-                        "pval":
-                            pval,
+                            result = "庄"
 
-                        "num":
-                            num,
+                        elif pval > bval:
 
-                        "pair":
-                            pair,
+                            result = "闲"
 
-                        "res":
-                            res,
+                        else:
 
-                        "code":
-                            code,
+                            result = "和"
 
-                        "offset":
-                            pos,
+                        code = safe_ascii(
+                            code_raw
+                        ).strip(
+                            "\x00 "
+                        )
 
-                        "raw":
-                            bytes(chunk)
-                    })
+                        candidates.append({
+
+                            "room":
+                                room,
+
+                            "result":
+                                result,
+
+                            "bval":
+                                bval,
+
+                            "pval":
+                                pval,
+
+                            "num":
+                                num,
+
+                            "pair":
+                                pair,
+
+                            "res":
+                                res,
+
+                            "code":
+                                code,
+
+                            "offset":
+                                pos,
+
+                            "raw":
+                                bytes(
+                                    chunk
+                                )
+                        })
+
+                except Exception:
+                    pass
 
             start = pos + 1
 
@@ -1076,7 +1955,10 @@ def parse_choice_baccarat_packet(
 
     if not isinstance(
         raw_msg,
-        (bytes, bytearray)
+        (
+            bytes,
+            bytearray
+        )
     ):
         return None
 
@@ -1093,7 +1975,11 @@ def parse_choice_baccarat_packet(
     if not candidates:
         return None
 
-    # 如果一个封包存在多个结果，取最后一个
+    # --------------------------------------------------------
+    # 如果一个 packet 有多个结果
+    # 取最后一个
+    # --------------------------------------------------------
+
     item = candidates[-1]
 
     room = item[
@@ -1145,27 +2031,39 @@ def parse_choice_baccarat_packet(
             game_id,
 
         "bval":
-            item["bval"],
+            item[
+                "bval"
+            ],
 
         "pval":
-            item["pval"],
+            item[
+                "pval"
+            ],
 
         "num":
-            item["num"],
+            item[
+                "num"
+            ],
 
         "pair":
-            item["pair"],
+            item[
+                "pair"
+            ],
 
         "code":
-            item["code"],
+            item[
+                "code"
+            ],
 
         "res":
-            item["res"]
+            item[
+                "res"
+            ]
     }
 
 
 # ============================================================
-# Baccarat 数据处理
+# Baccarat Stats
 # ============================================================
 
 def update_baccarat_stats(
@@ -1220,6 +2118,53 @@ def update_baccarat_stats(
         0
     )
 
+    bacc[
+        "stats"
+    ][
+        "win_rate"
+    ] = calculate_baccarat_win_rate(
+        history
+    )
+
+
+# ============================================================
+# Baccarat 全局预测
+# ============================================================
+
+def update_global_baccarat_prediction():
+
+    bacc = global_data[
+        "baccarat"
+    ]
+
+    room = bacc.get(
+        "current_room",
+        "D51"
+    )
+
+    history = (
+        bacc[
+            "rooms"
+        ].get(
+            room,
+            []
+        )
+    )
+
+    if not history:
+
+        bacc[
+            "predicted_result"
+        ] = "--"
+
+        return
+
+    bacc[
+        "predicted_result"
+    ] = predict_baccarat_next(
+        history
+    )
+
 
 # ============================================================
 # Baccarat WS Message
@@ -1232,7 +2177,10 @@ def on_baccarat_message(
 
     if not isinstance(
         message,
-        (bytes, bytearray)
+        (
+            bytes,
+            bytearray
+        )
     ):
 
         return
@@ -1242,7 +2190,7 @@ def on_baccarat_message(
     )
 
     # --------------------------------------------------------
-    # 只有包含房间 VID 时才显示 Binary
+    # Binary Debug
     # --------------------------------------------------------
 
     contains_room = any(
@@ -1266,12 +2214,28 @@ def on_baccarat_message(
             f"{bytes_to_hex(raw)}"
         )
 
-    parsed = parse_choice_baccarat_packet(
-        raw
-    )
+    # --------------------------------------------------------
+    # Parse
+    # --------------------------------------------------------
+
+    try:
+
+        parsed = (
+            parse_choice_baccarat_packet(
+                raw
+            )
+        )
+
+    except Exception as e:
+
+        print(
+            f"⚠️ [百家乐 Parser] "
+            f"{e}"
+        )
+
+        return
 
     if not parsed:
-
         return
 
     room = parsed[
@@ -1279,7 +2243,6 @@ def on_baccarat_message(
     ]
 
     if room not in BACCARAT_ROOMS:
-
         return
 
     with data_lock:
@@ -1298,13 +2261,16 @@ def on_baccarat_message(
         # 防重复
         # ----------------------------------------------------
 
+        game_id = parsed.get(
+            "game_id",
+            ""
+        )
+
         exists = any(
             item.get(
                 "game_id"
             )
-            == parsed[
-                "game_id"
-            ]
+            == game_id
 
             for item in room_history
         )
@@ -1314,19 +2280,26 @@ def on_baccarat_message(
             return
 
         # ----------------------------------------------------
-        # 先预测，再加入结果
+        # 关键修正
         #
-        # 保留原 Baccarat 算法
+        # 这个结果还没有加入 history。
+        #
+        # 所以这里得到的 prediction
+        # 才是真正「开奖前」的预测。
         # ----------------------------------------------------
+
+        prediction_before_result = (
+            predict_baccarat_next(
+                room_history
+            )
+        )
 
         parsed[
             "predict"
-        ] = predict_baccarat_next(
-            room_history
-        )
+        ] = prediction_before_result
 
         # ----------------------------------------------------
-        # 最新放最前
+        # 最新结果放最前
         # ----------------------------------------------------
 
         room_history.insert(
@@ -1334,13 +2307,17 @@ def on_baccarat_message(
             parsed
         )
 
+        room_history = (
+            room_history[
+                :BACCARAT_MAX_HISTORY
+            ]
+        )
+
         bacc[
             "rooms"
         ][
             room
-        ] = room_history[
-            :100
-        ]
+        ] = room_history
 
         # ----------------------------------------------------
         # 当前房间
@@ -1368,21 +2345,37 @@ def on_baccarat_message(
             "result"
         ]
 
+        # ----------------------------------------------------
+        # Stats
+        # ----------------------------------------------------
+
+        update_baccarat_stats(
+            room
+        )
+
+        # ----------------------------------------------------
+        # 关键修正
+        #
+        # 加入最新结果后，
+        # 再预测下一局。
+        # ----------------------------------------------------
+
         bacc[
             "predicted_result"
         ] = predict_baccarat_next(
             room_history
         )
 
-        update_baccarat_stats(
-            room
-        )
+    # --------------------------------------------------------
+    # 保存
+    # --------------------------------------------------------
 
     save_data_json()
 
     print(
         f"🃏 [百家乐 {room}] "
         f"结果:{parsed['result']} | "
+        f"预测:{parsed['predict']} | "
         f"庄:{parsed['bval']} "
         f"闲:{parsed['pval']} | "
         f"局:{parsed['game']}"
@@ -1444,10 +2437,6 @@ def on_baccarat_open(
         f"🌐 {BACCARAT_WS_URL}"
     )
 
-    # --------------------------------------------------------
-    # Choice Baccarat 初始化
-    # --------------------------------------------------------
-
     try:
 
         subscribe_baccarat_rooms(
@@ -1468,10 +2457,17 @@ def on_baccarat_open(
 
 
 # ============================================================
-# Baccarat WS
+# Baccarat WebSocket
 # ============================================================
 
 def start_baccarat_ws():
+
+    # --------------------------------------------------------
+    # 不直接手动加入 Origin header
+    #
+    # websocket-client 自己会处理 Origin。
+    # 使用 origin 参数指定来源。
+    # --------------------------------------------------------
 
     headers = [
         "User-Agent: Mozilla/5.0 "
@@ -1479,12 +2475,12 @@ def start_baccarat_ws():
         "AppleWebKit/537.36 "
         "(KHTML, like Gecko) "
         "Chrome/153.0.0.0 "
-        "Safari/537.36",
-
-        "Origin: https://gci.arvideo.video"
+        "Safari/537.36"
     ]
 
     while True:
+
+        ws = None
 
         try:
 
@@ -1513,8 +2509,12 @@ def start_baccarat_ws():
             )
 
             ws.run_forever(
+
                 ping_interval=20,
-                ping_timeout=10
+
+                ping_timeout=10,
+
+                origin=BACCARAT_ORIGIN
             )
 
         except Exception as e:
@@ -1524,11 +2524,225 @@ def start_baccarat_ws():
                 f"{e}"
             )
 
+        finally:
+
+            try:
+
+                if ws is not None:
+
+                    ws.close()
+
+            except Exception:
+                pass
+
         print(
-            "⏳ 5秒后重新连接 Baccarat..."
+            f"⏳ "
+            f"{BACCARAT_RECONNECT_DELAY}秒后"
+            f"重新连接 Baccarat..."
         )
 
-        time.sleep(5)
+        time.sleep(
+            BACCARAT_RECONNECT_DELAY
+        )
+
+
+# ============================================================
+# 启动时重新计算 Baccarat 数据
+# ============================================================
+
+def rebuild_baccarat_state():
+
+    with data_lock:
+
+        bacc = global_data[
+            "baccarat"
+        ]
+
+        # ----------------------------------------------------
+        # 每个房间重新计算
+        # ----------------------------------------------------
+
+        for room in BACCARAT_ROOMS:
+
+            history = bacc[
+                "rooms"
+            ][
+                room
+            ]
+
+            if not isinstance(
+                history,
+                list
+            ):
+                history = []
+
+            history = history[
+                :BACCARAT_MAX_HISTORY
+            ]
+
+            bacc[
+                "rooms"
+            ][
+                room
+            ] = history
+
+            update_baccarat_stats(
+                room
+            )
+
+        # ----------------------------------------------------
+        # 当前房间
+        # ----------------------------------------------------
+
+        current_room = normalize_room(
+            bacc.get(
+                "current_room",
+                "D51"
+            )
+        )
+
+        if not current_room:
+            current_room = "D51"
+
+        bacc[
+            "current_room"
+        ] = current_room
+
+        history = bacc[
+            "rooms"
+        ].get(
+            current_room,
+            []
+        )
+
+        if history:
+
+            latest = history[0]
+
+            bacc[
+                "latest_result"
+            ] = latest.get(
+                "result",
+                "--"
+            )
+
+            bacc[
+                "shoe_no"
+            ] = latest.get(
+                "shoe",
+                "01"
+            )
+
+            bacc[
+                "game_no"
+            ] = latest.get(
+                "game",
+                "01"
+            )
+
+            bacc[
+                "predicted_result"
+            ] = predict_baccarat_next(
+                history
+            )
+
+        else:
+
+            bacc[
+                "latest_result"
+            ] = "--"
+
+            bacc[
+                "predicted_result"
+            ] = "--"
+
+
+# ============================================================
+# 打印启动状态
+# ============================================================
+
+def print_startup_status():
+
+    with data_lock:
+
+        wingo_count = len(
+            global_data[
+                "wingo"
+            ][
+                "draws"
+            ]
+        )
+
+        current_room = (
+            global_data[
+                "baccarat"
+            ][
+                "current_room"
+            ]
+        )
+
+        baccarat_count = len(
+            global_data[
+                "baccarat"
+            ][
+                "rooms"
+            ].get(
+                current_room,
+                []
+            )
+        )
+
+    print(
+        "=" * 70
+    )
+
+    print(
+        "🚀 WinGo + Choice百家乐 "
+        "实时数据采集系统"
+    )
+
+    print(
+        "=" * 70
+    )
+
+    print(
+        f"🎯 WinGo API: "
+        f"{WINGO_API_URL}"
+    )
+
+    print(
+        f"🎯 WinGo Type ID: "
+        f"{TYPE_ID}"
+    )
+
+    print(
+        f"🎯 WinGo 历史: "
+        f"{wingo_count} 期"
+    )
+
+    print(
+        f"🃏 Baccarat WS: "
+        f"{BACCARAT_WS_URL}"
+    )
+
+    print(
+        f"🃏 Baccarat 当前房间: "
+        f"{current_room}"
+    )
+
+    print(
+        f"🃏 Baccarat 历史: "
+        f"{baccarat_count} 局"
+    )
+
+    print(
+        f"💾 数据文件: "
+        f"{DATA_FILE}"
+    )
+
+    print(
+        "=" * 70
+    )
 
 
 # ============================================================
@@ -1537,58 +2751,101 @@ def start_baccarat_ws():
 
 def main():
 
-    print("=" * 65)
+    # --------------------------------------------------------
+    # 切换到 bot.py 所在目录
+    # --------------------------------------------------------
 
-    print(
-        "🚀 WinGo + Choice百家乐 "
-        "实时数据采集系统"
-    )
+    try:
 
-    print(
-        "🎯 WinGo：原有算法"
-    )
+        os.chdir(
+            BASE_DIR
+        )
 
-    print(
-        "🃏 Baccarat：Choice "
-        "ng211.mdvuz.com:5000"
-    )
-
-    print("=" * 65)
+    except Exception:
+        pass
 
     # --------------------------------------------------------
-    # WinGo
+    # 读取旧数据
+    # --------------------------------------------------------
+
+    load_existing_data()
+
+    # --------------------------------------------------------
+    # 重建 Baccarat Stats
+    # --------------------------------------------------------
+
+    rebuild_baccarat_state()
+
+    # --------------------------------------------------------
+    # 保存一次干净的数据
+    # --------------------------------------------------------
+
+    save_data_json()
+
+    # --------------------------------------------------------
+    # 显示启动状态
+    # --------------------------------------------------------
+
+    print_startup_status()
+
+    # --------------------------------------------------------
+    # WinGo Thread
     # --------------------------------------------------------
 
     wingo_thread = threading.Thread(
+
         target=wingo_loop,
+
+        name="WinGoThread",
+
         daemon=True
     )
 
     wingo_thread.start()
 
     # --------------------------------------------------------
-    # Baccarat
+    # Baccarat Thread
     # --------------------------------------------------------
 
     baccarat_thread = threading.Thread(
+
         target=start_baccarat_ws,
+
+        name="BaccaratThread",
+
         daemon=True
     )
 
     baccarat_thread.start()
 
+    print(
+        "🟢 [SYSTEM] "
+        "WinGo + Baccarat 已启动"
+    )
+
+    # --------------------------------------------------------
+    # Main Keep Alive
+    # --------------------------------------------------------
+
     try:
 
         while True:
 
-            time.sleep(1)
+            time.sleep(
+                1
+            )
 
     except KeyboardInterrupt:
 
         print(
-            "\n👋 程序已安全退出"
+            "\n👋 "
+            "程序已安全退出"
         )
 
+
+# ============================================================
+# ENTRY
+# ============================================================
 
 if __name__ == "__main__":
 
