@@ -13,9 +13,7 @@ from collections import Counter
 # 基本路径
 # ============================================================
 
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATA_FILE = os.path.join(
     BASE_DIR,
@@ -39,17 +37,13 @@ WINGO_API_URL = (
 
 WINGO_ORIGIN = "https://mzplay0.com"
 
-WINGO_REFERER = (
-    "https://mzplay0.com/"
-)
+WINGO_REFERER = "https://mzplay0.com/"
 
 TYPE_ID = 30
 LANGUAGE = 0
 
 POLL_INTERVAL = 10
-
 INIT_SCAN_PAGES = 10
-
 MAX_WINGO_HISTORY = 300
 
 
@@ -57,13 +51,9 @@ MAX_WINGO_HISTORY = 300
 # Baccarat WebSocket
 # ============================================================
 
-BACCARAT_WS_URL = (
-    "wss://ng211.mdvuz.com:5000"
-)
+BACCARAT_WS_URL = "wss://ng211.mdvuz.com:5000"
 
-BACCARAT_ORIGIN = (
-    "https://gci.arvideo.video"
-)
+BACCARAT_ORIGIN = "https://gci.arvideo.video"
 
 BACCARAT_ROOMS = (
     "D51",
@@ -73,7 +63,7 @@ BACCARAT_ROOMS = (
     "D55",
     "D56",
     "D57",
-    "D58"
+    "D58",
 )
 
 MAX_BACCARAT_HISTORY = 200
@@ -84,15 +74,8 @@ MAX_BACCARAT_HISTORY = 200
 # ============================================================
 
 def create_default_data():
-
     return {
-
-        # ----------------------------------------------------
-        # 原本旧 Dashboard 数据
-        # ----------------------------------------------------
-
-        "update_time":
-            "2026-09-27 10:30:00",
+        "update_time": "2026-09-27 10:30:00",
 
         "price_history": [
             {
@@ -106,143 +89,63 @@ def create_default_data():
         ],
 
         "ai_learning": {
-
             "weights": {
-
-                "ma_factor":
-                    0.35,
-
-                "rsi_factor":
-                    0.25,
-
-                "trend_factor":
-                    0.40
+                "ma_factor": 0.35,
+                "rsi_factor": 0.25,
+                "trend_factor": 0.40
             }
         },
 
         "market_analysis": {
-
-            "big10":
-                "60%",
-
-            "small10":
-                "40%",
-
-            "big50":
-                "55%",
-
-            "small50":
-                "45%"
+            "big10": "60%",
+            "small10": "40%",
+            "big50": "55%",
+            "small50": "45%"
         },
 
-        # ----------------------------------------------------
-        # 系统更新时间
-        # ----------------------------------------------------
-
-        "updated_at":
-            int(time.time()),
-
-        # ----------------------------------------------------
-        # WinGo
-        # ----------------------------------------------------
+        "updated_at": int(time.time()),
 
         "wingo": {
-
             "stats": {
-
-                "streak_val":
-                    "-",
-
-                "streak_cnt":
-                    0,
-
-                "big_cnt":
-                    0,
-
-                "small_cnt":
-                    0
+                "streak_val": "-",
+                "streak_cnt": 0,
+                "big_cnt": 0,
+                "small_cnt": 0
             },
 
             "prediction": {
-
-                "num":
-                    5,
-
-                "size":
-                    "大",
-
-                "signal":
-                    "观望",
-
-                "confidence":
-                    "低",
-
-                "big_score":
-                    0,
-
-                "small_score":
-                    0,
-
-                "difference":
-                    0,
-
-                "markov_num":
-                    5,
-
-                "markov_size":
-                    "大",
-
-                "mean_size":
-                    "平",
-
-                "streak":
-                    0,
-
-                "special":
-                    False
+                "num": 5,
+                "size": "大",
+                "signal": "观望",
+                "confidence": "低",
+                "big_score": 0,
+                "small_score": 0,
+                "difference": 0,
+                "markov_num": 5,
+                "markov_size": "大",
+                "mean_size": "平",
+                "streak": 0,
+                "special": False
             },
 
             "draws": []
         },
 
-        # ----------------------------------------------------
-        # Baccarat
-        # ----------------------------------------------------
-
         "baccarat": {
-
-            "current_room":
-                "D51",
-
-            "shoe_no":
-                "01",
-
-            "game_no":
-                "01",
-
-            "latest_result":
-                "--",
-
-            "predicted_result":
-                "--",
+            "current_room": "D51",
+            "shoe_no": "01",
+            "game_no": "01",
+            "latest_result": "--",
+            "predicted_result": "--",
 
             "stats": {
-
-                "banker_cnt":
-                    0,
-
-                "player_cnt":
-                    0,
-
-                "tie_cnt":
-                    0,
-
-                "win_rate":
-                    0
+                "banker_cnt": 0,
+                "player_cnt": 0,
+                "tie_cnt": 0,
+                "win_rate": 0
             },
 
             "rooms": {
-
                 "D51": [],
                 "D52": [],
                 "D53": [],
@@ -267,23 +170,20 @@ data_lock = threading.Lock()
 session = requests.Session()
 
 session.headers.update({
-
-    "User-Agent":
+    "User-Agent": (
         "Mozilla/5.0 "
         "(Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 "
         "(KHTML, like Gecko) "
         "Chrome/153.0.0.0 "
-        "Safari/537.36",
+        "Safari/537.36"
+    ),
 
-    "Content-Type":
-        "application/json;charset=UTF-8",
+    "Content-Type": "application/json;charset=UTF-8",
 
-    "Origin":
-        WINGO_ORIGIN,
+    "Origin": WINGO_ORIGIN,
 
-    "Referer":
-        WINGO_REFERER
+    "Referer": WINGO_REFERER
 })
 
 
@@ -292,7 +192,6 @@ session.headers.update({
 # ============================================================
 
 def generate_random(length=32):
-
     return "".join(
         random.choices(
             "0123456789abcdef",
@@ -302,24 +201,16 @@ def generate_random(length=32):
 
 
 def generate_signature(data):
-
     sign_data = {
-
         k: v
-
-        for k, v in sorted(
-            data.items()
-        )
-
+        for k, v in sorted(data.items())
         if k not in (
             "signature",
             "timestamp",
             "track",
             "xosoBettingData"
         )
-
         and v is not None
-
         and v != ""
     }
 
@@ -335,7 +226,6 @@ def generate_signature(data):
 
 
 def get_wingo_size(number):
-
     number = int(number)
 
     if 0 <= number <= 4:
@@ -348,17 +238,12 @@ def get_wingo_size(number):
 # WinGo 颜色
 # ============================================================
 
-def normalize_wingo_colour(
-    number,
-    api_colour=""
-):
-
+def normalize_wingo_colour(number, api_colour=""):
     try:
         number = int(number)
     except Exception:
         return str(api_colour or "")
 
-    # 保留 API 原本颜色
     if api_colour:
         return str(api_colour)
 
@@ -379,28 +264,19 @@ def normalize_wingo_colour(
 # ============================================================
 
 def predict_wingo_next(draws):
-
     if not draws or len(draws) < 10:
-
         return {
-
             "num": 5,
             "size": "大",
             "signal": "观望",
             "confidence": "低",
-
             "big_score": 0,
             "small_score": 0,
-
             "difference": 0,
-
             "markov_num": 5,
             "markov_size": "大",
-
             "mean_size": "平",
-
             "streak": 0,
-
             "special": False
         }
 
@@ -408,9 +284,7 @@ def predict_wingo_next(draws):
     sizes = []
 
     for item in draws:
-
         try:
-
             nums.append(
                 int(item["number"])
             )
@@ -420,30 +294,21 @@ def predict_wingo_next(draws):
             )
 
         except Exception:
-
             continue
 
     if len(nums) < 10:
-
         return {
-
             "num": 5,
             "size": "大",
             "signal": "观望",
             "confidence": "低",
-
             "big_score": 0,
             "small_score": 0,
-
             "difference": 0,
-
             "markov_num": 5,
             "markov_size": "大",
-
             "mean_size": "平",
-
             "streak": 0,
-
             "special": False
         }
 
@@ -452,7 +317,6 @@ def predict_wingo_next(draws):
     # --------------------------------------------------------
 
     last_num = nums[0]
-
     last_size = sizes[0]
 
     # --------------------------------------------------------
@@ -462,7 +326,6 @@ def predict_wingo_next(draws):
     streak_cnt = 0
 
     for size in sizes:
-
         if size == last_size:
             streak_cnt += 1
         else:
@@ -472,40 +335,23 @@ def predict_wingo_next(draws):
     # 数字转换关系
     # --------------------------------------------------------
 
-    transition_counts = [
-        0
-    ] * 10
+    transition_counts = [0] * 10
 
-    for i in range(
-        len(nums) - 1
-    ):
-
+    for i in range(len(nums) - 1):
         current_num = nums[i]
-
         previous_num = nums[i + 1]
 
         if previous_num == last_num:
-
             if 0 <= current_num <= 9:
+                transition_counts[current_num] += 1
 
-                transition_counts[
-                    current_num
-                ] += 1
-
-    max_transition = max(
-        transition_counts
-    )
+    max_transition = max(transition_counts)
 
     if max_transition > 0:
-
-        markov_best_num = (
-            transition_counts.index(
-                max_transition
-            )
+        markov_best_num = transition_counts.index(
+            max_transition
         )
-
     else:
-
         markov_best_num = 5
 
     markov_size = (
@@ -527,15 +373,12 @@ def predict_wingo_next(draws):
     )
 
     if big_count >= 7:
-
         mean_size = "小"
 
     elif big_count <= 3:
-
         mean_size = "大"
 
     else:
-
         mean_size = "平"
 
     # --------------------------------------------------------
@@ -555,29 +398,20 @@ def predict_wingo_next(draws):
     small_score = 0.0
 
     if markov_size == "大":
-
         big_score += 1.5
-
     else:
-
         small_score += 1.5
 
     if mean_size == "大":
-
         big_score += 1.0
 
     elif mean_size == "小":
-
         small_score += 1.0
 
     if streak_cnt >= 3:
-
         if last_size == "大":
-
             big_score += 1.2
-
         else:
-
             small_score += 1.2
 
     difference = abs(
@@ -589,11 +423,8 @@ def predict_wingo_next(draws):
     # --------------------------------------------------------
 
     if big_score >= small_score:
-
         final_size = "大"
-
     else:
-
         final_size = "小"
 
     # --------------------------------------------------------
@@ -601,43 +432,30 @@ def predict_wingo_next(draws):
     # --------------------------------------------------------
 
     signal = "观望"
-
     confidence = "普通"
 
     if difference < 0.8:
-
         signal = "观望"
-
         confidence = "避险观望"
 
     elif special:
-
         signal = "观望"
-
         confidence = "避险观望"
 
     elif big_score > small_score:
-
         signal = "BUY"
 
         if big_score >= 2.5:
-
             confidence = "高确信"
-
         else:
-
             confidence = "普通"
 
     else:
-
         signal = "SELL"
 
         if small_score >= 2.5:
-
             confidence = "高确信"
-
         else:
-
             confidence = "普通"
 
     # --------------------------------------------------------
@@ -645,29 +463,21 @@ def predict_wingo_next(draws):
     # --------------------------------------------------------
 
     if final_size == "大":
-
         start_num = 5
         end_num = 10
         target_num = 7
-
     else:
-
         start_num = 0
         end_num = 5
         target_num = 2
 
     max_num_score = -1
 
-    for number in range(
-        start_num,
-        end_num
-    ):
-
+    for number in range(start_num, end_num):
         if (
             transition_counts[number]
             > max_num_score
         ):
-
             max_num_score = (
                 transition_counts[number]
             )
@@ -675,7 +485,6 @@ def predict_wingo_next(draws):
             target_num = number
 
     if max_transition == 0:
-
         target_num = (
             7
             if final_size == "大"
@@ -683,51 +492,18 @@ def predict_wingo_next(draws):
         )
 
     return {
-
-        "num":
-            target_num,
-
-        "size":
-            final_size,
-
-        "signal":
-            signal,
-
-        "confidence":
-            confidence,
-
-        "big_score":
-            round(
-                big_score,
-                2
-            ),
-
-        "small_score":
-            round(
-                small_score,
-                2
-            ),
-
-        "difference":
-            round(
-                difference,
-                2
-            ),
-
-        "markov_num":
-            markov_best_num,
-
-        "markov_size":
-            markov_size,
-
-        "mean_size":
-            mean_size,
-
-        "streak":
-            streak_cnt,
-
-        "special":
-            special
+        "num": target_num,
+        "size": final_size,
+        "signal": signal,
+        "confidence": confidence,
+        "big_score": round(big_score, 2),
+        "small_score": round(small_score, 2),
+        "difference": round(difference, 2),
+        "markov_num": markov_best_num,
+        "markov_size": markov_size,
+        "mean_size": mean_size,
+        "streak": streak_cnt,
+        "special": special
     }
 
 
@@ -736,42 +512,28 @@ def predict_wingo_next(draws):
 # ============================================================
 
 def load_existing_data():
-
     global global_data
 
-    if not os.path.exists(
-        DATA_FILE
-    ):
-
+    if not os.path.exists(DATA_FILE):
         print(
             "ℹ️ data.json 不存在，"
             "使用默认数据"
         )
-
         return
 
     try:
-
         with open(
             DATA_FILE,
             "r",
             encoding="utf-8"
         ) as file:
+            loaded = json.load(file)
 
-            loaded = json.load(
-                file
-            )
-
-        if not isinstance(
-            loaded,
-            dict
-        ):
-
+        if not isinstance(loaded, dict):
             print(
                 "⚠️ data.json 不是 JSON object，"
                 "使用默认数据"
             )
-
             return
 
         default = create_default_data()
@@ -786,12 +548,8 @@ def load_existing_data():
             "ai_learning",
             "market_analysis"
         ):
-
             if key in loaded:
-
-                default[key] = (
-                    loaded[key]
-                )
+                default[key] = loaded[key]
 
         # ----------------------------------------------------
         # 更新时间
@@ -801,7 +559,6 @@ def load_existing_data():
             loaded.get("updated_at"),
             int
         ):
-
             default["updated_at"] = (
                 loaded["updated_at"]
             )
@@ -810,48 +567,32 @@ def load_existing_data():
         # WinGo
         # ----------------------------------------------------
 
-        old_wingo = loaded.get(
-            "wingo"
-        )
+        old_wingo = loaded.get("wingo")
 
-        if isinstance(
-            old_wingo,
-            dict
-        ):
-
+        if isinstance(old_wingo, dict):
             old_draws = old_wingo.get(
                 "draws",
                 []
             )
 
-            if isinstance(
-                old_draws,
-                list
-            ):
-
+            if isinstance(old_draws, list):
                 clean_draws = []
 
                 for item in old_draws:
-
                     normalized = (
-                        normalize_wingo_item(
-                            item
-                        )
+                        normalize_wingo_item(item)
                     )
 
                     if normalized:
-
                         clean_draws.append(
                             normalized
                         )
 
-                default[
-                    "wingo"
-                ][
-                    "draws"
-                ] = clean_draws[
-                    :MAX_WINGO_HISTORY
-                ]
+                default["wingo"]["draws"] = (
+                    clean_draws[
+                        :MAX_WINGO_HISTORY
+                    ]
+                )
 
         # ----------------------------------------------------
         # Baccarat
@@ -861,10 +602,7 @@ def load_existing_data():
             "baccarat"
         )
 
-        if isinstance(
-            old_baccarat,
-            dict
-        ):
+        if isinstance(old_baccarat, dict):
 
             for key in (
                 "current_room",
@@ -873,48 +611,32 @@ def load_existing_data():
                 "latest_result",
                 "predicted_result"
             ):
-
                 if key in old_baccarat:
-
-                    default[
-                        "baccarat"
-                    ][key] = (
+                    default["baccarat"][key] = (
                         old_baccarat[key]
                     )
 
-            old_rooms = (
-                old_baccarat.get(
-                    "rooms",
-                    {}
-                )
+            old_rooms = old_baccarat.get(
+                "rooms",
+                {}
             )
 
-            if isinstance(
-                old_rooms,
-                dict
-            ):
+            if isinstance(old_rooms, dict):
 
                 for room in BACCARAT_ROOMS:
 
-                    history = (
-                        old_rooms.get(
-                            room,
-                            []
-                        )
+                    history = old_rooms.get(
+                        room,
+                        []
                     )
 
                     if not isinstance(
                         history,
                         list
                     ):
-
                         continue
 
-                    default[
-                        "baccarat"
-                    ][
-                        "rooms"
-                    ][room] = (
+                    default["baccarat"]["rooms"][room] = (
                         history[
                             :MAX_BACCARAT_HISTORY
                         ]
@@ -962,9 +684,7 @@ def load_existing_data():
             "不会把错误 JSON 继续写回"
         )
 
-        global_data = (
-            create_default_data()
-        )
+        global_data = create_default_data()
 
     except Exception as e:
 
@@ -972,28 +692,19 @@ def load_existing_data():
             f"⚠️ 读取 data.json 失败: {e}"
         )
 
-        global_data = (
-            create_default_data()
-        )
+        global_data = create_default_data()
 
 
 # ============================================================
 # WinGo 数据标准化
 # ============================================================
 
-def normalize_wingo_item(
-    item
-):
+def normalize_wingo_item(item):
 
-    if not isinstance(
-        item,
-        dict
-    ):
-
+    if not isinstance(item, dict):
         return None
 
     try:
-
         issue = str(
             item.get(
                 "issueNumber",
@@ -1005,22 +716,16 @@ def normalize_wingo_item(
         )
 
         number = int(
-            item.get(
-                "number"
-            )
+            item.get("number")
         )
 
     except Exception:
-
         return None
 
     if not issue:
         return None
 
-    if not (
-        0 <= number <= 9
-    ):
-
+    if not (0 <= number <= 9):
         return None
 
     colour = normalize_wingo_colour(
@@ -1032,20 +737,10 @@ def normalize_wingo_item(
     )
 
     return {
-
-        "issueNumber":
-            issue,
-
-        "number":
-            number,
-
-        "colour":
-            colour,
-
-        "size":
-            get_wingo_size(
-                number
-            )
+        "issueNumber": issue,
+        "number": number,
+        "colour": colour,
+        "size": get_wingo_size(number)
     }
 
 
@@ -1064,17 +759,13 @@ def save_data_json():
             )
         )
 
-        snapshot[
-            "updated_at"
-        ] = int(
+        snapshot["updated_at"] = int(
             time.time()
         )
 
-        global_data[
-            "updated_at"
-        ] = snapshot[
-            "updated_at"
-        ]
+        global_data["updated_at"] = (
+            snapshot["updated_at"]
+        )
 
     try:
 
@@ -1113,7 +804,6 @@ def save_data_json():
             if os.path.exists(
                 TEMP_DATA_FILE
             ):
-
                 os.remove(
                     TEMP_DATA_FILE
                 )
@@ -1132,32 +822,18 @@ def fetch_wingo_draw_page(
 ):
 
     payload = {
-
-        "pageSize":
-            page_size,
-
-        "pageNo":
-            page_no,
-
-        "typeId":
-            TYPE_ID,
-
-        "language":
-            LANGUAGE,
-
-        "random":
-            generate_random()
+        "pageSize": page_size,
+        "pageNo": page_no,
+        "typeId": TYPE_ID,
+        "language": LANGUAGE,
+        "random": generate_random()
     }
 
-    payload[
-        "signature"
-    ] = generate_signature(
+    payload["signature"] = generate_signature(
         payload
     )
 
-    payload[
-        "timestamp"
-    ] = int(
+    payload["timestamp"] = int(
         time.time()
     )
 
@@ -1173,16 +849,12 @@ def fetch_wingo_draw_page(
 
         data = response.json()
 
-        if data.get(
-            "code"
-        ) != 0:
+        if data.get("code") != 0:
 
             print(
                 f"⚠️ [WinGo] "
-                f"API code="
-                f"{data.get('code')} "
-                f"msg="
-                f"{data.get('msg')}"
+                f"API code={data.get('code')} "
+                f"msg={data.get('msg')}"
             )
 
             return []
@@ -1194,6 +866,12 @@ def fetch_wingo_draw_page(
             {}
         )
 
+        if not isinstance(
+            api_data,
+            dict
+        ):
+            return []
+
         items = api_data.get(
             "list",
             []
@@ -1203,19 +881,15 @@ def fetch_wingo_draw_page(
             items,
             list
         ):
-
             return []
 
         for item in items:
 
             normalized = (
-                normalize_wingo_item(
-                    item
-                )
+                normalize_wingo_item(item)
             )
 
             if normalized:
-
                 result.append(
                     normalized
                 )
@@ -1236,9 +910,7 @@ def fetch_wingo_draw_page(
 # 更新 WinGo
 # ============================================================
 
-def update_wingo_data(
-    draws
-):
+def update_wingo_data(draws):
 
     if not draws:
         return
@@ -1251,27 +923,17 @@ def update_wingo_data(
         reverse=True
     )
 
-    draws = draws[
-        :MAX_WINGO_HISTORY
-    ]
+    draws = draws[:MAX_WINGO_HISTORY]
 
-    streak_val = (
-        draws[0]["size"]
-    )
+    streak_val = draws[0]["size"]
 
     streak_cnt = 0
 
     for item in draws:
 
-        if (
-            item["size"]
-            == streak_val
-        ):
-
+        if item["size"] == streak_val:
             streak_cnt += 1
-
         else:
-
             break
 
     size_counts = Counter(
@@ -1279,44 +941,29 @@ def update_wingo_data(
         for item in draws
     )
 
-    prediction = (
-        predict_wingo_next(
-            draws
-        )
+    prediction = predict_wingo_next(
+        draws
     )
 
     with data_lock:
 
-        global_data[
-            "wingo"
-        ] = {
-
+        global_data["wingo"] = {
             "stats": {
-
-                "streak_val":
-                    streak_val,
-
-                "streak_cnt":
-                    streak_cnt,
-
-                "big_cnt":
-                    size_counts.get(
-                        "大",
-                        0
-                    ),
-
-                "small_cnt":
-                    size_counts.get(
-                        "小",
-                        0
-                    )
+                "streak_val": streak_val,
+                "streak_cnt": streak_cnt,
+                "big_cnt": size_counts.get(
+                    "大",
+                    0
+                ),
+                "small_cnt": size_counts.get(
+                    "小",
+                    0
+                )
             },
 
-            "prediction":
-                prediction,
+            "prediction": prediction,
 
-            "draws":
-                draws
+            "draws": draws
         }
 
     save_data_json()
@@ -1325,8 +972,7 @@ def update_wingo_data(
         f"✅ [WinGo] "
         f"{len(draws)}期 | "
         f"最新:{draws[0]['number']} | "
-        f"长龙:{streak_val}"
-        f"x{streak_cnt} | "
+        f"长龙:{streak_val}x{streak_cnt} | "
         f"预测:{prediction['size']} "
         f"{prediction['num']} | "
         f"{prediction['confidence']}"
@@ -1357,23 +1003,18 @@ def load_wingo_history():
     for item in existing:
 
         normalized = (
-            normalize_wingo_item(
-                item
-            )
+            normalize_wingo_item(item)
         )
 
         if normalized:
 
             issue_map[
-                normalized[
-                    "issueNumber"
-                ]
+                normalized["issueNumber"]
             ] = normalized
 
     print(
         f"🔍 [WinGo] "
-        f"扫描最近 "
-        f"{INIT_SCAN_PAGES} 页..."
+        f"扫描最近 {INIT_SCAN_PAGES} 页..."
     )
 
     for page in range(
@@ -1398,14 +1039,10 @@ def load_wingo_history():
         for item in page_data:
 
             issue_map[
-                item[
-                    "issueNumber"
-                ]
+                item["issueNumber"]
             ] = item
 
-        time.sleep(
-            0.3
-        )
+        time.sleep(0.3)
 
     draws = sorted(
         issue_map.values(),
@@ -1435,9 +1072,7 @@ def wingo_loop():
     )
 
     seen_issues = {
-        item[
-            "issueNumber"
-        ]
+        item["issueNumber"]
         for item in memory_draws
     }
 
@@ -1455,7 +1090,6 @@ def wingo_loop():
         )
 
         if not latest_page:
-
             continue
 
         changed = False
@@ -1496,9 +1130,7 @@ def wingo_loop():
             )
 
             seen_issues = {
-                item[
-                    "issueNumber"
-                ]
+                item["issueNumber"]
                 for item in memory_draws
             }
 
@@ -1511,48 +1143,35 @@ def wingo_loop():
 # Baccarat Prediction
 # ============================================================
 
-def predict_baccarat_next(
-    history
-):
+def predict_baccarat_next(history):
 
     if not history:
-
         return "庄"
 
-    recent = history[
-        :10
-    ]
+    recent = history[:10]
 
     banker_cnt = sum(
         1
         for item in recent
-        if item.get(
-            "result"
-        ) == "庄"
+        if item.get("result") == "庄"
     )
 
     player_cnt = sum(
         1
         for item in recent
-        if item.get(
-            "result"
-        ) == "闲"
+        if item.get("result") == "闲"
     )
 
     if banker_cnt >= 6:
-
         return "闲"
 
     if player_cnt >= 6:
-
         return "庄"
 
     if banker_cnt > player_cnt:
-
         return "闲"
 
     if player_cnt > banker_cnt:
-
         return "庄"
 
     return "庄"
@@ -1562,9 +1181,7 @@ def predict_baccarat_next(
 # Baccarat Prediction Win Rate
 # ============================================================
 
-def calculate_baccarat_win_rate(
-    history
-):
+def calculate_baccarat_win_rate(history):
 
     checked = 0
     wins = 0
@@ -1579,30 +1196,24 @@ def calculate_baccarat_win_rate(
             "predict"
         )
 
-        if (
-            result not in (
-                "庄",
-                "闲"
-            )
+        if result not in (
+            "庄",
+            "闲"
         ):
-
             continue
 
         if predicted not in (
             "庄",
             "闲"
         ):
-
             continue
 
         checked += 1
 
         if result == predicted:
-
             wins += 1
 
     if checked <= 0:
-
         return 0
 
     return round(
@@ -1621,57 +1232,34 @@ def bytes_to_hex(data):
         data,
         (bytes, bytearray)
     ):
-
         return ""
 
-    return bytes(
-        data
-    ).hex().upper()
+    return bytes(data).hex().upper()
 
 
 def safe_ascii(data):
 
     try:
-
         return data.decode(
             "utf-8",
             errors="ignore"
         )
 
     except Exception:
-
         return ""
 
 
-def room_to_choice_code(
-    room
-):
+def room_to_choice_code(room):
 
     mapping = {
-
-        "D51":
-            b"D051",
-
-        "D52":
-            b"D052",
-
-        "D53":
-            b"D053",
-
-        "D54":
-            b"D054",
-
-        "D55":
-            b"D055",
-
-        "D56":
-            b"D056",
-
-        "D57":
-            b"D057",
-
-        "D58":
-            b"D058"
+        "D51": b"D051",
+        "D52": b"D052",
+        "D53": b"D053",
+        "D54": b"D054",
+        "D55": b"D055",
+        "D56": b"D056",
+        "D57": b"D057",
+        "D58": b"D058"
     }
 
     return mapping.get(
@@ -1684,14 +1272,10 @@ def room_to_choice_code(
 # Baccarat Subscribe Packet
 # ============================================================
 
-def build_baccarat_room_packet(
-    room
-):
+def build_baccarat_room_packet(room):
 
     room_code = (
-        room_to_choice_code(
-            room
-        )
+        room_to_choice_code(room)
     )
 
     packet = bytearray(
@@ -1710,14 +1294,10 @@ def build_baccarat_room_packet(
         )
     )
 
-    return bytes(
-        packet
-    )
+    return bytes(packet)
 
 
-def subscribe_baccarat_rooms(
-    ws
-):
+def subscribe_baccarat_rooms(ws):
 
     print(
         "📡 [百家乐] "
@@ -1749,9 +1329,7 @@ def subscribe_baccarat_rooms(
                 f"{bytes_to_hex(packet)}"
             )
 
-            time.sleep(
-                0.15
-            )
+            time.sleep(0.15)
 
         except Exception as e:
 
@@ -1765,37 +1343,27 @@ def subscribe_baccarat_rooms(
 # Baccarat Binary Parser
 # ============================================================
 
-def parse_bac_result_candidates(
-    raw
-):
+def parse_bac_result_candidates(raw):
 
     if not isinstance(
         raw,
         (bytes, bytearray)
     ):
-
         return []
 
-    data = bytes(
-        raw
-    )
+    data = bytes(raw)
 
     candidates = []
 
     payload_length = 13
 
-    if len(data) < (
-        payload_length
-    ):
-
+    if len(data) < payload_length:
         return candidates
 
     for room in BACCARAT_ROOMS:
 
         vid = (
-            room_to_choice_code(
-                room
-            )
+            room_to_choice_code(room)
         )
 
         start = 0
@@ -1823,9 +1391,7 @@ def parse_bac_result_candidates(
 
                 res = chunk[4]
 
-                code_raw = chunk[
-                    5:9
-                ]
+                code_raw = chunk[5:9]
 
                 bval = chunk[9]
 
@@ -1851,15 +1417,12 @@ def parse_bac_result_candidates(
                 ):
 
                     if bval > pval:
-
                         result = "庄"
 
                     elif pval > bval:
-
                         result = "闲"
 
                     else:
-
                         result = "和"
 
                     code = (
@@ -1872,38 +1435,16 @@ def parse_bac_result_candidates(
                     )
 
                     candidates.append({
-
-                        "room":
-                            room,
-
-                        "result":
-                            result,
-
-                        "bval":
-                            bval,
-
-                        "pval":
-                            pval,
-
-                        "num":
-                            num,
-
-                        "pair":
-                            pair,
-
-                        "res":
-                            res,
-
-                        "code":
-                            code,
-
-                        "offset":
-                            pos,
-
-                        "raw":
-                            bytes(
-                                chunk
-                            )
+                        "room": room,
+                        "result": result,
+                        "bval": bval,
+                        "pval": pval,
+                        "num": num,
+                        "pair": pair,
+                        "res": res,
+                        "code": code,
+                        "offset": pos,
+                        "raw": bytes(chunk)
                     })
 
             start = pos + 1
@@ -1915,15 +1456,12 @@ def parse_bac_result_candidates(
 # Baccarat Packet
 # ============================================================
 
-def parse_choice_baccarat_packet(
-    raw_msg
-):
+def parse_choice_baccarat_packet(raw_msg):
 
     if not isinstance(
         raw_msg,
         (bytes, bytearray)
     ):
-
         return None
 
     candidates = (
@@ -1933,18 +1471,13 @@ def parse_choice_baccarat_packet(
     )
 
     if not candidates:
-
         return None
 
     item = candidates[-1]
 
-    room = item[
-        "room"
-    ]
+    room = item["room"]
 
-    result = item[
-        "result"
-    ]
+    result = item["result"]
 
     game_no = item.get(
         "code",
@@ -1970,39 +1503,27 @@ def parse_choice_baccarat_packet(
     )
 
     return {
+        "room": room,
 
-        "room":
-            room,
+        "shoe": "01",
 
-        "shoe":
-            "01",
+        "game": game_no,
 
-        "game":
-            game_no,
+        "result": result,
 
-        "result":
-            result,
+        "game_id": game_id,
 
-        "game_id":
-            game_id,
+        "bval": item["bval"],
 
-        "bval":
-            item["bval"],
+        "pval": item["pval"],
 
-        "pval":
-            item["pval"],
+        "num": item["num"],
 
-        "num":
-            item["num"],
+        "pair": item["pair"],
 
-        "pair":
-            item["pair"],
+        "code": item["code"],
 
-        "code":
-            item["code"],
-
-        "res":
-            item["res"]
+        "res": item["res"]
     }
 
 
@@ -2010,13 +1531,9 @@ def parse_choice_baccarat_packet(
 # Baccarat Stats
 # ============================================================
 
-def rebuild_baccarat_stats(
-    room
-):
+def rebuild_baccarat_stats(room):
 
-    bacc = global_data[
-        "baccarat"
-    ]
+    bacc = global_data["baccarat"]
 
     history = (
         bacc[
@@ -2027,45 +1544,26 @@ def rebuild_baccarat_stats(
     )
 
     counts = Counter(
-        item.get(
-            "result"
-        )
+        item.get("result")
         for item in history
     )
 
-    bacc[
-        "stats"
-    ][
-        "banker_cnt"
-    ] = counts.get(
-        "庄",
-        0
+    bacc["stats"]["banker_cnt"] = (
+        counts.get("庄", 0)
     )
 
-    bacc[
-        "stats"
-    ][
-        "player_cnt"
-    ] = counts.get(
-        "闲",
-        0
+    bacc["stats"]["player_cnt"] = (
+        counts.get("闲", 0)
     )
 
-    bacc[
-        "stats"
-    ][
-        "tie_cnt"
-    ] = counts.get(
-        "和",
-        0
+    bacc["stats"]["tie_cnt"] = (
+        counts.get("和", 0)
     )
 
-    bacc[
-        "stats"
-    ][
-        "win_rate"
-    ] = calculate_baccarat_win_rate(
-        history
+    bacc["stats"]["win_rate"] = (
+        calculate_baccarat_win_rate(
+            history
+        )
     )
 
 
@@ -2089,7 +1587,6 @@ def rebuild_all_baccarat():
                 history,
                 list
             ):
-
                 history = []
 
             global_data[
@@ -2111,11 +1608,7 @@ def rebuild_all_baccarat():
             )
         )
 
-        if (
-            current_room
-            not in BACCARAT_ROOMS
-        ):
-
+        if current_room not in BACCARAT_ROOMS:
             current_room = "D51"
 
         global_data[
@@ -2213,12 +1706,9 @@ def on_baccarat_message(
         message,
         (bytes, bytearray)
     ):
-
         return
 
-    raw = bytes(
-        message
-    )
+    raw = bytes(message)
 
     parsed = (
         parse_choice_baccarat_packet(
@@ -2227,18 +1717,11 @@ def on_baccarat_message(
     )
 
     if not parsed:
-
         return
 
-    room = parsed[
-        "room"
-    ]
+    room = parsed["room"]
 
-    if (
-        room
-        not in BACCARAT_ROOMS
-    ):
-
+    if room not in BACCARAT_ROOMS:
         return
 
     with data_lock:
@@ -2259,31 +1742,24 @@ def on_baccarat_message(
         # 防重复
         # ----------------------------------------------------
 
-        game_id = parsed[
-            "game_id"
-        ]
+        game_id = parsed["game_id"]
 
         exists = any(
-
-            item.get(
-                "game_id"
-            ) == game_id
-
+            item.get("game_id") == game_id
             for item in room_history
         )
 
         if exists:
-
             return
 
         # ----------------------------------------------------
         # 先预测，再加入结果
         # ----------------------------------------------------
 
-        parsed[
-            "predict"
-        ] = predict_baccarat_next(
-            room_history
+        parsed["predict"] = (
+            predict_baccarat_next(
+                room_history
+            )
         )
 
         # ----------------------------------------------------
@@ -2366,7 +1842,7 @@ def on_baccarat_message(
 
 
 # ============================================================
-# Baccarat WS
+# Baccarat WS Error
 # ============================================================
 
 def on_baccarat_error(
@@ -2380,6 +1856,10 @@ def on_baccarat_error(
     )
 
 
+# ============================================================
+# Baccarat WS Close
+# ============================================================
+
 def on_baccarat_close(
     ws,
     close_status_code,
@@ -2392,19 +1872,19 @@ def on_baccarat_close(
     )
 
     print(
-        f"状态: "
-        f"{close_status_code}"
+        f"状态: {close_status_code}"
     )
 
     print(
-        f"原因: "
-        f"{close_msg}"
+        f"原因: {close_msg}"
     )
 
 
-def on_baccarat_open(
-    ws
-):
+# ============================================================
+# Baccarat WS Open
+# ============================================================
+
+def on_baccarat_open(ws):
 
     print(
         "🟢 [Choice百家乐] "
@@ -2434,23 +1914,32 @@ def on_baccarat_open(
         )
 
 
+# ============================================================
+# Baccarat WebSocket
+# ============================================================
+
 def start_baccarat_ws():
 
     headers = [
+        (
+            "User-Agent: "
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/153.0.0.0 "
+            "Safari/537.36"
+        ),
 
-        "User-Agent: "
-        "Mozilla/5.0 "
-        "(Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 "
-        "(KHTML, like Gecko) "
-        "Chrome/153.0.0.0 "
-        "Safari/537.36",
-
-        "Origin: "
-        "https://gci.arvideo.video"
+        (
+            "Origin: "
+            "https://gci.arvideo.video"
+        )
     ]
 
     while True:
+
+        ws = None
 
         try:
 
@@ -2460,28 +1949,16 @@ def start_baccarat_ws():
             )
 
             ws = websocket.WebSocketApp(
-
                 BACCARAT_WS_URL,
-
                 header=headers,
-
-                on_open=
-                    on_baccarat_open,
-
-                on_message=
-                    on_baccarat_message,
-
-                on_error=
-                    on_baccarat_error,
-
-                on_close=
-                    on_baccarat_close
+                on_open=on_baccarat_open,
+                on_message=on_baccarat_message,
+                on_error=on_baccarat_error,
+                on_close=on_baccarat_close
             )
 
             ws.run_forever(
-
                 ping_interval=20,
-
                 ping_timeout=10
             )
 
@@ -2491,6 +1968,16 @@ def start_baccarat_ws():
                 f"❌ [百家乐 WS] "
                 f"{e}"
             )
+
+        finally:
+
+            try:
+
+                if ws is not None:
+                    ws.close()
+
+            except Exception:
+                pass
 
         print(
             "⏳ 5 秒后重新连接 Baccarat..."
@@ -2558,8 +2045,7 @@ def main():
     )
 
     print(
-        f"🃏 Baccarat: "
-        f"D51-D58"
+        "🃏 Baccarat: D51-D58"
     )
 
     print("=" * 70)
@@ -2575,9 +2061,7 @@ def main():
     # --------------------------------------------------------
 
     wingo_thread = threading.Thread(
-
         target=wingo_loop,
-
         daemon=True
     )
 
@@ -2588,9 +2072,7 @@ def main():
     # --------------------------------------------------------
 
     baccarat_thread = threading.Thread(
-
         target=start_baccarat_ws,
-
         daemon=True
     )
 
@@ -2613,6 +2095,9 @@ def main():
         )
 
 
-if __name__ == "__main__":
+# ============================================================
+# 程序入口
+# ============================================================
 
+if __name__ == "__main__":
     main()
