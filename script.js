@@ -4074,6 +4074,12 @@ async function fetchBaccaratData() {
 
 
         if (!response.ok) {
+
+            console.warn(
+                "Baccarat data.json HTTP:",
+                response.status
+            );
+
             return;
         }
 
@@ -4087,6 +4093,10 @@ async function fetchBaccaratData() {
             !data.baccarat ||
             !data.baccarat.rooms
         ) {
+
+            console.warn(
+                "data.json 没有 baccarat.rooms"
+            );
 
             return;
         }
@@ -4111,51 +4121,169 @@ async function fetchBaccaratData() {
                     )
                 ) {
 
+                    baccaratData[room] = {
+
+                        round: 0,
+
+                        history: [],
+
+                        records: []
+                    };
+
                     return;
                 }
 
 
+                /*
+                 * =================================================
+                 * 保存完整 Baccarat Record
+                 * =================================================
+                 */
+
+                const records =
+                    source
+                        .filter(
+                            item =>
+                                item &&
+                                typeof item ===
+                                "object"
+                        )
+                        .map(
+                            item => {
+
+                                const result =
+                                    baccaratResultToCode(
+                                        item.result
+                                    );
+
+
+                                return {
+
+                                    room:
+                                        item.room ??
+                                        room,
+
+                                    game:
+                                        item.game ??
+                                        item.round ??
+                                        item.game_no ??
+                                        0,
+
+                                    round:
+                                        item.round ??
+                                        item.game ??
+                                        item.game_no ??
+                                        0,
+
+                                    game_id:
+                                        item.game_id ??
+                                        "",
+
+                                    result:
+                                        result,
+
+                                    resultName:
+                                        result === "B"
+                                            ? "庄"
+                                            : result === "P"
+                                                ? "闲"
+                                                : result === "T"
+                                                    ? "和"
+                                                    : "-",
+
+                                    bval:
+                                        safeNumber(
+                                            item.bval
+                                        ),
+
+                                    pval:
+                                        safeNumber(
+                                            item.pval
+                                        ),
+
+                                    pair:
+                                        safeNumber(
+                                            item.pair
+                                        ),
+
+                                    num:
+                                        safeNumber(
+                                            item.num
+                                        ),
+
+                                    predict:
+                                        item.predict ??
+                                        ""
+                                };
+
+                            }
+                        )
+                        .filter(
+                            item =>
+                                item.result
+                        );
+
+
+                /*
+                 * =================================================
+                 * 历史结果
+                 *
+                 * bot.py:
+                 *
+                 * index 0 = 最新
+                 *
+                 * 前端:
+                 *
+                 * oldest -> newest
+                 * =================================================
+                 */
+
                 const history =
-                    normalizeBaccaratRoomHistory(
-                        source
-                    );
+                    records
+                        .map(
+                            item =>
+                                item.result
+                        )
+                        .reverse();
+
+
+                /*
+                 * =================================================
+                 * 最新一局
+                 * =================================================
+                 */
+
+                const latest =
+                    source.length > 0
+                        ? source[0]
+                        : null;
 
 
                 let round = 0;
 
 
                 if (
-                    source.length > 0
+                    latest &&
+                    typeof latest ===
+                    "object"
                 ) {
 
-                    const latest =
-                        source[0];
+                    round =
+                        Number(
+                            latest.game ??
+                            latest.round ??
+                            latest.game_no ??
+                            0
+                        );
 
 
                     if (
-                        latest &&
-                        typeof latest ===
-                        "object"
+                        !Number.isFinite(
+                            round
+                        )
                     ) {
 
-                        round =
-                            Number(
-                                latest.game
-                                ??
-                                latest.round
-                                ??
-                                0
-                            );
-
-
-                        if (
-                            !Number.isFinite(
-                                round
-                            )
-                        ) {
-
-                            round = 0;
-                        }
+                        round = 0;
                     }
                 }
 
@@ -4164,15 +4292,37 @@ async function fetchBaccaratData() {
 
                     round,
 
-                    history
+                    history,
+
+                    records
                 };
+
+
+                console.log(
+                    `[Baccarat ${room}]`,
+                    {
+                        total:
+                            records.length,
+
+                        latest:
+                            records[0] ??
+                            null
+                    }
+                );
             }
         );
 
 
+        /*
+         * =================================================
+         * 更新目前显示的桌
+         * =================================================
+         */
+
         renderBaccarat(
             currentBaccaratTable
         );
+
 
     } catch (error) {
 
@@ -4805,6 +4955,74 @@ function renderBaccarat(
 
 
 /* =========================================================
+   UNIFIED DASHBOARD REFRESH SYSTEM
+========================================================= */
+
+let dashboardRefreshRunning = false;
+let baccaratRefreshRunning = false;
+
+
+/* =========================================================
+   SAFE WINGO REFRESH
+========================================================= */
+
+async function safeRefreshDashboard() {
+
+    if (dashboardRefreshRunning) {
+        return;
+    }
+
+    dashboardRefreshRunning = true;
+
+    try {
+
+        await refreshDashboard();
+
+    } catch (error) {
+
+        console.error(
+            "WinGo Dashboard Refresh Error:",
+            error
+        );
+
+    } finally {
+
+        dashboardRefreshRunning = false;
+    }
+}
+
+
+/* =========================================================
+   SAFE BACCARAT REFRESH
+========================================================= */
+
+async function safeFetchBaccaratData() {
+
+    if (baccaratRefreshRunning) {
+        return;
+    }
+
+    baccaratRefreshRunning = true;
+
+    try {
+
+        await fetchBaccaratData();
+
+    } catch (error) {
+
+        console.error(
+            "Baccarat Refresh Error:",
+            error
+        );
+
+    } finally {
+
+        baccaratRefreshRunning = false;
+    }
+}
+
+
+/* =========================================================
    COUNTDOWN
 ========================================================= */
 
@@ -4813,14 +5031,13 @@ setInterval(
 
         countdownVal--;
 
-
         if (
             countdownVal <= 0
         ) {
 
             countdownVal = 5;
 
-            refreshDashboard();
+            safeRefreshDashboard();
         }
 
 
@@ -4846,13 +5063,13 @@ setInterval(
 ========================================================= */
 
 setInterval(
-    fetchBaccaratData,
+    safeFetchBaccaratData,
     2000
 );
 
 
 /* =========================================================
-   INIT
+   MYT CLOCK
 ========================================================= */
 
 setInterval(
@@ -4862,107 +5079,149 @@ setInterval(
 
 
 /* =========================================================
-   SAFE INIT
+   INITIALIZE DASHBOARD
 ========================================================= */
 
-try {
-    updateMYTClock();
-} catch (error) {
-    console.error("MYT Clock Init Error:", error);
-}
+async function initializeDashboard() {
 
-try {
-    updateAILearningDashboard();
-} catch (error) {
-    console.error("AI Dashboard Init Error:", error);
-}
+    console.log(
+        "========================================"
+    );
 
-try {
-    fetchBaccaratData();
-} catch (error) {
-    console.error("Baccarat Init Error:", error);
-}
+    console.log(
+        "Dashboard Initializing..."
+    );
 
-try {
-    refreshDashboard();
-} catch (error) {
-    console.error("WinGo Dashboard Init Error:", error);
-}
-document.addEventListener('DOMContentLoaded', () => {
-    let countdownValue = 180;
-    const countdownEl = document.getElementById('countdown');
-    const updateTimeEl = document.getElementById('update-time');
-    let chartInstance = null;
+    console.log(
+        "========================================"
+    );
 
-    setInterval(() => {
-        countdownValue--;
-        if (countdownValue <= 0) {
-            countdownValue = 180;
-            loadData();
-        }
-        if (countdownEl) countdownEl.textContent = countdownValue;
-    }, 1000);
 
-    async function loadData() {
-        try {
-            const response = await fetch('data.json?t=' + new Date().getTime());
-            if (!response.ok) throw new Error('Data fetch failed');
-            const data = await response.json();
-            renderDashboard(data);
-        } catch (error) {
-            console.error('Data loading error:', error);
-        }
+    /* -----------------------------------------------------
+       MYT CLOCK
+    ----------------------------------------------------- */
+
+    try {
+
+        updateMYTClock();
+
+    } catch (error) {
+
+        console.error(
+            "MYT Clock Init Error:",
+            error
+        );
     }
 
-    function renderDashboard(data) {
-        if (updateTimeEl && data.update_time) updateTimeEl.textContent = data.update_time;
 
-        if (data.price_history && document.getElementById('priceChart')) {
-            renderChart(data.price_history);
-        }
+    /* -----------------------------------------------------
+       AI LEARNING
+    ----------------------------------------------------- */
 
-        if (data.ai_learning && document.getElementById('ai-weights')) {
-            document.getElementById('ai-weights').textContent = JSON.stringify(data.ai_learning.weights || {}, null, 2);
-        }
+    try {
 
-        if (data.market_analysis) {
-            const ma = data.market_analysis;
-            setElementText('big10', ma.big10 ?? 'N/A');
-            setElementText('small10', ma.small10 ?? 'N/A');
-            setElementText('big50', ma.big50 ?? 'N/A');
-            setElementText('small50', ma.small50 ?? 'N/A');
-        }
+        updateAILearningDashboard();
+
+    } catch (error) {
+
+        console.error(
+            "AI Dashboard Init Error:",
+            error
+        );
     }
 
-    function setElementText(id, text) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = text;
+
+    /* -----------------------------------------------------
+       BACCARAT
+    ----------------------------------------------------- */
+
+    try {
+
+        await safeFetchBaccaratData();
+
+    } catch (error) {
+
+        console.error(
+            "Baccarat Init Error:",
+            error
+        );
     }
 
-    function renderChart(history) {
-        const ctx = document.getElementById('priceChart').getContext('2d');
-        const labels = history.map(item => item.time);
-        const prices = history.map(item => item.price);
 
-        if (chartInstance) chartInstance.destroy();
+    /* -----------------------------------------------------
+       WINGO
+    ----------------------------------------------------- */
 
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Price',
-                    data: prices,
-                    borderColor: '#00ff88',
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
+    try {
+
+        await safeRefreshDashboard();
+
+    } catch (error) {
+
+        console.error(
+            "WinGo Dashboard Init Error:",
+            error
+        );
     }
 
-    loadData();
-});
+
+    /* -----------------------------------------------------
+       COUNTDOWN DISPLAY
+    ----------------------------------------------------- */
+
+    const countdown =
+        document.getElementById(
+            "countdown"
+        );
+
+    if (countdown) {
+
+        countdown.textContent =
+            countdownVal;
+    }
+
+
+    console.log(
+        "========================================"
+    );
+
+    console.log(
+        "Dashboard Initialized"
+    );
+
+    console.log(
+        "WinGo refresh: 5 seconds"
+    );
+
+    console.log(
+        "Baccarat refresh: 2 seconds"
+    );
+
+    console.log(
+        "========================================"
+    );
+}
+
+
+/* =========================================================
+   START APPLICATION
+========================================================= */
+
+if (
+    document.readyState ===
+    "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializeDashboard,
+        {
+            once: true
+        }
+    );
+
+} else {
+
+    initializeDashboard();
+
+}
