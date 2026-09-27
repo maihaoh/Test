@@ -1,4 +1,24 @@
 {
+    "update_time": "2026-09-27 10:30:00",
+    "price_history": [
+        {"time": "10:00", "price": 64200},
+        {"time": "10:05", "price": 64350}
+    ],
+    "ai_learning": {
+        "weights": {
+            "ma_factor": 0.35,
+            "rsi_factor": 0.25,
+            "trend_factor": 0.40
+        }
+    },
+    "market_analysis": {
+        "big10": "60%",
+        "small10": "40%",
+        "big50": "55%",
+        "small50": "45%"
+    }
+}
+{
   "updated_at": 1790470713,
   "wingo": {
     "stats": {
