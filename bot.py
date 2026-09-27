@@ -1343,7 +1343,108 @@ def subscribe_baccarat_rooms(ws):
 # Baccarat Binary Parser
 # ============================================================
 
+# ============================================================
+# Baccarat Binary Debug Parser
+# ============================================================
+
+DEBUG_BACCARAT_RAW = True
+MAX_RAW_PREVIEW = 512
+
+
+def bytes_to_hex(data):
+    if not isinstance(data, (bytes, bytearray)):
+        return ""
+
+    return bytes(data).hex().upper()
+
+
+def safe_ascii(data):
+    try:
+        return data.decode(
+            "utf-8",
+            errors="ignore"
+        )
+    except Exception:
+        return ""
+
+
+def debug_baccarat_packet(raw):
+    """
+    只负责观察 Choice WebSocket 原始数据。
+    暂时不猜测 packet 的真实结构。
+    """
+
+    if not isinstance(raw, (bytes, bytearray)):
+        return
+
+    data = bytes(raw)
+
+    print()
+    print("=" * 80)
+    print("📥 [Choice百家乐] RAW WebSocket Packet")
+    print("=" * 80)
+
+    print(
+        f"长度: {len(data)} bytes"
+    )
+
+    print(
+        f"HEX: {bytes_to_hex(data[:MAX_RAW_PREVIEW])}"
+    )
+
+    ascii_data = safe_ascii(
+        data[:MAX_RAW_PREVIEW]
+    )
+
+    if ascii_data:
+        print(
+            f"ASCII: {repr(ascii_data)}"
+        )
+
+    print(
+        f"D51: {data.find(b'D051')}"
+    )
+
+    print(
+        f"D52: {data.find(b'D052')}"
+    )
+
+    print(
+        f"D53: {data.find(b'D053')}"
+    )
+
+    print(
+        f"D54: {data.find(b'D054')}"
+    )
+
+    print(
+        f"D55: {data.find(b'D055')}"
+    )
+
+    print(
+        f"D56: {data.find(b'D056')}"
+    )
+
+    print(
+        f"D57: {data.find(b'D057')}"
+    )
+
+    print(
+        f"D58: {data.find(b'D058')}"
+    )
+
+    print("=" * 80)
+
+
 def parse_bac_result_candidates(raw):
+    """
+    第一阶段：
+
+    不再强行把 packet 当成固定 13 bytes。
+
+    先扫描 D051-D058 附近的数据，
+    同时保留旧 parser 作为候选解析器。
+    """
 
     if not isinstance(
         raw,
@@ -1355,15 +1456,10 @@ def parse_bac_result_candidates(raw):
 
     candidates = []
 
-    payload_length = 13
-
-    if len(data) < payload_length:
-        return candidates
-
     for room in BACCARAT_ROOMS:
 
-        vid = (
-            room_to_choice_code(room)
+        room_code = room_to_choice_code(
+            room
         )
 
         start = 0
@@ -1371,22 +1467,24 @@ def parse_bac_result_candidates(raw):
         while True:
 
             pos = data.find(
-                vid,
+                room_code,
                 start
             )
 
             if pos < 0:
                 break
 
-            end = (
-                pos
-                + payload_length
-            )
+            # ------------------------------------------------
+            # 保留旧的 13-byte candidate
+            # ------------------------------------------------
 
-            if end <= len(data):
+            if (
+                pos + 13
+                <= len(data)
+            ):
 
                 chunk = data[
-                    pos:end
+                    pos:pos + 13
                 ]
 
                 res = chunk[4]
@@ -1417,12 +1515,15 @@ def parse_bac_result_candidates(raw):
                 ):
 
                     if bval > pval:
+
                         result = "庄"
 
                     elif pval > bval:
+
                         result = "闲"
 
                     else:
+
                         result = "和"
 
                     code = (
@@ -1435,16 +1536,27 @@ def parse_bac_result_candidates(raw):
                     )
 
                     candidates.append({
+
                         "room": room,
+
                         "result": result,
+
                         "bval": bval,
+
                         "pval": pval,
+
                         "num": num,
+
                         "pair": pair,
+
                         "res": res,
+
                         "code": code,
+
                         "offset": pos,
+
                         "raw": bytes(chunk)
+
                     })
 
             start = pos + 1
@@ -1452,11 +1564,131 @@ def parse_bac_result_candidates(raw):
     return candidates
 
 
-# ============================================================
-# Baccarat Packet
-# ============================================================
-
 def parse_choice_baccarat_packet(raw_msg):
+
+    if not isinstance(
+        raw_msg,
+        (bytes, bytearray)
+    ):
+        return None
+
+    raw = bytes(raw_msg)
+
+    # --------------------------------------------------------
+    # 第一阶段：打印真实 packet
+    # --------------------------------------------------------
+
+    if DEBUG_BACCARAT_RAW:
+
+        debug_baccarat_packet(
+            raw
+        )
+
+    # --------------------------------------------------------
+    # 暂时使用旧 candidate parser
+    # --------------------------------------------------------
+
+    candidates = (
+        parse_bac_result_candidates(
+            raw
+        )
+    )
+
+    if not candidates:
+
+        print(
+            "⚠️ [Choice百家乐] "
+            "暂时无法解析这个 packet"
+        )
+
+        return None
+
+    # --------------------------------------------------------
+    # 显示所有 candidate
+    # --------------------------------------------------------
+
+    print(
+        f"🔎 [Choice百家乐] "
+        f"找到 {len(candidates)} 个 candidate"
+    )
+
+    for index, item in enumerate(
+        candidates
+    ):
+
+        print(
+            f"   #{index + 1} "
+            f"{item['room']} | "
+            f"庄={item['bval']} | "
+            f"闲={item['pval']} | "
+            f"num={item['num']} | "
+            f"pair={item['pair']} | "
+            f"code={repr(item['code'])} | "
+            f"offset={item['offset']}"
+        )
+
+    # --------------------------------------------------------
+    # 暂时取最后一个 candidate
+    # --------------------------------------------------------
+
+    item = candidates[-1]
+
+    room = item["room"]
+
+    result = item["result"]
+
+    game_no = item.get(
+        "code",
+        ""
+    )
+
+    if not game_no:
+
+        game_no = str(
+            item.get(
+                "num",
+                0
+            )
+        )
+
+    # --------------------------------------------------------
+    # 临时稳定 ID
+    # --------------------------------------------------------
+
+    game_id = (
+        f"{room}-"
+        f"{game_no}-"
+        f"{item['bval']}-"
+        f"{item['pval']}-"
+        f"{item['num']}-"
+        f"{item['pair']}"
+    )
+
+    return {
+
+        "room": room,
+
+        "shoe": "01",
+
+        "game": game_no,
+
+        "result": result,
+
+        "game_id": game_id,
+
+        "bval": item["bval"],
+
+        "pval": item["pval"],
+
+        "num": item["num"],
+
+        "pair": item["pair"],
+
+        "code": item["code"],
+
+        "res": item["res"]
+
+    }
 
     if not isinstance(
         raw_msg,
@@ -1701,6 +1933,224 @@ def on_baccarat_message(
     ws,
     message
 ):
+
+    # ========================================================
+    # 只接受 Binary
+    # ========================================================
+
+    if not isinstance(
+        message,
+        (bytes, bytearray)
+    ):
+
+        print(
+            "📨 [Choice百家乐] "
+            f"收到非 Binary 数据: "
+            f"{type(message).__name__}"
+        )
+
+        return
+
+    raw = bytes(message)
+
+    # ========================================================
+    # 解析
+    # ========================================================
+
+    parsed = (
+        parse_choice_baccarat_packet(
+            raw
+        )
+    )
+
+    if not parsed:
+
+        return
+
+    room = parsed.get(
+        "room"
+    )
+
+    if room not in BACCARAT_ROOMS:
+
+        print(
+            f"⚠️ [Choice百家乐] "
+            f"未知房间: {room}"
+        )
+
+        return
+
+    # ========================================================
+    # 写入 data.json
+    # ========================================================
+
+    with data_lock:
+
+        bacc = global_data[
+            "baccarat"
+        ]
+
+        room_history = (
+            bacc[
+                "rooms"
+            ][
+                room
+            ]
+        )
+
+        # ----------------------------------------------------
+        # 防重复
+        # ----------------------------------------------------
+
+        game_id = parsed[
+            "game_id"
+        ]
+
+        exists = any(
+
+            item.get(
+                "game_id"
+            ) == game_id
+
+            for item in room_history
+
+        )
+
+        if exists:
+
+            print(
+                f"⏭️ [百家乐 {room}] "
+                f"重复局，跳过: "
+                f"{game_id}"
+            )
+
+            return
+
+        # ----------------------------------------------------
+        # 预测
+        # ----------------------------------------------------
+
+        parsed["predict"] = (
+            predict_baccarat_next(
+                room_history
+            )
+        )
+
+        # ----------------------------------------------------
+        # 最新放最前
+        # ----------------------------------------------------
+
+        room_history.insert(
+            0,
+            parsed
+        )
+
+        room_history = (
+            room_history[
+                :MAX_BACCARAT_HISTORY
+            ]
+        )
+
+        bacc[
+            "rooms"
+        ][
+            room
+        ] = room_history
+
+        # ----------------------------------------------------
+        # 当前房间
+        # ----------------------------------------------------
+
+        bacc[
+            "current_room"
+        ] = room
+
+        bacc[
+            "shoe_no"
+        ] = parsed.get(
+            "shoe",
+            "01"
+        )
+
+        bacc[
+            "game_no"
+        ] = parsed.get(
+            "game",
+            "01"
+        )
+
+        bacc[
+            "latest_result"
+        ] = parsed.get(
+            "result",
+            "--"
+        )
+
+        # ----------------------------------------------------
+        # 下一局预测
+        # ----------------------------------------------------
+
+        bacc[
+            "predicted_result"
+        ] = predict_baccarat_next(
+            room_history
+        )
+
+        # ----------------------------------------------------
+        # 统计
+        # ----------------------------------------------------
+
+        rebuild_baccarat_stats(
+            room
+        )
+
+    # ========================================================
+    # 保存
+    # ========================================================
+
+    save_data_json()
+
+    # ========================================================
+    # Console
+    # ========================================================
+
+    print()
+    print(
+        "🃏 ========================================"
+    )
+
+    print(
+        f"🃏 [百家乐 {room}] "
+        f"成功写入"
+    )
+
+    print(
+        f"   结果: {parsed['result']}"
+    )
+
+    print(
+        f"   庄点: {parsed['bval']}"
+    )
+
+    print(
+        f"   闲点: {parsed['pval']}"
+    )
+
+    print(
+        f"   局号: {parsed['game']}"
+    )
+
+    print(
+        f"   Pair: {parsed['pair']}"
+    )
+
+    print(
+        f"   Game ID: {parsed['game_id']}"
+    )
+
+    print(
+        "🃏 ========================================"
+    )
 
     if not isinstance(
         message,
