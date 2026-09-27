@@ -4,9 +4,10 @@ import hashlib
 import json
 import random
 import threading
-import zlib
+import struct
 from collections import Counter
 import websocket
+
 
 # ============================================================
 # WinGo 配置
@@ -21,11 +22,27 @@ LANGUAGE = 0
 POLL_INTERVAL = 10
 INIT_SCAN_PAGES = 5
 
+
 # ============================================================
 # Choice Baccarat WebSocket
 # ============================================================
 
-BACCARAT_WS_URL = "wss://et165.mdvuz.com:5030/"
+# Choice 实际百家乐数据连接
+BACCARAT_WS_URL = "wss://ng211.mdvuz.com:5000"
+
+BACCARAT_ORIGIN = "https://gci.arvideo.video"
+
+BACCARAT_ROOMS = {
+    "D51",
+    "D52",
+    "D53",
+    "D54",
+    "D55",
+    "D56",
+    "D57",
+    "D58"
+}
+
 
 # ============================================================
 # 全局数据
@@ -63,8 +80,8 @@ global_data = {
         "current_room": "D51",
         "shoe_no": "01",
         "game_no": "01",
-        "latest_result": "庄",
-        "predicted_result": "闲",
+        "latest_result": "--",
+        "predicted_result": "--",
 
         "stats": {
             "banker_cnt": 0,
@@ -85,6 +102,7 @@ global_data = {
         }
     }
 }
+
 
 data_lock = threading.Lock()
 
@@ -107,8 +125,12 @@ session.headers.update({
 # ============================================================
 
 def generate_random(length=32):
+
     return ''.join(
-        random.choices("0123456789abcdef", k=length)
+        random.choices(
+            "0123456789abcdef",
+            k=length
+        )
     )
 
 
@@ -158,21 +180,17 @@ def predict_wingo_next(draws):
             "size": "大",
             "signal": "观望",
             "confidence": "低",
-
             "big_score": 0,
             "small_score": 0,
             "difference": 0,
-
             "markov_num": 5,
             "markov_size": "大",
             "mean_size": "平",
-
             "streak": 0,
             "special": False
         }
 
     nums = []
-
     sizes = []
 
     for d in draws:
@@ -180,10 +198,12 @@ def predict_wingo_next(draws):
         try:
             nums.append(int(d["number"]))
             sizes.append(d["size"])
+
         except Exception:
             continue
 
     if len(nums) < 10:
+
         return {
             "num": 5,
             "size": "大",
@@ -199,17 +219,8 @@ def predict_wingo_next(draws):
             "special": False
         }
 
-    # --------------------------------------------------------
-    # 最新
-    # --------------------------------------------------------
-
     last_num = nums[0]
-
     last_size = sizes[0]
-
-    # --------------------------------------------------------
-    # 指标 1：长龙
-    # --------------------------------------------------------
 
     streak_cnt = 0
 
@@ -217,28 +228,25 @@ def predict_wingo_next(draws):
 
         if size == last_size:
             streak_cnt += 1
+
         else:
             break
-
-    # --------------------------------------------------------
-    # 指标 2：马尔可夫转移
-    # --------------------------------------------------------
 
     transition_counts = [0] * 10
 
     for i in range(len(nums) - 1):
 
         current_num = nums[i]
-
         previous_num = nums[i + 1]
 
         if previous_num == last_num:
 
             if 0 <= current_num <= 9:
-
                 transition_counts[current_num] += 1
 
-    max_transition = max(transition_counts)
+    max_transition = max(
+        transition_counts
+    )
 
     if max_transition > 0:
 
@@ -255,10 +263,6 @@ def predict_wingo_next(draws):
         if markov_best_num >= 5
         else "小"
     )
-
-    # --------------------------------------------------------
-    # 指标 3：近10期均值回归
-    # --------------------------------------------------------
 
     recent10 = nums[:10]
 
@@ -280,24 +284,14 @@ def predict_wingo_next(draws):
 
         mean_size = "平"
 
-    # --------------------------------------------------------
-    # 指标 4：0 / 5 特殊号
-    # --------------------------------------------------------
-
     is_special_num = (
         last_num == 0
         or last_num == 5
     )
 
-    # --------------------------------------------------------
-    # 综合评分
-    # --------------------------------------------------------
-
     big_score = 0.0
-
     small_score = 0.0
 
-    # 马尔可夫
     if markov_size == "大":
 
         big_score += 1.5
@@ -306,7 +300,6 @@ def predict_wingo_next(draws):
 
         small_score += 1.5
 
-    # 均值回归
     if mean_size == "大":
 
         big_score += 1.0
@@ -315,7 +308,6 @@ def predict_wingo_next(draws):
 
         small_score += 1.0
 
-    # 长龙
     if streak_cnt >= 3:
 
         if last_size == "大":
@@ -330,10 +322,6 @@ def predict_wingo_next(draws):
         big_score - small_score
     )
 
-    # --------------------------------------------------------
-    # 最终方向
-    # --------------------------------------------------------
-
     final_size = (
         "大"
         if big_score >= small_score
@@ -341,71 +329,48 @@ def predict_wingo_next(draws):
     )
 
     signal = "观望"
-
     confidence = "普通"
 
-    # 指标冲突
     if difference < 0.8:
 
         signal = "观望"
-
         confidence = "避险观望"
 
-    # 0 / 5
     elif is_special_num:
 
         signal = "观望"
-
         confidence = "避险观望"
 
-    # 大
     elif big_score > small_score:
 
         final_size = "大"
-
         signal = "BUY"
 
         if big_score >= 2.5:
-
             confidence = "🔥高确信"
-
         else:
-
             confidence = "普通"
 
-    # 小
     else:
 
         final_size = "小"
-
         signal = "SELL"
 
         if small_score >= 2.5:
-
             confidence = "🔥高确信"
-
         else:
-
             confidence = "普通"
-
-    # --------------------------------------------------------
-    # 具体数字
-    # --------------------------------------------------------
 
     if final_size == "大":
 
         target_num = 7
-
         start_num = 5
-
         end_num = 10
 
     else:
 
         target_num = 2
-
         start_num = 0
-
         end_num = 5
 
     max_num_score = -1
@@ -415,10 +380,8 @@ def predict_wingo_next(draws):
         if transition_counts[i] > max_num_score:
 
             max_num_score = transition_counts[i]
-
             target_num = i
 
-    # 没有历史转移时使用中位数
     if max_transition == 0:
 
         target_num = (
@@ -433,18 +396,35 @@ def predict_wingo_next(draws):
         "signal": signal,
         "confidence": confidence,
 
-        "big_score": round(big_score, 2),
-        "small_score": round(small_score, 2),
-        "difference": round(difference, 2),
+        "big_score": round(
+            big_score,
+            2
+        ),
 
-        "markov_num": markov_best_num,
-        "markov_size": markov_size,
+        "small_score": round(
+            small_score,
+            2
+        ),
 
-        "mean_size": mean_size,
+        "difference": round(
+            difference,
+            2
+        ),
 
-        "streak": streak_cnt,
+        "markov_num":
+            markov_best_num,
 
-        "special": is_special_num
+        "markov_size":
+            markov_size,
+
+        "mean_size":
+            mean_size,
+
+        "streak":
+            streak_cnt,
+
+        "special":
+            is_special_num
     }
 
 
@@ -510,7 +490,6 @@ def fetch_wingo_draw_page(
         data = response.json()
 
         if data.get("code") != 0:
-
             return []
 
         result = []
@@ -530,21 +509,31 @@ def fetch_wingo_draw_page(
                 )
 
                 result.append({
+
                     "issueNumber":
-                        str(item["issueNumber"]),
+                        str(
+                            item[
+                                "issueNumber"
+                            ]
+                        ),
 
                     "number":
                         number,
 
                     "colour":
-                        str(item["colour"]),
+                        str(
+                            item[
+                                "colour"
+                            ]
+                        ),
 
                     "size":
-                        get_wingo_size(number)
+                        get_wingo_size(
+                            number
+                        )
                 })
 
             except Exception:
-
                 continue
 
         return result
@@ -565,7 +554,6 @@ def fetch_wingo_draw_page(
 def update_wingo_data(draws):
 
     if not draws:
-
         return
 
     streak_val = draws[0]["size"]
@@ -575,11 +563,9 @@ def update_wingo_data(draws):
     for d in draws:
 
         if d["size"] == streak_val:
-
             streak_cnt += 1
 
         else:
-
             break
 
     sizes = [
@@ -646,7 +632,6 @@ def update_wingo_data(draws):
 def wingo_loop():
 
     memory_draws = []
-
     seen_issues = set()
 
     print(
@@ -682,7 +667,9 @@ def wingo_loop():
 
     memory_draws.sort(
         key=lambda x:
-            int(x["issueNumber"]),
+            int(
+                x["issueNumber"]
+            ),
         reverse=True
     )
 
@@ -696,11 +683,9 @@ def wingo_loop():
             POLL_INTERVAL
         )
 
-        latest_page = (
-            fetch_wingo_draw_page(
-                page_no=1,
-                page_size=10
-            )
+        latest_page = fetch_wingo_draw_page(
+            page_no=1,
+            page_size=10
         )
 
         new_items = []
@@ -723,7 +708,9 @@ def wingo_loop():
 
             new_items.sort(
                 key=lambda x:
-                    int(x["issueNumber"]),
+                    int(
+                        x["issueNumber"]
+                    ),
                 reverse=True
             )
 
@@ -732,7 +719,6 @@ def wingo_loop():
                 + memory_draws
             )
 
-            # 防止内存无限增长
             memory_draws = (
                 memory_draws[:200]
             )
@@ -746,10 +732,10 @@ def wingo_loop():
 # Baccarat 预测
 # ============================================================
 
+# ⚠️ 保留原来的 Baccarat 算法，不修改
 def predict_baccarat_next(history):
 
     if not history:
-
         return "庄"
 
     recent = history[:10]
@@ -767,159 +753,378 @@ def predict_baccarat_next(history):
     )
 
     if banker_cnt >= 6:
-
         return "闲"
 
     if player_cnt >= 6:
-
         return "庄"
 
-    # 数据不足以形成明显方向
     return "庄"
 
 
 # ============================================================
-# Baccarat 数据包解析
+# Baccarat 二进制工具
+# ============================================================
+
+def bytes_to_hex(data):
+
+    if not isinstance(
+        data,
+        (bytes, bytearray)
+    ):
+        return ""
+
+    return data.hex().upper()
+
+
+def safe_ascii(data):
+
+    try:
+        return data.decode(
+            "utf-8",
+            errors="ignore"
+        )
+    except Exception:
+        return ""
+
+
+def normalize_room(text):
+
+    if not text:
+        return None
+
+    text = str(text).upper()
+
+    # D051
+    if text.startswith("D0") and len(text) >= 4:
+
+        room = "D" + text[2:4]
+
+        if room in BACCARAT_ROOMS:
+            return room
+
+    # D51
+    if text in BACCARAT_ROOMS:
+        return text
+
+    return None
+
+
+# ============================================================
+# 从 Choice 二进制中寻找 Baccarat Result
+#
+# 已确认 Choice BacGameResultResp 的字段：
+#
+# vid
+# res
+# code
+# bval
+# pval
+# num
+# pair
+#
+# 这里不把整个 WS 当 JSON。
+# ============================================================
+
+def parse_bac_result_candidates(raw):
+
+    if not isinstance(
+        raw,
+        (bytes, bytearray)
+    ):
+        return []
+
+    data = bytes(raw)
+
+    candidates = []
+
+    # --------------------------------------------------------
+    # 常见 vid：
+    #
+    # D051
+    # D052
+    # ...
+    # --------------------------------------------------------
+
+    for pos in range(
+        0,
+        max(
+            0,
+            len(data) - 12
+        )
+    ):
+
+        chunk = data[
+            pos:
+        ]
+
+        if len(chunk) < 13:
+            continue
+
+        vid_raw = chunk[:4]
+
+        try:
+            vid = vid_raw.decode(
+                "ascii"
+            )
+        except Exception:
+            continue
+
+        room = normalize_room(
+            vid
+        )
+
+        if not room:
+            continue
+
+        # ----------------------------------------------------
+        # BacGameResultResp：
+        #
+        # 4 bytes vid
+        # 1 byte res
+        # 4 bytes code
+        # 1 byte bval
+        # 1 byte pval
+        # 1 byte num
+        # 1 byte pair
+        # ----------------------------------------------------
+
+        res = chunk[4]
+
+        code_raw = chunk[
+            5:9
+        ]
+
+        bval = chunk[9]
+        pval = chunk[10]
+        num = chunk[11]
+        pair = chunk[12]
+
+        # Baccarat 点数正常范围 0-9
+        if not (
+            0 <= bval <= 9
+            and 0 <= pval <= 9
+        ):
+            continue
+
+        # 牌数量通常不会离谱
+        if num > 20:
+            continue
+
+        # ----------------------------------------------------
+        # 判断庄 / 闲 / 和
+        # ----------------------------------------------------
+
+        if bval > pval:
+
+            result = "庄"
+
+        elif pval > bval:
+
+            result = "闲"
+
+        else:
+
+            result = "和"
+
+        code = safe_ascii(
+            code_raw
+        ).strip(
+            "\x00 "
+        )
+
+        candidates.append({
+
+            "room":
+                room,
+
+            "result":
+                result,
+
+            "bval":
+                bval,
+
+            "pval":
+                pval,
+
+            "num":
+                num,
+
+            "pair":
+                pair,
+
+            "res":
+                res,
+
+            "code":
+                code,
+
+            "offset":
+                pos
+        })
+
+    return candidates
+
+
+# ============================================================
+# Baccarat Packet Parser
 # ============================================================
 
 def parse_choice_baccarat_packet(
     raw_msg
 ):
 
-    if isinstance(
+    if not isinstance(
         raw_msg,
-        bytes
+        (bytes, bytearray)
     ):
-
-        try:
-
-            raw_msg = zlib.decompress(
-                raw_msg,
-                16 + zlib.MAX_WBITS
-            ).decode("utf-8")
-
-        except Exception:
-
-            try:
-
-                raw_msg = zlib.decompress(
-                    raw_msg
-                ).decode("utf-8")
-
-            except Exception:
-
-                return None
-
-    try:
-
-        data = json.loads(
-            raw_msg
-        )
-
-        game_id = str(
-            data.get(
-                "gameId",
-                data.get(
-                    "game_id",
-                    ""
-                )
-            )
-        )
-
-        if not game_id:
-
-            return None
-
-        if "GD" not in game_id:
-
-            return None
-
-        room_id = (
-            "D"
-            + game_id[2:4]
-        )
-
-        shoe_no = str(
-            data.get(
-                "shoeNo",
-                data.get(
-                    "shoe_no",
-                    "01"
-                )
-            )
-        )
-
-        game_no = str(
-            data.get(
-                "roundNo",
-                data.get(
-                    "game_no",
-                    "01"
-                )
-            )
-        )
-
-        winner_raw = str(
-            data.get(
-                "winner",
-                data.get(
-                    "result",
-                    "Banker"
-                )
-            )
-        ).lower()
-
-        if (
-            "banker" in winner_raw
-            or winner_raw == "1"
-        ):
-
-            winner = "庄"
-
-        elif (
-            "player" in winner_raw
-            or winner_raw == "2"
-        ):
-
-            winner = "闲"
-
-        else:
-
-            winner = "和"
-
-        if room_id not in global_data[
-            "baccarat"
-        ][
-            "rooms"
-        ]:
-
-            room_id = "D51"
-
-        return {
-
-            "room":
-                room_id,
-
-            "shoe":
-                shoe_no,
-
-            "game":
-                game_no,
-
-            "result":
-                winner,
-
-            "game_id":
-                game_id
-        }
-
-    except Exception:
-
         return None
+
+    raw = bytes(raw_msg)
+
+    # --------------------------------------------------------
+    # 不再尝试 JSON
+    # --------------------------------------------------------
+
+    candidates = parse_bac_result_candidates(
+        raw
+    )
+
+    if not candidates:
+        return None
+
+    # --------------------------------------------------------
+    # 取第一个有效结果
+    # --------------------------------------------------------
+
+    item = candidates[0]
+
+    room = item[
+        "room"
+    ]
+
+    result = item[
+        "result"
+    ]
+
+    # --------------------------------------------------------
+    # code 可能就是 Choice 的局号/游戏代码
+    # --------------------------------------------------------
+
+    game_no = item.get(
+        "code",
+        ""
+    )
+
+    if not game_no:
+
+        game_no = (
+            str(
+                item.get(
+                    "num",
+                    0
+                )
+            )
+        )
+
+    return {
+
+        "room":
+            room,
+
+        "shoe":
+            "01",
+
+        "game":
+            game_no,
+
+        "result":
+            result,
+
+        "game_id":
+            (
+                f"{room}-"
+                f"{game_no}-"
+                f"{item['bval']}-"
+                f"{item['pval']}-"
+                f"{item['num']}"
+            ),
+
+        "bval":
+            item["bval"],
+
+        "pval":
+            item["pval"],
+
+        "num":
+            item["num"],
+
+        "pair":
+            item["pair"],
+
+        "code":
+            item["code"]
+    }
 
 
 # ============================================================
-# Baccarat WS
+# Baccarat 数据处理
+# ============================================================
+
+def update_baccarat_stats(
+    room
+):
+
+    bacc = global_data[
+        "baccarat"
+    ]
+
+    history = bacc[
+        "rooms"
+    ][
+        room
+    ]
+
+    results = [
+        h.get(
+            "result"
+        )
+        for h in history
+    ]
+
+    counts = Counter(
+        results
+    )
+
+    bacc[
+        "stats"
+    ][
+        "banker_cnt"
+    ] = counts.get(
+        "庄",
+        0
+    )
+
+    bacc[
+        "stats"
+    ][
+        "player_cnt"
+    ] = counts.get(
+        "闲",
+        0
+    )
+
+    bacc[
+        "stats"
+    ][
+        "tie_cnt"
+    ] = counts.get(
+        "和",
+        0
+    )
+
+
+# ============================================================
+# Baccarat WS Message
 # ============================================================
 
 def on_baccarat_message(
@@ -927,10 +1132,17 @@ def on_baccarat_message(
     message
 ):
 
-    parsed = (
-        parse_choice_baccarat_packet(
-            message
-        )
+    if not isinstance(
+        message,
+        (bytes, bytearray)
+    ):
+
+        # Choice 主数据应该是 binary。
+        # 字符串消息不当成 Baccarat JSON。
+        return
+
+    parsed = parse_choice_baccarat_packet(
+        message
     )
 
     if not parsed:
@@ -940,6 +1152,9 @@ def on_baccarat_message(
     room = parsed[
         "room"
     ]
+
+    if room not in BACCARAT_ROOMS:
+        return
 
     with data_lock:
 
@@ -953,15 +1168,9 @@ def on_baccarat_message(
             room
         ]
 
-        prediction = (
-            predict_baccarat_next(
-                room_history
-            )
-        )
-
-        parsed[
-            "predict"
-        ] = prediction
+        # ----------------------------------------------------
+        # 防止重复
+        # ----------------------------------------------------
 
         exists = any(
             item.get(
@@ -972,93 +1181,88 @@ def on_baccarat_message(
             for item in room_history
         )
 
-        if not exists:
+        if exists:
+            return
 
-            room_history.insert(
-                0,
-                parsed
-            )
+        # ----------------------------------------------------
+        # 先预测，再加入最新结果
+        #
+        # 保留原来的 Baccarat 预测算法
+        # ----------------------------------------------------
 
-            bacc[
-                "rooms"
-            ][
-                room
-            ] = room_history[
-                :100
-            ]
+        parsed[
+            "predict"
+        ] = predict_baccarat_next(
+            room_history
+        )
 
-        if room == "D51":
+        # ----------------------------------------------------
+        # 最新放最前
+        # ----------------------------------------------------
 
-            bacc[
-                "shoe_no"
-            ] = parsed[
-                "shoe"
-            ]
+        room_history.insert(
+            0,
+            parsed
+        )
 
-            bacc[
-                "game_no"
-            ] = parsed[
-                "game"
-            ]
+        bacc[
+            "rooms"
+        ][
+            room
+        ] = room_history[
+            :100
+        ]
 
-            bacc[
-                "latest_result"
-            ] = parsed[
-                "result"
-            ]
+        # ----------------------------------------------------
+        # 当前房间
+        # ----------------------------------------------------
 
-            bacc[
-                "predicted_result"
-            ] = predict_baccarat_next(
-                room_history
-            )
+        bacc[
+            "current_room"
+        ] = room
 
-            results = [
-                h["result"]
-                for h in room_history
-            ]
+        bacc[
+            "shoe_no"
+        ] = parsed[
+            "shoe"
+        ]
 
-            counts = Counter(
-                results
-            )
+        bacc[
+            "game_no"
+        ] = parsed[
+            "game"
+        ]
 
-            bacc[
-                "stats"
-            ][
-                "banker_cnt"
-            ] = counts.get(
-                "庄",
-                0
-            )
+        bacc[
+            "latest_result"
+        ] = parsed[
+            "result"
+        ]
 
-            bacc[
-                "stats"
-            ][
-                "player_cnt"
-            ] = counts.get(
-                "闲",
-                0
-            )
+        bacc[
+            "predicted_result"
+        ] = predict_baccarat_next(
+            room_history
+        )
 
-            bacc[
-                "stats"
-            ][
-                "tie_cnt"
-            ] = counts.get(
-                "和",
-                0
-            )
+        update_baccarat_stats(
+            room
+        )
 
     save_data_json()
 
     print(
         f"🃏 [百家乐 {room}] "
-        f"靴:{parsed['shoe']} "
-        f"局:{parsed['game']} | "
         f"结果:{parsed['result']} | "
-        f"预测:{parsed['predict']}"
+        f"庄:{parsed['bval']} "
+        f"闲:{parsed['pval']} | "
+        f"局:{parsed['game']}"
     )
 
+
+# ============================================================
+# Baccarat WS Error
+# ============================================================
 
 def on_baccarat_error(
     ws,
@@ -1066,9 +1270,14 @@ def on_baccarat_error(
 ):
 
     print(
-        f"⚠️ [百家乐 WS 错误]: {error}"
+        f"⚠️ [百家乐 WS 错误] "
+        f"{error}"
     )
 
+
+# ============================================================
+# Baccarat WS Close
+# ============================================================
 
 def on_baccarat_close(
     ws,
@@ -1089,38 +1298,81 @@ def on_baccarat_close(
     start_baccarat_ws()
 
 
-def start_baccarat_ws():
+# ============================================================
+# Baccarat WS Open
+# ============================================================
 
-    headers = {
-        "User-Agent":
-            "Mozilla/5.0 "
-            "(Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 "
-            "(KHTML, like Gecko) "
-            "Chrome/153.0.0.0 "
-            "Safari/537.36",
+def on_baccarat_open(
+    ws
+):
 
-        "Origin":
-            "https://gc.ckrkg.com"
-    }
-
-    ws = websocket.WebSocketApp(
-
-        BACCARAT_WS_URL,
-
-        header=headers,
-
-        on_message=
-            on_baccarat_message,
-
-        on_error=
-            on_baccarat_error,
-
-        on_close=
-            on_baccarat_close
+    print(
+        "🟢 [Choice百家乐 WS] "
+        "连接成功"
     )
 
-    ws.run_forever()
+    print(
+        f"🌐 {BACCARAT_WS_URL}"
+    )
+
+
+# ============================================================
+# Baccarat WS
+# ============================================================
+
+def start_baccarat_ws():
+
+    headers = [
+        "User-Agent: Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/153.0.0.0 "
+        "Safari/537.36",
+
+        "Origin: https://gci.arvideo.video"
+    ]
+
+    while True:
+
+        try:
+
+            ws = websocket.WebSocketApp(
+
+                BACCARAT_WS_URL,
+
+                header=headers,
+
+                on_open=
+                    on_baccarat_open,
+
+                on_message=
+                    on_baccarat_message,
+
+                on_error=
+                    on_baccarat_error,
+
+                on_close=
+                    on_baccarat_close
+            )
+
+            ws.run_forever(
+                ping_interval=20,
+                ping_timeout=10
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ [百家乐 WS] "
+                f"{e}"
+            )
+
+        print(
+            "⏳ 5秒后重新连接 Baccarat..."
+        )
+
+        time.sleep(5)
 
 
 # ============================================================
@@ -1137,14 +1389,19 @@ def main():
     )
 
     print(
-        "🎯 WinGo：4指标共振预测"
+        "🎯 WinGo：原有算法"
     )
 
     print(
-        "🃏 Baccarat：D51-D58 WebSocket"
+        "🃏 Baccarat：Choice "
+        "ng211.mdvuz.com:5000"
     )
 
     print("=" * 65)
+
+    # --------------------------------------------------------
+    # WinGo
+    # --------------------------------------------------------
 
     wingo_thread = threading.Thread(
         target=wingo_loop,
@@ -1152,6 +1409,10 @@ def main():
     )
 
     wingo_thread.start()
+
+    # --------------------------------------------------------
+    # Baccarat
+    # --------------------------------------------------------
 
     baccarat_thread = threading.Thread(
         target=start_baccarat_ws,
