@@ -110,10 +110,7 @@ function loadAILearning() {
         const parsed =
             JSON.parse(saved);
 
-        return deepMerge(
-            base,
-            parsed
-        );
+        return mergeLearningState(base, parsed);
 
     } catch (e) {
 
@@ -131,48 +128,21 @@ function loadAILearning() {
 }
 
 
-function deepMerge(base, source) {
-
-    if (
-        typeof base !== "object" ||
-        base === null
-    ) {
-        return source;
-    }
-
-    if (
-        typeof source !== "object" ||
-        source === null
-    ) {
+function mergeLearningState(base, source) {
+    if (Array.isArray(base)) return Array.isArray(source)
+        ? source.filter(item => item && typeof item === "object").slice(0, 500) : base;
+    if (base && typeof base === "object") {
+        if (!source || typeof source !== "object" || Array.isArray(source)) return base;
+        for (const key of Object.keys(base)) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+                base[key] = mergeLearningState(base[key], source[key]);
+            }
+        }
         return base;
     }
-
-    Object.keys(source).forEach(key => {
-
-        if (
-            typeof source[key] === "object" &&
-            source[key] !== null &&
-            !Array.isArray(source[key])
-        ) {
-
-            if (!base[key]) {
-                base[key] = {};
-            }
-
-            deepMerge(
-                base[key],
-                source[key]
-            );
-
-        } else {
-
-            base[key] =
-                source[key];
-        }
-
-    });
-
-    return base;
+    if (base === null) return typeof source === "string" ? source : base;
+    return typeof source === typeof base &&
+        (typeof source !== "number" || Number.isFinite(source)) ? source : base;
 }
 
 
@@ -2504,7 +2474,91 @@ function renderAIReview(
    FETCH WINGO
 ========================================================= */
 
+// One shared snapshot for both tabs; do not let a stalled request freeze polling.
+let snapshotPromise = null;
+let snapshotCache = null;
+let snapshotLoadedAt = 0;
+let lastWingoDraws = [];
+
+async function fetchWithTimeout(url, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+        const response = await fetch(url, {...options, signal: controller.signal});
+        // Consume the body under the same timeout, including a stalled response body.
+        const body = await response.text();
+        return {ok: response.ok, status: response.status,
+            text: async () => body, json: async () => JSON.parse(body)};
+    } finally { clearTimeout(timer); }
+}
+
+async function loadDashboardSnapshot() {
+    if (snapshotCache && Date.now() - snapshotLoadedAt < 1500) return snapshotCache;
+    if (!snapshotPromise) {
+        snapshotPromise = (async () => {
+            const response = await fetchWithTimeout(`./data.json?t=${Date.now()}`, {cache: "no-store"});
+            if (!response.ok) throw new Error(`data.json HTTP ${response.status}`);
+            const data = await response.json();
+            if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("无效的数据文件");
+            snapshotCache = data;
+            snapshotLoadedAt = Date.now();
+            return data;
+        })().finally(() => { snapshotPromise = null; });
+    }
+    return snapshotPromise;
+}
+
+function setDataStatus(feed, message) {
+    const el = document.getElementById(`${feed}-data-status`);
+    if (el) el.textContent = message;
+}
+
+function snapshotTime(data) {
+    const date = new Date(Number(data.updated_at) * 1000);
+    if (!Number.isFinite(date.getTime()) || !data.updated_at) return "快照更新时间未知";
+    const stale = Date.now() - date.getTime() > 10 * 60 * 1000;
+    return `${stale ? "数据可能已过期 · " : ""}文件更新：${date.toLocaleString("zh-CN", {timeZone: "Asia/Kuala_Lumpur"})} MYT（非实时）`;
+}
+
+function normalizeWingoDraws(list) {
+    if (!Array.isArray(list)) return [];
+    const draws = new Map();
+    for (const item of list) {
+        if (!item || typeof item !== "object") continue;
+        const issue = String(item.issueNumber ?? item.issue ?? "").trim();
+        const raw = item.number ?? item.num;
+        const number = Number(raw);
+        if (!/^\d+$/.test(issue) || raw === null || raw === undefined || String(raw).trim() === "" ||
+            !Number.isInteger(number) || number < 0 || number > 9) continue;
+        draws.set(issue, {issue, number, size: number >= 5 ? "大" : "小", colour: item.colour ?? item.color ?? ""});
+    }
+    return [...draws.values()].sort((a, b) => b.issue.length - a.issue.length || b.issue.localeCompare(a.issue)).slice(0, 300);
+}
+
 async function fetchDraws() {
+    try {
+        const data = await loadDashboardSnapshot();
+        const draws = normalizeWingoDraws(data.wingo?.draws);
+        if (!draws.length) throw new Error("data.json 没有有效 WinGo 数据");
+        lastWingoDraws = draws;
+        setDataStatus("wingo", `已读取 ${draws.length} 笔历史 · ${snapshotTime(data)}`);
+        return draws;
+    } catch (error) {
+        console.warn("WinGo snapshot unavailable:", error);
+        const draws = normalizeWingoDraws(await fetchWorkerDraws());
+        if (draws.length) {
+            lastWingoDraws = normalizeWingoDraws([...lastWingoDraws, ...draws]);
+            setDataStatus("wingo", `备用接口已加载 ${lastWingoDraws.length} 笔记录`);
+            return lastWingoDraws;
+        }
+        setDataStatus("wingo", lastWingoDraws.length
+            ? "数据更新失败，当前显示上次成功读取的历史记录。"
+            : "无法读取开奖数据。请使用 HTTP 服务打开页面，并检查 data.json / 数据接口。");
+        return lastWingoDraws;
+    }
+}
+
+async function fetchWorkerDraws() {
 
     try {
 
@@ -2571,7 +2625,7 @@ async function fetchDraws() {
 
             pageNo: 1,
 
-            pageSize: 10,
+            pageSize: 100,
 
             random,
 
@@ -2643,7 +2697,7 @@ async function fetchDraws() {
 
 
         const response =
-            await fetch(
+            await fetchWithTimeout(
                 WORKER_URL,
                 {
                     method: "POST",
@@ -4063,29 +4117,7 @@ async function fetchBaccaratData() {
 
     try {
 
-        const response =
-            await fetch(
-                `./data.json?t=${Date.now()}`,
-                {
-                    cache:
-                        "no-store"
-                }
-            );
-
-
-        if (!response.ok) {
-
-            console.warn(
-                "Baccarat data.json HTTP:",
-                response.status
-            );
-
-            return;
-        }
-
-
-        const data =
-            await response.json();
+        const data = await loadDashboardSnapshot();
 
 
         if (
@@ -4094,11 +4126,7 @@ async function fetchBaccaratData() {
             !data.baccarat.rooms
         ) {
 
-            console.warn(
-                "data.json 没有 baccarat.rooms"
-            );
-
-            return;
+            throw new Error("data.json 没有 baccarat.rooms");
         }
 
 
@@ -4319,17 +4347,19 @@ async function fetchBaccaratData() {
          * =================================================
          */
 
-        renderBaccarat(
-            currentBaccaratTable
-        );
+        renderBaccarat(currentBaccaratTable);
+        const count = Object.values(baccaratData).reduce((n, room) => n + room.history.length, 0);
+        setDataStatus("baccarat", count
+            ? `已读取 ${count} 笔记录 · ${snapshotTime(data)}`
+            : "尚未收到百家乐开奖记录；请检查 bot.py 的 WebSocket 连接。");
 
 
     } catch (error) {
 
         console.warn(
-            "Baccarat data.json 读取失败:",
-            error
+            "Baccarat data.json 读取失败:", error
         );
+        setDataStatus("baccarat", "数据读取失败，保留上次结果。请使用 HTTP 服务打开页面并检查 data.json。");
     }
 }
 
@@ -5137,7 +5167,7 @@ async function initializeDashboard() {
 
     try {
 
-        await safeFetchBaccaratData();
+        await Promise.allSettled([safeFetchBaccaratData(), safeRefreshDashboard()]);
 
     } catch (error) {
 
