@@ -1376,6 +1376,12 @@ function getLearnedPrediction(
     }
 
 
+    if ((predictedNum >= 5 ? "大" : "小") !== prediction) {
+        const candidates = Array.from({length: 5}, (_, index) => index + (prediction === "大" ? 5 : 0));
+        candidates.sort((a, b) => nums.filter(n => n === b).length - nums.filter(n => n === a).length || a - b);
+        predictedNum = candidates[0];
+    }
+
     return {
 
         num:
@@ -1862,8 +1868,11 @@ function compareIssues(left, right) {
     return a.length - b.length || a.localeCompare(b);
 }
 
+let learningSyncInfo = {checkedAt: null, added: 0, latest: null, count: 0};
+
 function reviewNewOutcome(draws) {
     const ordered = normalizeWingoDraws(draws);
+    const before = aiLearning.stats.win + aiLearning.stats.loss + aiLearning.stats.pass;
     let latestReview = null;
     // Oldest eligible outcome first. Each prediction sees only older outcomes.
     for (let index = ordered.length - 11; index >= 0; index--) {
@@ -1871,6 +1880,9 @@ function reviewNewOutcome(draws) {
         if (aiLearning.lastReviewedIssue && compareIssues(draw.issue, aiLearning.lastReviewedIssue) <= 0) continue;
         latestReview = reviewSingleOutcome(ordered.slice(index)) || latestReview;
     }
+    learningSyncInfo = {checkedAt: new Date().toLocaleTimeString("zh-CN", {timeZone: "Asia/Kuala_Lumpur"}),
+        added: aiLearning.stats.win + aiLearning.stats.loss + aiLearning.stats.pass - before,
+        latest: ordered[0]?.issue || null, count: ordered.length};
     return latestReview;
 }
 
@@ -2137,9 +2149,13 @@ function updateAILearningDashboard() {
 
     setText(
         "ai-state",
-        aiLearning.lastReviewedIssue ? "已复盘，等待新期" : "等待数据"
+        learningSyncInfo.added > 0 ? `新增 ${learningSyncInfo.added} 笔` : aiLearning.lastReviewedIssue ? "已同步，等待新期" : "等待数据"
     );
 
+
+    setText("learning-sync-detail", learningSyncInfo.checkedAt
+        ? `最近检查 ${learningSyncInfo.checkedAt} MYT · 读取 ${learningSyncInfo.count} 笔 · 最新期号 ${learningSyncInfo.latest || "—"} · 已复盘至 ${aiLearning.lastReviewedIssue || "—"}。${learningSyncInfo.added ? `本次新增复盘 ${learningSyncInfo.added} 笔。` : "本次没有可复盘的新期号，次数保持不变。"}`
+        : "正在检查历史数据…");
 
     setText(
         "ai-learning-count",
@@ -2283,23 +2299,22 @@ function renderAIReview(draws) {
     const result = evaluateReview(row);
     set("review-status", `历史复盘 · ${draw.issue}`);
     set("review-prediction", outcome === "PASS" ? "PASS · 观望"
-        : `${prediction.num} / ${getNumberColours(prediction.num).join("＋")} / ${prediction.size}`);
-    set("review-actual", `${draw.number} / ${getNumberColours(draw.number).join("＋")} / ${draw.size}`);
+        : `${prediction.num} / ${prediction.size}`);
+    set("review-actual", `${draw.number} / ${draw.size}`);
     const resultEl = document.getElementById("review-result");
-    if (resultEl) resultEl.innerHTML = [resultBadge(result.number,"号码 "),resultBadge(result.colour,"颜色 "),resultBadge(result.size,"大小 ")].join(" ");
+    if (resultEl) resultEl.innerHTML = resultBadge(result.size);
     const factorNames = {markov:"转移规律", mean:"均值回归", streak:"连续大小", frequency:"近期频率", balance:"大小分布"};
     const factors = Object.entries(prediction.factorContributions || {}).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,3);
     const explanation = factors.map(([name,value]) => `${factorNames[name] || name} ${value > 0 ? "偏大" : value < 0 ? "偏小" : "中性"}（${value.toFixed(2)}）`).join("；");
-    set("review-message", `${outcome === "PASS" ? `观望原因：${prediction.passReason || "信号不足"}。` : "号码、颜色、大小分别判定；同大小但号码不同，号码仍算 LOSS。"}主要大小因素：${explanation || "暂无"}。这些是规则贡献，不是开奖原因。`);
+    set("review-message", `${outcome === "PASS" ? `观望原因：${prediction.passReason || "信号不足"}。` : "只比较大小：0–4 小，5–9 大；号码不同但大小相同也算 WIN。"}主要大小因素：${explanation || "暂无"}。这些是规则贡献，不是开奖原因。`);
     const summaries = [10,50].map(limit => {
         const sample = rows.slice(0,limit);
         const decisions = sample.filter(r=>r.prediction && r.outcome !== "PASS" && r.outcome !== "NO_DATA");
         const pass = sample.filter(r=>r.outcome === "PASS").length;
-        const rates = [["number","号码"],["colour","颜色"],["size","大小"]].map(([key,label])=>{
-            const wins = decisions.filter(r=>evaluateReview(r)[key] === "WIN").length;
-            return `${label} ${wins}/${decisions.length}${decisions.length ? `（${(wins/decisions.length*100).toFixed(1)}%）` : "（无有效样本）"}`;
-        }).join("；");
-        return `最近 ${sample.length} 期：${rates}；PASS ${pass}；历史不足无法评估 ${sample.length-decisions.length-pass} 笔。`;
+        const wins = decisions.filter(r=>r.outcome === "WIN").length;
+        const missing = sample.length - decisions.length - pass;
+        const rate = decisions.length ? `${(wins / decisions.length * 100).toFixed(1)}%` : "暂无有效判断";
+        return `最近 ${sample.length} 期：大小 WIN ${wins} / LOSS ${decisions.length-wins} · 命中率 ${rate} · PASS ${pass}${missing ? ` · 历史不足 ${missing} 笔` : ""}。`;
     });
     let losses = 0;
     for (const entry of rows) {
@@ -2308,7 +2323,7 @@ function renderAIReview(draws) {
         if (entry.outcome !== "LOSS") break;
         losses++;
     }
-    set("review-summary", `${summaries.join("\n")}\n最近有效大小判断连续失误 ${losses} 次（略过 PASS）。颜色按完整组合比较，0=红＋紫、5=绿＋紫。以上为固定初始权重的历史回测，不是预先保存的实盘预测。`);
+    set("review-summary", `${summaries.join("\n")}\n最近有效大小判断连续失误 ${losses} 次（略过 PASS）。0–4 小，5–9 大；结果只比较大小。以上为固定初始权重的历史回测，不是预先保存的实盘预测。`);
 }
 
 
@@ -3411,18 +3426,14 @@ function renderDrawTable(draws) {
         <tr>
             <td>${draw.issue}</td>
             <td>${getNumberIconHtml(draw.number)} <span>${draw.size}</span></td>
-            <td>${!prediction ? "—" : outcome === "PASS" ? "PASS" : getNumberIconHtml(prediction.num)}</td>
-            <td>${!prediction ? "—" : outcome === "PASS" ? "观望" : getNumberColours(prediction.num).join("＋")}</td>
-            <td class="result-stack">${[ ["number","号码 "], ["colour","颜色 "], ["size","大小 "] ].map(([key,label]) => resultBadge(evaluateReview({draw,prediction,outcome})[key],label)).join(" ")}</td>
+            <td>${!prediction ? "—" : outcome === "PASS" ? "PASS" : `${getNumberIconHtml(prediction.num)} <span>${prediction.size}</span>`}</td>
+            <td>${resultBadge(outcome)}</td>
         </tr>
-    `).join("") || '<tr><td colspan="5">暂无数据</td></tr>';
-    if (table.tagName === "TBODY") {
-        table.innerHTML = rows;
-    } else {
-        table.innerHTML = `<div class="table-wrapper"><table>
-            <thead><tr><th>期号</th><th>实际开奖</th><th>号码</th><th>颜色</th><th>回测结果</th></tr></thead>
-            <tbody>${rows}</tbody></table></div>`;
-    }
+    `).join("") || '<tr><td colspan="4">暂无数据</td></tr>';
+    if (table.tagName === "TBODY") table.innerHTML = rows;
+    else table.innerHTML = `<div class="table-wrapper"><table>
+        <thead><tr><th>期号</th><th>实际开奖</th><th>回测预测</th><th>回测结果</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
 }
 
 
