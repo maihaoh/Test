@@ -2018,3 +2018,5 @@ tbody tr:hover {
         animation-iteration-count: 1 !important;
     }
 }
+
+.data-status { padding: 12px 16px; border: 1px solid #526176; border-radius: 10px; color: #cbd5e1; background: #172131; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
