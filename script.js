@@ -750,7 +750,8 @@ function rememberPattern(
 
 function getPatternExperience(
     draws,
-    prediction
+    prediction,
+    learning = aiLearning
 ) {
 
     const pattern =
@@ -770,7 +771,7 @@ function getPatternExperience(
 
 
     const records =
-        aiLearning.patterns.recent.filter(
+        learning.patterns.recent.filter(
             x =>
                 x.pattern === pattern
         );
@@ -1089,7 +1090,8 @@ function getLearnedPrediction(
     const patternMemory =
         getPatternExperience(
             draws,
-            temporaryPrediction
+            temporaryPrediction,
+            learning
         );
 
 
@@ -3498,128 +3500,27 @@ function updateMarketAnalysis(
    ONLY SIZE DECIDES WIN / LOSS
 ========================================================= */
 
-function runBacktest(
-    draws
-) {
+// Replay each outcome using only older draws and fixed baseline weights.
+// These are retrospective simulations, not saved pre-draw predictions.
+function getHistoricalRows(draws) {
+    const ordered = normalizeWingoDraws(draws);
+    const baseline = JSON.parse(JSON.stringify(DEFAULT_AI_LEARNING));
+    return ordered.slice(0, 50).map((draw, index) => {
+        const history = ordered.slice(index + 1);
+        if (history.length < 10) return {draw, prediction: null, outcome: "NO_DATA"};
+        const prediction = getLearnedPrediction(history, baseline);
+        const outcome = prediction.size === "PASS" ? "PASS"
+            : prediction.size === draw.size ? "WIN" : "LOSS";
+        return {draw, prediction, outcome};
+    });
+}
 
-    if (
-        !draws ||
-        draws.length < 12
-    ) {
-
-        return {
-
-            win: 0,
-
-            loss: 0,
-
-            pass: 0,
-
-            valid: 0,
-
-            rate: 0
-        };
-    }
-
-
-    let win = 0;
-    let loss = 0;
-    let pass = 0;
-
-
-    const maxRows =
-        Math.min(
-            50,
-            draws.length - 10
-        );
-
-
-    const simulatedLearning =
-        JSON.parse(
-            JSON.stringify(
-                aiLearning
-            )
-        );
-
-
-    for (
-        let i = 0;
-        i < maxRows;
-        i++
-    ) {
-
-        const currentDraw =
-            draws[i];
-
-
-        const history =
-            draws.slice(
-                i + 1
-            );
-
-
-        const prediction =
-            getLearnedPrediction(
-                history,
-                simulatedLearning
-            );
-
-
-        if (
-            prediction.size ===
-            "PASS"
-        ) {
-
-            pass++;
-
-        } else if (
-            prediction.size ===
-            currentDraw.size
-        ) {
-
-            /*
-             * 只比较大小
-             */
-
-            win++;
-
-        } else {
-
-            /*
-             * 只比较大小
-             */
-
-            loss++;
-        }
-    }
-
-
-    const valid =
-        win + loss;
-
-
-    const rate =
-        valid > 0
-            ? (
-                win /
-                valid *
-                100
-            )
-            : 0;
-
-
-    return {
-
-        win,
-
-        loss,
-
-        pass,
-
-        valid,
-
-        rate
-    };
+function runBacktest(draws) {
+    const rows = getHistoricalRows(draws);
+    const count = outcome => rows.filter(row => row.outcome === outcome).length;
+    const win = count("WIN"), loss = count("LOSS"), pass = count("PASS");
+    const valid = win + loss;
+    return {win, loss, pass, valid, rate: valid ? win / valid * 100 : 0};
 }
 
 
@@ -3667,115 +3568,26 @@ function updateWinRate(
    DRAW TABLE
 ========================================================= */
 
-function renderDrawTable(
-    draws
-) {
-
-    const table =
-        document.getElementById(
-            "draw-table"
-        );
-
-
-    if (!table) {
-        return;
+function renderDrawTable(draws) {
+    const table = document.getElementById("draw-table");
+    if (!table) return;
+    const labels = {WIN: "WIN · 命中", LOSS: "LOSS · 未命中", PASS: "PASS · 不计胜负", NO_DATA: "数据不足"};
+    const rows = getHistoricalRows(draws).map(({draw, prediction, outcome}) => `
+        <tr>
+            <td>${draw.issue}</td>
+            <td>${getNumberIconHtml(draw.number)} <span>${draw.size}</span></td>
+            <td>${prediction ? prediction.size : "—"}</td>
+            <td>${prediction ? (prediction.size === "PASS" ? "观望" : prediction.signal) : "等待数据"}</td>
+            <td>${labels[outcome]}</td>
+        </tr>
+    `).join("") || '<tr><td colspan="5">暂无数据</td></tr>';
+    if (table.tagName === "TBODY") {
+        table.innerHTML = rows;
+    } else {
+        table.innerHTML = `<div class="table-wrapper"><table>
+            <thead><tr><th>期号</th><th>实际开奖</th><th>回测预测</th><th>信号</th><th>回测结果</th></tr></thead>
+            <tbody>${rows}</tbody></table></div>`;
     }
-
-
-    const rows =
-        draws
-            .slice(
-                0,
-                50
-            )
-            .map(
-                draw => {
-
-                    return `
-                        <tr>
-
-                            <td>
-                                ${draw.issue}
-                            </td>
-
-                            <td>
-                                ${getNumberIconHtml(
-                                    draw.number
-                                )}
-                                ${draw.number}
-                            </td>
-
-                            <td>
-                                ${draw.size}
-                            </td>
-
-                            <td>
-                                ${draw.colour || "-"}
-                            </td>
-
-                            <td>
-                                -
-                            </td>
-
-                        </tr>
-                    `;
-                }
-            )
-            .join("");
-
-
-    if (
-        table.tagName ===
-        "TBODY"
-    ) {
-
-        table.innerHTML =
-            rows ||
-            `
-                <tr>
-                    <td colspan="5">
-                        暂无数据
-                    </td>
-                </tr>
-            `;
-
-        return;
-    }
-
-
-    table.innerHTML = `
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>期号</th>
-
-                        <th>号码</th>
-
-                        <th>大小</th>
-
-                        <th>颜色</th>
-
-                        <th>-</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    ${rows}
-
-                </tbody>
-
-            </table>
-
-        </div>
-    `;
 }
 
 
