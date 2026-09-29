@@ -18,7 +18,7 @@
 
     <link
         rel="stylesheet"
-        href="style.css"
+        href="style.css?v=3"
     >
 
 </head>
@@ -164,7 +164,7 @@
             <div class="card winrate-card">
 
                 <div class="card-title">
-                    📈 历史回测胜率
+                    📈 大小回测胜率
                 </div>
 
                 <div
@@ -400,7 +400,7 @@
                 <div class="review-item review-prediction">
 
                     <div class="review-label">
-                        🔮 上一期预测
+                        🔮 历史回测判断
                     </div>
 
                     <div
@@ -448,7 +448,7 @@
                 <div class="review-item review-learning">
 
                     <div class="review-label">
-                        🧠 AI 动作
+                        🧠 复盘分析
                     </div>
 
                     <div
@@ -465,6 +465,8 @@
         </div>
 
 
+
+        <div class="section-card"><div class="section-title">📊 近期复盘汇总</div><div id="review-summary" class="review-summary">等待数据</div></div>
 
         <!-- =================================================
              AI SMART LEARNING
@@ -711,7 +713,7 @@
             <div class="section-title">
                 📜 WinGo 最近 50 局 · 历史回测
             </div>
-            <p class="data-status">固定初始权重，只用该期之前的记录回测大小；不是开奖前保存的预测。PASS 与数据不足不计胜负，命中率不代表未来表现。</p>
+            <p class="data-status">号码、颜色为历史回测预测；结果分别比较号码、完整颜色组合及大小。上方胜率只统计大小。PASS 与数据不足不计胜负；历史回测不代表未来表现。</p>
 
 
             <div class="table-wrapper">
@@ -726,9 +728,9 @@
 
                             <th>实际开奖</th>
 
-                            <th>回测预测</th>
+                            <th>号码</th>
 
-                            <th>信号</th>
+                            <th>颜色</th>
 
                             <th>回测结果</th>
 
@@ -1227,7 +1229,7 @@
 </div>
 
 
-<script src="script.js"></script>
+<script src="script.js?v=3"></script>
 
 </body>
 
