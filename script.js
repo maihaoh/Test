@@ -2227,254 +2227,70 @@ function updateAILearningDashboard() {
    WIN / LOSS = SIZE ONLY
 ========================================================= */
 
-function renderAIReview(
-    draws
-) {
-
-    if (
-        !draws ||
-        draws.length < 12
-    ) {
-
-        return;
-    }
-
-
-    const actual =
-        draws[0];
-
-    const history =
-        draws.slice(1);
-
-
-    const prediction =
-        getLearnedPrediction(
-            history
-        );
-
-
-    if (
-        !prediction ||
-        !actual
-    ) {
-
-        return;
-    }
-
-
-    const status =
-        document.getElementById(
-            "review-status"
-        );
-
-    const predEl =
-        document.getElementById(
-            "review-prediction"
-        );
-
-    const actualEl =
-        document.getElementById(
-            "review-actual"
-        );
-
-    const resultEl =
-        document.getElementById(
-            "review-result"
-        );
-
-    const messageEl =
-        document.getElementById(
-            "review-message"
-        );
-
-
-    /*
-     * =====================================================
-     * 预测显示
-     *
-     * 号码 / 大小 / 信心
-     *
-     * 例如：
-     * 7 / 大 / 72%
-     *
-     * 注意：
-     * 号码只是显示
-     * 不参与 WIN / LOSS
-     * =====================================================
-     */
-
-    if (predEl) {
-
-        if (
-            prediction.size === "PASS"
-        ) {
-
-            predEl.textContent =
-                `PASS / ${prediction.confidence}%`;
-
-        } else {
-
-            predEl.textContent =
-                `${prediction.num ?? "-"} / ${prediction.size} / ${prediction.confidence}%`;
-        }
-    }
-
-
-    /*
-     * =====================================================
-     * 实际开奖
-     *
-     * 例如：
-     * 8 / 大
-     * =====================================================
-     */
-
-    if (actualEl) {
-
-        actualEl.textContent =
-            `${actual.number} / ${actual.size}`;
-    }
-
-
-    /*
-     * =====================================================
-     * PASS
-     * =====================================================
-     */
-
-    if (
-        prediction.size === "PASS"
-    ) {
-
-        const forced =
-            getForcedCounterfactual(
-                history
-            );
-
-
-        let counter =
-            "PASS";
-
-
-        if (forced) {
-
-            if (
-                forced.size ===
-                actual.size
-            ) {
-
-                counter =
-                    "PASS → 强制大小判断：WIN";
-
-            } else {
-
-                counter =
-                    "PASS → 强制大小判断：LOSS";
-            }
-        }
-
-
-        if (status) {
-
-            status.textContent =
-                "PASS";
-
-            status.className =
-                "review-status review-pass";
-        }
-
-
-        if (resultEl) {
-
-            resultEl.textContent =
-                counter;
-
-            resultEl.className =
-                "review-result review-pass";
-        }
-
-
-        if (messageEl) {
-
-            messageEl.textContent =
-                `AI 本期选择 PASS。${
-                    prediction.passReason ||
-                    ""
-                }`;
-        }
-
-
-        return;
-    }
-
-
-    /*
-     * =====================================================
-     * WIN / LOSS
-     *
-     * 只比较：
-     *
-     * prediction.size
-     * VS
-     * actual.size
-     *
-     * 号码不参与
-     * 颜色不参与
-     * =====================================================
-     */
-
-    const win =
-        prediction.size ===
-        actual.size;
-
-
-    if (status) {
-
-        status.textContent =
-            win
-                ? "WIN"
-                : "LOSS";
-
-        status.className =
-            win
-                ? "review-status review-win"
-                : "review-status review-loss";
-    }
-
-
-    if (resultEl) {
-
-        resultEl.textContent =
-            win
-                ? "✓ 大小判断正确"
-                : "✕ 大小判断错误";
-
-        resultEl.className =
-            win
-                ? "review-result review-win"
-                : "review-result review-loss";
-    }
-
-
-    if (messageEl) {
-
-        if (win) {
-
-            messageEl.textContent =
-                `预测 ${prediction.num ?? "-"} / ${prediction.size} → 实际 ${actual.number} / ${actual.size}，本期 WIN（只计算大小）。`;
-
-        } else {
-
-            messageEl.textContent =
-                `预测 ${prediction.num ?? "-"} / ${prediction.size} → 实际 ${actual.number} / ${actual.size}，本期 LOSS（只计算大小）。`;
-        }
-    }
+function getNumberColours(number) {
+    if (!Number.isInteger(number) || number < 0 || number > 9) return [];
+    if (number === 0) return ["红", "紫"];
+    if (number === 5) return ["绿", "紫"];
+    return [number % 2 ? "绿" : "红"];
 }
 
+function evaluateReview(row) {
+    if (!row.prediction || row.outcome === "NO_DATA") return {number: "NO_DATA", colour: "NO_DATA", size: "NO_DATA"};
+    if (row.outcome === "PASS") return {number: "PASS", colour: "PASS", size: "PASS"};
+    const predicted = row.prediction.num;
+    // Exact colour-set comparison: red+violet differs from red alone.
+    return {
+        number: predicted === row.draw.number ? "WIN" : "LOSS",
+        colour: getNumberColours(predicted).join() === getNumberColours(row.draw.number).join() ? "WIN" : "LOSS",
+        size: row.outcome
+    };
+}
 
-/* =========================================================
-   FETCH WINGO
-========================================================= */
+function resultBadge(outcome, label = "") {
+    const names = {WIN: "WIN", LOSS: "LOSS", PASS: "PASS", NO_DATA: "数据不足"};
+    return `<span class="outcome outcome-${outcome.toLowerCase()}">${label}${names[outcome]}</span>`;
+}
+
+function renderAIReview(draws) {
+    const rows = getHistoricalRows(draws);
+    const row = rows[0];
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    if (!row || !row.prediction) {
+        for (const id of ["review-status", "review-prediction", "review-actual", "review-result", "review-message", "review-summary"]) set(id, "历史不足，至少需要该期之前 10 笔记录");
+        return;
+    }
+    const {draw, prediction, outcome} = row;
+    const result = evaluateReview(row);
+    set("review-status", `历史复盘 · ${draw.issue}`);
+    set("review-prediction", outcome === "PASS" ? "PASS · 观望"
+        : `${prediction.num} / ${getNumberColours(prediction.num).join("＋")} / ${prediction.size}`);
+    set("review-actual", `${draw.number} / ${getNumberColours(draw.number).join("＋")} / ${draw.size}`);
+    const resultEl = document.getElementById("review-result");
+    if (resultEl) resultEl.innerHTML = [resultBadge(result.number,"号码 "),resultBadge(result.colour,"颜色 "),resultBadge(result.size,"大小 ")].join(" ");
+    const factorNames = {markov:"转移规律", mean:"均值回归", streak:"连续大小", frequency:"近期频率", balance:"大小分布"};
+    const factors = Object.entries(prediction.factorContributions || {}).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,3);
+    const explanation = factors.map(([name,value]) => `${factorNames[name] || name} ${value > 0 ? "偏大" : value < 0 ? "偏小" : "中性"}（${value.toFixed(2)}）`).join("；");
+    set("review-message", `${outcome === "PASS" ? `观望原因：${prediction.passReason || "信号不足"}。` : "号码、颜色、大小分别判定；同大小但号码不同，号码仍算 LOSS。"}主要大小因素：${explanation || "暂无"}。这些是规则贡献，不是开奖原因。`);
+    const summaries = [10,50].map(limit => {
+        const sample = rows.slice(0,limit);
+        const decisions = sample.filter(r=>r.prediction && r.outcome !== "PASS" && r.outcome !== "NO_DATA");
+        const pass = sample.filter(r=>r.outcome === "PASS").length;
+        const rates = [["number","号码"],["colour","颜色"],["size","大小"]].map(([key,label])=>{
+            const wins = decisions.filter(r=>evaluateReview(r)[key] === "WIN").length;
+            return `${label} ${wins}/${decisions.length}${decisions.length ? `（${(wins/decisions.length*100).toFixed(1)}%）` : "（无有效样本）"}`;
+        }).join("；");
+        return `最近 ${sample.length} 期：${rates}；PASS ${pass}；数据不足 ${sample.length-decisions.length-pass}。`;
+    });
+    let losses = 0;
+    for (const entry of rows) {
+        if (entry.outcome === "NO_DATA") break;
+        if (entry.outcome === "PASS") continue;
+        if (entry.outcome !== "LOSS") break;
+        losses++;
+    }
+    set("review-summary", `${summaries.join("\n")}\n最近有效大小判断连续失误 ${losses} 次（略过 PASS）。颜色按完整组合比较，0=红＋紫、5=绿＋紫。以上为固定初始权重的历史回测，不是预先保存的实盘预测。`);
+}
+
 
 // One shared snapshot for both tabs; do not let a stalled request freeze polling.
 let snapshotPromise = null;
@@ -3571,21 +3387,20 @@ function updateWinRate(
 function renderDrawTable(draws) {
     const table = document.getElementById("draw-table");
     if (!table) return;
-    const labels = {WIN: "WIN · 命中", LOSS: "LOSS · 未命中", PASS: "PASS · 不计胜负", NO_DATA: "数据不足"};
     const rows = getHistoricalRows(draws).map(({draw, prediction, outcome}) => `
         <tr>
             <td>${draw.issue}</td>
             <td>${getNumberIconHtml(draw.number)} <span>${draw.size}</span></td>
-            <td>${prediction ? prediction.size : "—"}</td>
-            <td>${prediction ? (prediction.size === "PASS" ? "观望" : prediction.signal) : "等待数据"}</td>
-            <td>${labels[outcome]}</td>
+            <td>${!prediction ? "—" : outcome === "PASS" ? "PASS" : getNumberIconHtml(prediction.num)}</td>
+            <td>${!prediction ? "—" : outcome === "PASS" ? "观望" : getNumberColours(prediction.num).join("＋")}</td>
+            <td class="result-stack">${[ ["number","号码 "], ["colour","颜色 "], ["size","大小 "] ].map(([key,label]) => resultBadge(evaluateReview({draw,prediction,outcome})[key],label)).join(" ")}</td>
         </tr>
     `).join("") || '<tr><td colspan="5">暂无数据</td></tr>';
     if (table.tagName === "TBODY") {
         table.innerHTML = rows;
     } else {
         table.innerHTML = `<div class="table-wrapper"><table>
-            <thead><tr><th>期号</th><th>实际开奖</th><th>回测预测</th><th>信号</th><th>回测结果</th></tr></thead>
+            <thead><tr><th>期号</th><th>实际开奖</th><th>号码</th><th>颜色</th><th>回测结果</th></tr></thead>
             <tbody>${rows}</tbody></table></div>`;
     }
 }
