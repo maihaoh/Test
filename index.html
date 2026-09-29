@@ -98,6 +98,10 @@
             🃏 Baccarat
         </button>
 
+        <button class="main-tab" onclick="switchMainTab('k3', this)">🎲 K3 Lotre</button>
+        <button class="main-tab" onclick="switchMainTab('5d', this)">🔢 5D Lotre</button>
+        <button class="main-tab" onclick="switchMainTab('trx', this)">🪙 Trx Win</button>
+
     </div>
 
 
@@ -476,7 +480,7 @@
 
             <div class="section-title">
 
-                🤖 AI 历史复盘学习
+                🤖 AI 智能学习
 
                 <span
                     id="ai-learning-status"
@@ -487,8 +491,6 @@
 
             </div>
 
-
-            <p id="learning-sync-detail" class="data-status" role="status">正在检查历史数据…</p>
 
             <!-- STATUS -->
 
@@ -514,7 +516,7 @@
                 <div class="ai-learning-item count-item">
 
                     <div class="ai-learning-label">
-                        📚 已复盘次数（含 PASS）
+                        📚 学习次数
                     </div>
 
                     <div
@@ -715,7 +717,7 @@
             <div class="section-title">
                 📜 WinGo 最近 50 局 · 历史回测
             </div>
-            <p class="data-status">实际开奖和回测预测显示号码＋大小。0–4 小，5–9 大；WIN／LOSS 只按大小判断。PASS 与数据不足不计胜负；历史回测不代表未来表现。</p>
+            <p class="data-status">号码、颜色为历史回测预测；结果分别比较号码、完整颜色组合及大小。上方胜率只统计大小。PASS 与数据不足不计胜负；历史回测不代表未来表现。</p>
 
 
             <div class="table-wrapper">
@@ -730,8 +732,9 @@
 
                             <th>实际开奖</th>
 
-                            <th>回测预测</th>
+                            <th>号码</th>
 
+                            <th>颜色</th>
 
                             <th>回测结果</th>
 
@@ -744,7 +747,7 @@
 
                         <tr>
 
-                            <td colspan="4">
+                            <td colspan="5">
                                 等待数据……
                             </td>
 
@@ -1227,10 +1230,23 @@
 
     </section>
 
+
+    <section id="k3-section" class="main-section local-game-section">
+      <div class="section-card"><div class="section-title">🎲 K3 Lotre</div><p class="data-status">本地 Result 模式（之后再接真实开奖）</p><div class="local-game-grid"><div><label>Period</label><input id="k3-period" class="local-input" value="20260929101010850"></div><div><label>Result（三颗骰子，1-6）</label><input id="k3-result" class="local-input" value="1,4,5"></div></div><button class="local-save" onclick="saveLocalGame('k3')">保存 Result</button><div id="k3-preview" class="local-preview"></div><div id="k3-history" class="local-history"></div></div>
+    </section>
+
+    <section id="5d-section" class="main-section local-game-section">
+      <div class="section-card"><div class="section-title">🔢 5D Lotre</div><p class="data-status">本地 Result 模式（之后再接真实开奖）</p><div class="local-game-grid"><div><label>Period</label><input id="5d-period" class="local-input" value="20260929102010850"></div><div><label>Result（5位数字）</label><input id="5d-result" class="local-input" value="8,5,9,2,7"></div></div><button class="local-save" onclick="saveLocalGame('5d')">保存 Result</button><div id="5d-preview" class="local-preview"></div><div id="5d-history" class="local-history"></div></div>
+    </section>
+
+    <section id="trx-section" class="main-section local-game-section">
+      <div class="section-card"><div class="section-title">🪙 Trx Win</div><p class="data-status">本地 Result 模式（之后再接 Hash / Block Result）</p><div class="local-game-grid"><div><label>Period</label><input id="trx-period" class="local-input" value="20260929103010850"></div><div><label>Result（0-9）</label><input id="trx-result" class="local-input" value="5"></div></div><button class="local-save" onclick="saveLocalGame('trx')">保存 Result</button><div id="trx-preview" class="local-preview"></div><div id="trx-history" class="local-history"></div></div>
+    </section>
+
 </div>
 
 
-<script src="script.js?v=8"></script>
+<script src="script.js?v=3"></script>
 
 </body>
 
