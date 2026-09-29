@@ -110,7 +110,9 @@ function loadAILearning() {
         const parsed =
             JSON.parse(saved);
 
-        return mergeLearningState(base, parsed);
+        const restored = mergeLearningState(base, parsed);
+        restored.stats.total = restored.stats.win + restored.stats.loss + restored.stats.pass;
+        return restored;
 
     } catch (e) {
 
@@ -1618,10 +1620,8 @@ function learnFromReview(
     review
 ) {
 
-    if (!review) {
-        return;
-    }
-
+    if (!review || !review.issue || !["WIN", "LOSS", "PASS"].includes(review.outcome)) return;
+    if (aiLearning.lastReviewedIssue && compareIssues(review.issue, aiLearning.lastReviewedIssue) <= 0) return;
 
     const actualDirection =
         getDirectionFromSize(
@@ -1830,6 +1830,9 @@ function learnFromReview(
     }
 
 
+    // PASS also adjusts learning state and therefore counts as a processed review.
+    aiLearning.stats.total = aiLearning.stats.win + aiLearning.stats.loss + aiLearning.stats.pass;
+    review.source = "historical_replay";
     aiLearning.recentReviews.unshift(
         review
     );
@@ -1854,13 +1857,30 @@ function learnFromReview(
    ONLY SIZE DECIDES WIN / LOSS
 ========================================================= */
 
-function reviewNewOutcome(
+function compareIssues(left, right) {
+    const a = String(left), b = String(right);
+    return a.length - b.length || a.localeCompare(b);
+}
+
+function reviewNewOutcome(draws) {
+    const ordered = normalizeWingoDraws(draws);
+    let latestReview = null;
+    // Oldest eligible outcome first. Each prediction sees only older outcomes.
+    for (let index = ordered.length - 11; index >= 0; index--) {
+        const draw = ordered[index];
+        if (aiLearning.lastReviewedIssue && compareIssues(draw.issue, aiLearning.lastReviewedIssue) <= 0) continue;
+        latestReview = reviewSingleOutcome(ordered.slice(index)) || latestReview;
+    }
+    return latestReview;
+}
+
+function reviewSingleOutcome(
     draws
 ) {
 
     if (
         !draws ||
-        draws.length < 12
+        draws.length < 11
     ) {
 
         return null;
@@ -2111,19 +2131,19 @@ function updateAILearningDashboard() {
 
     setText(
         "ai-learning-status",
-        "🧠 自适应学习中"
+        aiLearning.lastReviewedIssue ? "🧠 历史复盘学习（本浏览器）" : "等待有效历史"
     );
 
 
     setText(
         "ai-state",
-        "ACTIVE"
+        aiLearning.lastReviewedIssue ? "已复盘，等待新期" : "等待数据"
     );
 
 
     setText(
         "ai-learning-count",
-        stats.total
+        stats.win + stats.loss + stats.pass
     );
 
 
@@ -2279,7 +2299,7 @@ function renderAIReview(draws) {
             const wins = decisions.filter(r=>evaluateReview(r)[key] === "WIN").length;
             return `${label} ${wins}/${decisions.length}${decisions.length ? `（${(wins/decisions.length*100).toFixed(1)}%）` : "（无有效样本）"}`;
         }).join("；");
-        return `最近 ${sample.length} 期：${rates}；PASS ${pass}；数据不足 ${sample.length-decisions.length-pass}。`;
+        return `最近 ${sample.length} 期：${rates}；PASS ${pass}；历史不足无法评估 ${sample.length-decisions.length-pass} 笔。`;
     });
     let losses = 0;
     for (const entry of rows) {
