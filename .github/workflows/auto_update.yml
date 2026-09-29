@@ -5,6 +5,10 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
+concurrency:
+  group: dashboard-data-update
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -27,7 +31,14 @@ jobs:
 
       - name: Run bot
         run: |
-          timeout 240 python bot.py || true
+          set +e
+          timeout --signal=INT 240 python -u bot.py
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then
+            exit "$status"
+          fi
+          python -m json.tool data.json > /dev/null
 
       - name: Commit data.json
         run: |
