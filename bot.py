@@ -748,7 +748,15 @@ def normalize_wingo_item(item):
 # 安全保存 data.json
 # ============================================================
 
+save_lock = threading.Lock()
+
+
 def save_data_json():
+    with save_lock:
+        _save_data_json_locked()
+
+
+def _save_data_json_locked():
 
     with data_lock:
 
@@ -2152,143 +2160,6 @@ def on_baccarat_message(
         "🃏 ========================================"
     )
 
-    if not isinstance(
-        message,
-        (bytes, bytearray)
-    ):
-        return
-
-    raw = bytes(message)
-
-    parsed = (
-        parse_choice_baccarat_packet(
-            raw
-        )
-    )
-
-    if not parsed:
-        return
-
-    room = parsed["room"]
-
-    if room not in BACCARAT_ROOMS:
-        return
-
-    with data_lock:
-
-        bacc = global_data[
-            "baccarat"
-        ]
-
-        room_history = (
-            bacc[
-                "rooms"
-            ][
-                room
-            ]
-        )
-
-        # ----------------------------------------------------
-        # 防重复
-        # ----------------------------------------------------
-
-        game_id = parsed["game_id"]
-
-        exists = any(
-            item.get("game_id") == game_id
-            for item in room_history
-        )
-
-        if exists:
-            return
-
-        # ----------------------------------------------------
-        # 先预测，再加入结果
-        # ----------------------------------------------------
-
-        parsed["predict"] = (
-            predict_baccarat_next(
-                room_history
-            )
-        )
-
-        # ----------------------------------------------------
-        # 最新放最前
-        # ----------------------------------------------------
-
-        room_history.insert(
-            0,
-            parsed
-        )
-
-        room_history = (
-            room_history[
-                :MAX_BACCARAT_HISTORY
-            ]
-        )
-
-        bacc[
-            "rooms"
-        ][
-            room
-        ] = room_history
-
-        # ----------------------------------------------------
-        # 当前房间
-        # ----------------------------------------------------
-
-        bacc[
-            "current_room"
-        ] = room
-
-        bacc[
-            "shoe_no"
-        ] = parsed.get(
-            "shoe",
-            "01"
-        )
-
-        bacc[
-            "game_no"
-        ] = parsed.get(
-            "game",
-            "01"
-        )
-
-        bacc[
-            "latest_result"
-        ] = parsed.get(
-            "result",
-            "--"
-        )
-
-        # ----------------------------------------------------
-        # 下一局预测
-        # ----------------------------------------------------
-
-        bacc[
-            "predicted_result"
-        ] = predict_baccarat_next(
-            room_history
-        )
-
-        # ----------------------------------------------------
-        # 统计
-        # ----------------------------------------------------
-
-        rebuild_baccarat_stats(
-            room
-        )
-
-    save_data_json()
-
-    print(
-        f"🃏 [百家乐 {room}] "
-        f"结果:{parsed['result']} | "
-        f"庄:{parsed['bval']} | "
-        f"闲:{parsed['pval']} | "
-        f"局:{parsed['game']}"
-    )
 
 
 # ============================================================
