@@ -529,6 +529,35 @@ class MZPlayClient:
         self.refresh_token = str(data.get("refreshToken") or self.refresh_token)
         return True
 
+    def ensure_login(self):
+        """Ensure one authenticated MZPlay session without duplicate concurrent logins."""
+        with self.lock:
+            if not self.token:
+                self.login()
+        return True
+
+    def get_choice_launch_url(self):
+        """Get a fresh authorized Choice/AG Video launch URL from MZPlay.
+
+        The returned URL contains short-lived authorization material and must not be
+        logged or persisted.  This follows the same GetGameUrl call used by the web UI.
+        """
+        body = self.post(
+            "/GetGameUrl",
+            {
+                "vendorCode": "AG_Video",
+                "returnUrl": ORIGIN,
+                "deviceType": 0,
+            },
+        )
+        data = body.get("data") if isinstance(body, dict) else None
+        if isinstance(data, dict) and isinstance(data.get("data"), dict):
+            data = data["data"]
+        url = str(data.get("url") or "").strip() if isinstance(data, dict) else ""
+        if not url.startswith("https://gci.arvideo.video/forwardGame.do?"):
+            raise RuntimeError("GetGameUrl 未返回有效的 Choice launch URL")
+        return url
+
     def post(self, path, data=None):
         with self.lock:
             if not self.token:
@@ -597,10 +626,10 @@ def extract_issue(game, body):
 
 
 class MultiGameCollector:
-    def __init__(self, on_update, poll_interval=8):
+    def __init__(self, on_update, poll_interval=8, client=None):
         self.on_update = on_update
         self.poll_interval = poll_interval
-        self.client = MZPlayClient(load_config())
+        self.client = client or MZPlayClient(load_config())
         self.states = {
             key: {"reviews": [], "prediction": {}, "draws": [], "current_issue": {}, "status": f"{BUILD_VERSION} | 等待连接", "build_version": BUILD_VERSION}
             for key in GAME_DEFS
@@ -669,7 +698,7 @@ class MultiGameCollector:
             # One Login attempt serves all three games. Never let K3/5D/TRX each hammer /Login.
             if not self.client.token:
                 try:
-                    self.client.login()
+                    self.client.ensure_login()
                 except MZPlayRateLimit as exc:
                     status = f"{BUILD_VERSION} | 服务器限频：{exc}"
                     for game in self.states:
