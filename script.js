@@ -6,7 +6,7 @@ const WORKER_URL =
     "https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev";
 
 let myChart = null;
-let countdownVal = 5;
+let currentMainTab = "wingo";
 let currentBaccaratTable = "D51";
 
 const AI_LEARNING_KEY = "wingo_ai_learning_v2";
@@ -17,65 +17,19 @@ const AI_LEARNING_KEY = "wingo_ai_learning_v2";
 ========================================================= */
 
 const DEFAULT_AI_LEARNING = {
-    version: 2,
-
+    version: 3,
     factors: {
-        markov: {
-            weight: 1.00,
-            win: 0,
-            loss: 0
-        },
-
-        mean: {
-            weight: 1.00,
-            win: 0,
-            loss: 0
-        },
-
-        streak: {
-            weight: 1.00,
-            win: 0,
-            loss: 0
-        },
-
-        frequency: {
-            weight: 1.00,
-            win: 0,
-            loss: 0
-        },
-
-        balance: {
-            weight: 1.00,
-            win: 0,
-            loss: 0
-        }
+        markov: {weight: 1.00, win: 0, loss: 0},
+        mean: {weight: 1.00, win: 0, loss: 0},
+        streak: {weight: 1.00, win: 0, loss: 0},
+        frequency: {weight: 1.00, win: 0, loss: 0}
     },
-
-    stats: {
-        total: 0,
-        win: 0,
-        loss: 0,
-        pass: 0,
-        passCorrect: 0,
-        passMissed: 0
-    },
-
-    patterns: {
-        recent: [],
-        wrongPatterns: [],
-        successfulPatterns: []
-    },
-
+    stats: {total: 0, win: 0, loss: 0},
+    patterns: {recent: [], wrongPatterns: [], successfulPatterns: []},
     recentReviews: [],
-
     lastReviewedIssue: null,
-
-    lastLearningMessage:
-        "等待第一笔真实 Result 进行学习",
-
-    confidenceBias: 0,
-
-    passThreshold: 0.68
+    lastLearningMessage: "等待第一笔真实 Result 进行学习",
+    confidenceBias: 0
 };
 
 
@@ -111,7 +65,7 @@ function loadAILearning() {
             JSON.parse(saved);
 
         const restored = mergeLearningState(base, parsed);
-        restored.stats.total = restored.stats.win + restored.stats.loss + restored.stats.pass;
+        restored.stats.total = restored.stats.win + restored.stats.loss;
         return restored;
 
     } catch (e) {
@@ -319,6 +273,9 @@ function switchMainTab(
             "active"
         );
     }
+
+    currentMainTab = tab;
+    updateNextCountdown();
 }
 
 
@@ -366,280 +323,47 @@ function getNumberIconHtml(num) {
    FEATURE EXTRACTION
 ========================================================= */
 
-function getFeatureSnapshot(
-    draws
-) {
-
-    if (
-        !draws ||
-        draws.length < 5
-    ) {
-
-        return {
-            markov: 0,
-            mean: 0,
-            streak: 0,
-            frequency: 0,
-            balance: 0
-        };
+function getFeatureSnapshot(draws) {
+    if (!draws || draws.length < 5) {
+        return {markov: 0, mean: 0, streak: 0, frequency: 0};
     }
 
+    const nums = draws.map(d => safeNumber(d.number));
+    const sizes = draws.map(d => d.size === "大" ? "大" : "小");
 
-    const nums =
-        draws.map(
-            d =>
-                safeNumber(
-                    d.number
-                )
-        );
-
-    const sizes =
-        draws.map(
-            d =>
-                d.size === "大"
-                    ? "大"
-                    : "小"
-        );
-
-
-    /* -----------------------------------------------------
-       MARKOV
-    ----------------------------------------------------- */
-
-    const lastNum =
-        nums[0];
-
-    let bigTransitions = 0;
-    let smallTransitions = 0;
-    let totalTransitions = 0;
-
-    for (
-        let i = 1;
-        i < nums.length;
-        i++
-    ) {
-
-        if (
-            nums[i] === lastNum
-        ) {
-
+    const lastNum = nums[0];
+    let bigTransitions = 0, smallTransitions = 0, totalTransitions = 0;
+    for (let i = 1; i < nums.length; i++) {
+        if (nums[i] === lastNum) {
             totalTransitions++;
-
-            if (
-                sizes[i - 1] === "大"
-            ) {
-
-                bigTransitions++;
-
-            } else {
-
-                smallTransitions++;
-            }
+            if (sizes[i - 1] === "大") bigTransitions++;
+            else smallTransitions++;
         }
     }
+    const markov = totalTransitions ? (bigTransitions - smallTransitions) / totalTransitions : 0;
 
-
-    let markov = 0;
-
-    if (
-        totalTransitions > 0
-    ) {
-
-        markov =
-            (
-                bigTransitions -
-                smallTransitions
-            ) /
-            totalTransitions;
-    }
-
-
-    /* -----------------------------------------------------
-       MEAN REVERSION
-    ----------------------------------------------------- */
-
-    const recent10 =
-        sizes.slice(
-            0,
-            Math.min(
-                10,
-                sizes.length
-            )
-        );
-
-    const big10 =
-        recent10.filter(
-            x =>
-                x === "大"
-        ).length;
-
-    const small10 =
-        recent10.length -
-        big10;
-
-    let mean = 0;
-
-    if (
-        recent10.length >= 5
-    ) {
-
-        const ratio =
-            (
-                big10 -
-                small10
-            ) /
-            recent10.length;
-
-        mean =
-            -ratio;
-    }
-
-
-    /* -----------------------------------------------------
-       STREAK
-    ----------------------------------------------------- */
+    const recent10 = sizes.slice(0, Math.min(10, sizes.length));
+    const big10 = recent10.filter(x => x === "大").length;
+    const small10 = recent10.length - big10;
+    const mean = recent10.length >= 5 ? -((big10 - small10) / recent10.length) : 0;
 
     let streak = 1;
+    for (let i = 1; i < sizes.length && sizes[i] === sizes[0]; i++) streak++;
+    const streakSignal = streak >= 2
+        ? getDirectionFromSize(sizes[0]) * Math.min(1, streak / 5)
+        : 0;
 
-    for (
-        let i = 1;
-        i < sizes.length;
-        i++
-    ) {
-
-        if (
-            sizes[i] === sizes[0]
-        ) {
-
-            streak++;
-
-        } else {
-
-            break;
-        }
-    }
-
-
-    let streakSignal = 0;
-
-    if (
-        streak >= 2
-    ) {
-
-        const currentDirection =
-            getDirectionFromSize(
-                sizes[0]
-            );
-
-        streakSignal =
-            currentDirection *
-            Math.min(
-                1,
-                streak / 5
-            );
-    }
-
-
-    /* -----------------------------------------------------
-       FREQUENCY
-    ----------------------------------------------------- */
-
-    const recent20 =
-        sizes.slice(
-            0,
-            Math.min(
-                20,
-                sizes.length
-            )
-        );
-
-    const big20 =
-        recent20.filter(
-            x =>
-                x === "大"
-        ).length;
-
-    const frequency =
-        recent20.length > 0
-            ? (
-                big20 -
-                (
-                    recent20.length -
-                    big20
-                )
-            ) /
-            recent20.length
-            : 0;
-
-
-    /* -----------------------------------------------------
-       BALANCE
-    ----------------------------------------------------- */
-
-    const recent50 =
-        sizes.slice(
-            0,
-            Math.min(
-                50,
-                sizes.length
-            )
-        );
-
-    const big50 =
-        recent50.filter(
-            x =>
-                x === "大"
-        ).length;
-
-    const balance =
-        recent50.length > 0
-            ? (
-                big50 -
-                (
-                    recent50.length -
-                    big50
-                )
-            ) /
-            recent50.length
-            : 0;
-
+    const recent20 = sizes.slice(0, Math.min(20, sizes.length));
+    const big20 = recent20.filter(x => x === "大").length;
+    const frequency = recent20.length
+        ? (big20 - (recent20.length - big20)) / recent20.length
+        : 0;
 
     return {
-
-        markov:
-            clamp(
-                markov,
-                -1,
-                1
-            ),
-
-        mean:
-            clamp(
-                mean,
-                -1,
-                1
-            ),
-
-        streak:
-            clamp(
-                streakSignal,
-                -1,
-                1
-            ),
-
-        frequency:
-            clamp(
-                frequency,
-                -1,
-                1
-            ),
-
-        balance:
-            clamp(
-                balance,
-                -1,
-                1
-            )
+        markov: clamp(markov, -1, 1),
+        mean: clamp(mean, -1, 1),
+        streak: clamp(streakSignal, -1, 1),
+        frequency: clamp(frequency, -1, 1)
     };
 }
 
@@ -919,577 +643,131 @@ function getPatternExperience(
    AI PREDICTION
 ========================================================= */
 
-function getLearnedPrediction(
-    draws,
-    learning = aiLearning,
-    forceDecision = false
-) {
+function getLearnedPrediction(draws, learning = aiLearning) {
+    if (!draws || draws.length === 0) return null;
 
-    if (
-        !draws ||
-        draws.length < 10
-    ) {
-
+    if (draws.length < 10) {
+        const nums = draws.map(d => Number(d.number)).filter(n => Number.isInteger(n) && n >= 0 && n <= 9);
+        const counts = new Map();
+        nums.forEach((n, i) => counts.set(n, (counts.get(n) || 0) + (nums.length - i)));
+        let predictedNum = nums[0] ?? 5;
+        let best = -1;
+        for (const [n, value] of counts.entries()) {
+            if (value > best) { best = value; predictedNum = n; }
+        }
+        const size = predictedNum >= 5 ? "大" : "小";
         return {
-
-            num: null,
-
-            size: "PASS",
-
-            signal: "等待",
-
-            confidence: 0,
-
-            bigScore: 0,
-
-            smallScore: 0,
-
-            streakCnt: 0,
-
-            markovSize: "等待",
-
-            meanSize: "等待",
-
+            num: predictedNum,
+            size,
+            signal: size === "大" ? "BIG" : "SMALL",
+            confidence: clamp(50 + draws.length * 3, 50, 70),
+            bigScore: size === "大" ? 1 : 0,
+            smallScore: size === "小" ? 1 : 0,
+            streakCnt: getCurrentStreak(draws.map(d => d.size)),
+            markovSize: size,
+            meanSize: size,
             isSpecial: false,
-
-            features: {},
-
-            weightedScore: 0,
-
-            rawScore: 0,
-
-            passReason:
-                "历史数据不足",
-
+            features: getFeatureSnapshot(draws),
+            weightedScore: size === "大" ? 1 : -1,
+            rawScore: size === "大" ? 1 : -1,
             factorContributions: {}
         };
     }
 
-
-    const nums =
-        draws.map(
-            d =>
-                safeNumber(
-                    d.number
-                )
-        );
-
-    const sizes =
-        draws.map(
-            d =>
-                d.size === "大"
-                    ? "大"
-                    : "小"
-        );
-
-
-    const features =
-        getFeatureSnapshot(
-            draws
-        );
-
-
-    const factors =
-        learning.factors;
-
-
+    const nums = draws.map(d => safeNumber(d.number));
+    const sizes = draws.map(d => d.size === "大" ? "大" : "小");
+    const features = getFeatureSnapshot(draws);
+    const factors = learning.factors;
+    const contributions = {};
     let score = 0;
 
-    const contributions = {};
+    Object.keys(features).forEach(key => {
+        const feature = safeNumber(features[key]);
+        const weight = clamp(safeNumber(factors[key]?.weight) || 1, 0.20, 2.00);
+        contributions[key] = feature * weight;
+        score += contributions[key];
+    });
 
-
-    Object.keys(
-        features
-    ).forEach(
-        key => {
-
-            const feature =
-                safeNumber(
-                    features[key]
-                );
-
-            const weight =
-                clamp(
-                    safeNumber(
-                        factors[key]?.weight
-                    ) || 1,
-
-                    0.20,
-
-                    2.00
-                );
-
-            const contribution =
-                feature *
-                weight;
-
-            contributions[key] =
-                contribution;
-
-            score +=
-                contribution;
-        }
-    );
-
-
-    const latest =
-        sizes[0];
-
-    const previous =
-        sizes[1];
-
-
-    let transitionScore = 0;
-
-    let transitionSamples = 0;
-
-    for (
-        let i = 2;
-        i < sizes.length - 1;
-        i++
-    ) {
-
-        if (
-            sizes[i] === latest &&
-            sizes[i + 1]
-        ) {
-
+    const latest = sizes[0];
+    const previous = sizes[1];
+    let transitionScore = 0, transitionSamples = 0;
+    for (let i = 2; i < sizes.length - 1; i++) {
+        if (sizes[i] === latest && sizes[i + 1]) {
             transitionSamples++;
-
-            if (
-                sizes[i + 1] === "大"
-            ) {
-
-                transitionScore++;
-
-            } else {
-
-                transitionScore--;
-            }
+            transitionScore += sizes[i + 1] === "大" ? 1 : -1;
         }
     }
-
-
-    if (
-        transitionSamples >= 2
-    ) {
-
-        transitionScore =
-            transitionScore /
-            transitionSamples;
-
-        score +=
-            transitionScore *
-            0.80;
+    if (transitionSamples >= 2) {
+        transitionScore /= transitionSamples;
+        score += transitionScore * 0.80;
     }
 
-
-    const temporaryPrediction =
-        score >= 0
-            ? "大"
-            : "小";
-
-    const patternMemory =
-        getPatternExperience(
-            draws,
-            temporaryPrediction,
-            learning
-        );
-
-
-    if (
-        patternMemory.samples >= 2
-    ) {
-
-        score +=
-            patternMemory.bonus *
-            Math.min(
-                1.20,
-                0.35 +
-                patternMemory.samples *
-                0.05
-            );
+    const temporaryPrediction = score >= 0 ? "大" : "小";
+    const patternMemory = getPatternExperience(draws, temporaryPrediction, learning);
+    if (patternMemory.samples >= 2) {
+        score += patternMemory.bonus * Math.min(1.20, 0.35 + patternMemory.samples * 0.05);
     }
 
+    if (latest === previous) score += getDirectionFromSize(latest) * 0.20;
 
-    let momentum = 0;
-
-    if (
-        latest === previous
-    ) {
-
-        const dir =
-            getDirectionFromSize(
-                latest
-            );
-
-        momentum =
-            dir *
-            0.20;
-    }
-
-    score += momentum;
-
-
-    const recentReviews =
-        learning.recentReviews
-            .slice(
-                0,
-                10
-            )
-            .filter(
-                x =>
-                    x.outcome === "WIN" ||
-                    x.outcome === "LOSS"
-            );
-
-
+    const recentReviews = learning.recentReviews.slice(0, 10)
+        .filter(x => x.outcome === "WIN" || x.outcome === "LOSS");
     let selfConfidence = 0;
-
-
-    if (
-        recentReviews.length >= 3
-    ) {
-
-        const wins =
-            recentReviews.filter(
-                x =>
-                    x.outcome === "WIN"
-            ).length;
-
-        const losses =
-            recentReviews.filter(
-                x =>
-                    x.outcome === "LOSS"
-            ).length;
-
-        const total =
-            wins + losses;
-
-        const accuracy =
-            wins / total;
-
-        selfConfidence =
-            (
-                accuracy -
-                0.5
-            ) *
-            0.8;
-
-        score +=
-            selfConfidence;
+    if (recentReviews.length >= 3) {
+        const wins = recentReviews.filter(x => x.outcome === "WIN").length;
+        const accuracy = wins / recentReviews.length;
+        selfConfidence = (accuracy - 0.5) * 0.8;
+        score += selfConfidence;
     }
 
+    const prediction = getSizeFromDirection(score >= 0 ? 1 : -1);
+    let confidence = clamp(50 + Math.abs(score) * 22, 50, 92);
+    confidence = clamp(confidence + safeNumber(learning.confidenceBias), 50, 94);
 
-    let direction =
-        score >= 0
-            ? 1
-            : -1;
-
-
-    let prediction =
-        getSizeFromDirection(
-            direction
-        );
-
-
-    const confidenceRaw =
-        Math.abs(score);
-
-    let confidence =
-        50 +
-        confidenceRaw *
-        22;
-
-
-    confidence =
-        clamp(
-            confidence,
-            50,
-            92
-        );
-
-
-    confidence +=
-        safeNumber(
-            learning.confidenceBias
-        );
-
-
-    confidence =
-        clamp(
-            confidence,
-            50,
-            94
-        );
-
-
-    const threshold =
-        clamp(
-            safeNumber(
-                learning.passThreshold
-            ),
-            0.45,
-            1.25
-        );
-
-
-    let isPass =
-        forceDecision
-            ? false
-            : Math.abs(score) <
-                threshold;
-
-
-    const recentLosses =
-        learning.recentReviews
-            .slice(
-                0,
-                5
-            )
-            .filter(
-                x =>
-                    x.outcome === "LOSS"
-            ).length;
-
-
-    if (
-        !forceDecision &&
-        recentLosses >= 3
-    ) {
-
-        isPass =
-            Math.abs(score) <
-            threshold * 1.18;
-    }
-
-
-    const lastNum =
-        nums[0];
-
-    const isSpecial =
-        lastNum === 0 ||
-        lastNum === 5;
-
-
-    if (
-        !forceDecision &&
-        isSpecial &&
-        Math.abs(score) <
-        threshold * 1.25
-    ) {
-
-        isPass = true;
-    }
-
-
+    const lastNum = nums[0];
     let predictedNum = null;
-
     const transitionCounts = {};
-
-
-    for (
-        let i = 1;
-        i < nums.length;
-        i++
-    ) {
-
-        if (
-            nums[i] === lastNum
-        ) {
-
-            const next =
-                nums[i - 1];
-
-            transitionCounts[next] =
-                (
-                    transitionCounts[next] ||
-                    0
-                ) + 1;
+    for (let i = 1; i < nums.length; i++) {
+        if (nums[i] === lastNum) {
+            const nextNum = nums[i - 1];
+            transitionCounts[nextNum] = (transitionCounts[nextNum] || 0) + 1;
         }
     }
+    const transitionEntries = Object.entries(transitionCounts).sort((a, b) => b[1] - a[1]);
+    if (transitionEntries.length) predictedNum = Number(transitionEntries[0][0]);
 
-
-    const transitionEntries =
-        Object.entries(
-            transitionCounts
-        );
-
-
-    if (
-        transitionEntries.length
-    ) {
-
-        transitionEntries.sort(
-            (a, b) =>
-                b[1] -
-                a[1]
-        );
-
-        predictedNum =
-            Number(
-                transitionEntries[0][0]
-            );
-    }
-
-
-    if (
-        predictedNum === null ||
-        Number.isNaN(
-            predictedNum
-        )
-    ) {
-
+    if (predictedNum === null || Number.isNaN(predictedNum)) {
         const freq = {};
-
-        nums.forEach(
-            n => {
-
-                freq[n] =
-                    (
-                        freq[n] ||
-                        0
-                    ) + 1;
-            }
-        );
-
-
-        const entries =
-            Object.entries(
-                freq
-            );
-
-        entries.sort(
-            (a, b) =>
-                b[1] -
-                a[1]
-        );
-
-
-        if (entries.length) {
-
-            predictedNum =
-                Number(
-                    entries[0][0]
-                );
-        }
+        nums.forEach(n => { freq[n] = (freq[n] || 0) + 1; });
+        const entries = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+        if (entries.length) predictedNum = Number(entries[0][0]);
     }
-
 
     if ((predictedNum >= 5 ? "大" : "小") !== prediction) {
-        const candidates = Array.from({length: 5}, (_, index) => index + (prediction === "大" ? 5 : 0));
+        const candidates = Array.from({length: 5}, (_, i) => i + (prediction === "大" ? 5 : 0));
         candidates.sort((a, b) => nums.filter(n => n === b).length - nums.filter(n => n === a).length || a - b);
         predictedNum = candidates[0];
     }
 
     return {
-
-        num:
-            predictedNum,
-
-        size:
-            isPass
-                ? "PASS"
-                : prediction,
-
-        signal:
-            isPass
-                ? "PASS"
-                : prediction === "大"
-                    ? "BIG"
-                    : "SMALL",
-
-        confidence:
-            Math.round(
-                confidence
-            ),
-
-        bigScore:
-            Math.max(
-                score,
-                0
-            ),
-
-        smallScore:
-            Math.max(
-                -score,
-                0
-            ),
-
-        streakCnt:
-            getCurrentStreak(
-                sizes
-            ),
-
-        markovSize:
-            features.markov >= 0
-                ? "大"
-                : "小",
-
-        meanSize:
-            features.mean >= 0
-                ? "大"
-                : "小",
-
-        isSpecial,
-
+        num: predictedNum,
+        size: prediction,
+        signal: prediction === "大" ? "BIG" : "SMALL",
+        confidence: Math.round(confidence),
+        bigScore: Math.max(score, 0),
+        smallScore: Math.max(-score, 0),
+        streakCnt: getCurrentStreak(sizes),
+        markovSize: features.markov >= 0 ? "大" : "小",
+        meanSize: features.mean >= 0 ? "大" : "小",
+        isSpecial: lastNum === 0 || lastNum === 5,
         features,
-
-        weightedScore:
-            score,
-
-        rawScore:
-            score,
-
-        passReason:
-            isPass
-                ? getPassReason(
-                    score,
-                    threshold,
-                    recentLosses
-                )
-                : "",
-
-        factorContributions:
-            contributions,
-
+        weightedScore: score,
+        rawScore: score,
+        factorContributions: contributions,
         patternMemory,
-
         transitionScore,
-
         selfConfidence
     };
-}
-
-
-/* =========================================================
-   PASS REASON
-========================================================= */
-
-function getPassReason(
-    score,
-    threshold,
-    recentLosses
-) {
-
-    if (
-        recentLosses >= 3 &&
-        Math.abs(score) <
-        threshold * 1.18
-    ) {
-
-        return "近期预测连续失误，AI 自动降低判断信心";
-    }
-
-    if (
-        Math.abs(score) <
-        threshold * 0.55
-    ) {
-
-        return "当前 Result 模式没有明显方向";
-    }
-
-    return "多个历史判断互相冲突";
 }
 
 
@@ -1548,312 +826,47 @@ function getCurrentStreak(
 
 
 /* =========================================================
-   COUNTERFACTUAL PASS
-========================================================= */
-
-function getCounterfactualResult(
-    prediction,
-    actualSize
-) {
-
-    if (
-        !prediction ||
-        prediction.size === "PASS"
-    ) {
-
-        return "NONE";
-    }
-
-    return prediction.size ===
-        actualSize
-        ? "WIN"
-        : "LOSS";
-}
-
-
-function getForcedCounterfactual(
-    draws
-) {
-
-    const prediction =
-        getLearnedPrediction(
-            draws
-        );
-
-    if (
-        !prediction ||
-        !prediction.size
-    ) {
-
-        return null;
-    }
-
-
-    if (
-        prediction.size === "PASS"
-    ) {
-
-        const fakeLearning =
-            JSON.parse(
-                JSON.stringify(
-                    aiLearning
-                )
-            );
-
-        fakeLearning.passThreshold =
-            0;
-
-        const forced =
-            getLearnedPrediction(
-                draws,
-                fakeLearning,
-                true
-            );
-
-        return forced;
-    }
-
-    return prediction;
-}
-
-
-/* =========================================================
    LEARNING ENGINE
    WIN / LOSS ONLY BASED ON SIZE
 ========================================================= */
 
-function learnFromReview(
-    review
-) {
-
-    if (!review || !review.issue || !["WIN", "LOSS", "PASS"].includes(review.outcome)) return;
+function learnFromReview(review) {
+    if (!review || !review.issue || !["WIN", "LOSS"].includes(review.outcome)) return;
     if (aiLearning.lastReviewedIssue && compareIssues(review.issue, aiLearning.lastReviewedIssue) <= 0) return;
 
-    const actualDirection =
-        getDirectionFromSize(
-            review.actualSize
-        );
-
-
-    /*
-     * =====================================================
-     * 这里明确：
-     *
-     * WIN / LOSS 只来自：
-     *
-     * predictionSize === actualSize
-     *
-     * 预测号码不会参与
-     * 颜色不会参与
-     * =====================================================
-     */
-
-    if (
-        review.outcome === "WIN" ||
-        review.outcome === "LOSS"
-    ) {
-
-        const correct =
-            review.outcome === "WIN";
-
-
-        aiLearning.stats.total++;
-
-
-        if (correct) {
-
-            aiLearning.stats.win++;
-
-        } else {
-
-            aiLearning.stats.loss++;
-        }
-
-
-        Object.keys(
-            aiLearning.factors
-        ).forEach(
-            key => {
-
-                const feature =
-                    safeNumber(
-                        review.featureSnapshot?.[
-                            key
-                        ]
-                    );
-
-
-                if (
-                    Math.abs(feature) <
-                    0.08
-                ) {
-
-                    return;
-                }
-
-
-                const factor =
-                    aiLearning.factors[key];
-
-
-                const factorDirection =
-                    feature >= 0
-                        ? 1
-                        : -1;
-
-
-                const aligned =
-                    factorDirection ===
-                    actualDirection;
-
-
-                if (
-                    aligned === correct
-                ) {
-
-                    factor.weight +=
-                        correct
-                            ? 0.035
-                            : 0.020;
-
-                } else {
-
-                    factor.weight -=
-                        correct
-                            ? 0.020
-                            : 0.040;
-                }
-
-
-                factor.weight =
-                    clamp(
-                        factor.weight,
-                        0.25,
-                        2.00
-                    );
-
-
-                if (correct) {
-
-                    factor.win++;
-
-                } else {
-
-                    factor.loss++;
-                }
-
-            }
-        );
-
-
-        if (correct) {
-
-            aiLearning.confidenceBias +=
-                0.35;
-
-        } else {
-
-            aiLearning.confidenceBias -=
-                0.55;
-        }
-
-
-        aiLearning.confidenceBias =
-            clamp(
-                aiLearning.confidenceBias,
-                -8,
-                8
-            );
-
-
-        rememberPattern(
-            review.pattern,
-            review.predictionSize,
-            review.actualSize,
-            review.outcome
-        );
-
-
-        aiLearning.lastLearningMessage =
-            correct
-                ? `实际大小 ${review.actualSize} 与 AI 大小判断一致，AI 强化有效因素。`
-                : `实际大小 ${review.actualSize} 与 AI 大小判断相反，AI 降低近期失效因素权重。`;
-    }
-
-
-    if (
-        review.outcome === "PASS"
-    ) {
-
-        aiLearning.stats.pass++;
-
-
-        if (
-            review.counterfactual === "WIN"
-        ) {
-
-            aiLearning.stats.passMissed++;
-
-            aiLearning.passThreshold -=
-                0.025;
-
-            aiLearning.lastLearningMessage =
-                "本次 PASS 如果强制判断大小会 WIN，AI 稍微降低 PASS 门槛。";
-
-        } else if (
-            review.counterfactual === "LOSS"
-        ) {
-
-            aiLearning.stats.passCorrect++;
-
-            aiLearning.passThreshold +=
-                0.025;
-
-            aiLearning.lastLearningMessage =
-                "本次 PASS 避开了错误大小判断，AI 保持更谨慎。";
-
-        } else {
-
-            aiLearning.lastLearningMessage =
-                "本次 PASS 没有足够大小方向，AI 保持观察。";
-        }
-
-
-        aiLearning.passThreshold =
-            clamp(
-                aiLearning.passThreshold,
-                0.45,
-                1.25
-            );
-
-
-        rememberPattern(
-            review.pattern,
-            review.predictionSize,
-            review.actualSize,
-            "PASS"
-        );
-    }
-
-
-    // PASS also adjusts learning state and therefore counts as a processed review.
-    aiLearning.stats.total = aiLearning.stats.win + aiLearning.stats.loss + aiLearning.stats.pass;
-    review.source = "historical_replay";
-    aiLearning.recentReviews.unshift(
-        review
+    const actualDirection = getDirectionFromSize(review.actualSize);
+    const correct = review.outcome === "WIN";
+    if (correct) aiLearning.stats.win++;
+    else aiLearning.stats.loss++;
+    aiLearning.stats.total = aiLearning.stats.win + aiLearning.stats.loss;
+
+    Object.keys(aiLearning.factors).forEach(key => {
+        const feature = safeNumber(review.featureSnapshot?.[key]);
+        if (Math.abs(feature) < 0.08) return;
+        const factor = aiLearning.factors[key];
+        const aligned = (feature >= 0 ? 1 : -1) === actualDirection;
+        if (aligned === correct) factor.weight += correct ? 0.035 : 0.020;
+        else factor.weight -= correct ? 0.020 : 0.040;
+        factor.weight = clamp(factor.weight, 0.25, 2.00);
+        if (correct) factor.win++;
+        else factor.loss++;
+    });
+
+    aiLearning.confidenceBias = clamp(
+        aiLearning.confidenceBias + (correct ? 0.35 : -0.55),
+        -8,
+        8
     );
 
-    aiLearning.recentReviews =
-        aiLearning.recentReviews.slice(
-            0,
-            100
-        );
+    rememberPattern(review.pattern, review.predictionSize, review.actualSize, review.outcome);
+    aiLearning.lastLearningMessage = correct
+        ? `实际大小 ${review.actualSize} 与 AI 大小判断一致，AI 强化有效因素。`
+        : `实际大小 ${review.actualSize} 与 AI 大小判断相反，AI 降低近期失效因素权重。`;
 
-
-    aiLearning.lastReviewedIssue =
-        review.issue;
-
-
+    review.source = "historical_replay";
+    aiLearning.recentReviews.unshift(review);
+    aiLearning.recentReviews = aiLearning.recentReviews.slice(0, 100);
+    aiLearning.lastReviewedIssue = review.issue;
     saveAILearning();
 }
 
@@ -1872,192 +885,55 @@ let learningSyncInfo = {checkedAt: null, added: 0, latest: null, count: 0};
 
 function reviewNewOutcome(draws) {
     const ordered = normalizeWingoDraws(draws);
-    const before = aiLearning.stats.win + aiLearning.stats.loss + aiLearning.stats.pass;
+    const before = aiLearning.stats.win + aiLearning.stats.loss;
     let latestReview = null;
-    // Oldest eligible outcome first. Each prediction sees only older outcomes.
     for (let index = ordered.length - 11; index >= 0; index--) {
         const draw = ordered[index];
         if (aiLearning.lastReviewedIssue && compareIssues(draw.issue, aiLearning.lastReviewedIssue) <= 0) continue;
         latestReview = reviewSingleOutcome(ordered.slice(index)) || latestReview;
     }
-    learningSyncInfo = {checkedAt: new Date().toLocaleTimeString("zh-CN", {timeZone: "Asia/Kuala_Lumpur"}),
-        added: aiLearning.stats.win + aiLearning.stats.loss + aiLearning.stats.pass - before,
-        latest: ordered[0]?.issue || null, count: ordered.length};
+    learningSyncInfo = {
+        checkedAt: new Date().toLocaleTimeString("zh-CN", {timeZone: "Asia/Kuala_Lumpur"}),
+        added: aiLearning.stats.win + aiLearning.stats.loss - before,
+        latest: ordered[0]?.issue || null,
+        count: ordered.length
+    };
     return latestReview;
 }
 
-function reviewSingleOutcome(
-    draws
-) {
+function reviewSingleOutcome(draws) {
+    if (!draws || draws.length < 11) return null;
+    const actual = draws[0];
+    if (!actual) return null;
+    if (aiLearning.lastReviewedIssue === actual.issue) return null;
 
-    if (
-        !draws ||
-        draws.length < 11
-    ) {
-
-        return null;
-    }
-
-
-    const actual =
-        draws[0];
-
-
-    if (!actual) {
-        return null;
-    }
-
-
-    if (
-        aiLearning.lastReviewedIssue ===
-        actual.issue
-    ) {
-
-        return null;
-    }
-
-
-    const history =
-        draws.slice(1);
-
-
-    const prediction =
-        getLearnedPrediction(
-            history
-        );
-
-
-    if (!prediction) {
-        return null;
-    }
-
-
-    const actualSize =
-        actual.size === "大"
-            ? "大"
-            : "小";
-
-
-    let outcome =
-        "PASS";
-
-    let counterfactual =
-        "NONE";
-
-
-    /*
-     * =====================================================
-     * PASS
-     * =====================================================
-     */
-
-    if (
-        prediction.size === "PASS"
-    ) {
-
-        const forced =
-            getForcedCounterfactual(
-                history
-            );
-
-
-        if (forced) {
-
-            counterfactual =
-                forced.size ===
-                actualSize
-                    ? "WIN"
-                    : "LOSS";
-        }
-
-    } else {
-
-        /*
-         * =================================================
-         * 核心：
-         *
-         * 只比较 SIZE
-         *
-         * 号码不同没关系
-         * 颜色不同没关系
-         * =================================================
-         */
-
-        outcome =
-            prediction.size ===
-                actualSize
-                ? "WIN"
-                : "LOSS";
-    }
-
+    const history = draws.slice(1);
+    const prediction = getLearnedPrediction(history);
+    if (!prediction) return null;
+    const actualSize = actual.size === "大" ? "大" : "小";
+    const outcome = prediction.size === actualSize ? "WIN" : "LOSS";
 
     const review = {
-
-        issue:
-            actual.issue,
-
-        predictionSize:
-            prediction.size,
-
-        /*
-         * 预测号码只是记录
-         * 不参与 WIN / LOSS
-         */
-        predictedNum:
-            prediction.num,
-
-        signal:
-            prediction.signal,
-
+        issue: actual.issue,
+        predictionSize: prediction.size,
+        predictedNum: prediction.num,
+        signal: prediction.signal,
         actualSize,
-
-        actualNum:
-            actual.number,
-
+        actualNum: actual.number,
         outcome,
-
-        counterfactual,
-
-        pattern:
-            getCurrentPattern(
-                history
-            ),
-
-        featureSnapshot:
-            prediction.features,
-
-        weightBefore:
-            getCurrentWeights(),
-
-        weightAfter:
-            null,
-
-        timestamp:
-            Date.now()
+        pattern: getCurrentPattern(history),
+        featureSnapshot: prediction.features,
+        weightBefore: getCurrentWeights(),
+        weightAfter: null,
+        timestamp: Date.now()
     };
 
-
-    learnFromReview(
-        review
-    );
-
-
-    review.weightAfter =
-        getCurrentWeights();
-
-
-    if (
-        aiLearning.recentReviews[0]
-    ) {
-
-        aiLearning.recentReviews[0]
-            .weightAfter =
-            review.weightAfter;
-
+    learnFromReview(review);
+    review.weightAfter = getCurrentWeights();
+    if (aiLearning.recentReviews[0]) {
+        aiLearning.recentReviews[0].weightAfter = review.weightAfter;
         saveAILearning();
     }
-
-
     return review;
 }
 
@@ -2067,33 +943,11 @@ function reviewSingleOutcome(
 ========================================================= */
 
 function getCurrentWeights() {
-
     return {
-
-        markov:
-            Number(
-                aiLearning.factors.markov.weight
-            ).toFixed(2),
-
-        mean:
-            Number(
-                aiLearning.factors.mean.weight
-            ).toFixed(2),
-
-        streak:
-            Number(
-                aiLearning.factors.streak.weight
-            ).toFixed(2),
-
-        frequency:
-            Number(
-                aiLearning.factors.frequency.weight
-            ).toFixed(2),
-
-        balance:
-            Number(
-                aiLearning.factors.balance.weight
-            ).toFixed(2)
+        markov: Number(aiLearning.factors.markov.weight).toFixed(2),
+        mean: Number(aiLearning.factors.mean.weight).toFixed(2),
+        streak: Number(aiLearning.factors.streak.weight).toFixed(2),
+        frequency: Number(aiLearning.factors.frequency.weight).toFixed(2)
     };
 }
 
@@ -2103,157 +957,25 @@ function getCurrentWeights() {
 ========================================================= */
 
 function updateAILearningDashboard() {
-
-    const stats =
-        aiLearning.stats;
-
-
-    const total =
-        stats.win +
-        stats.loss;
-
-
-    const accuracy =
-        total > 0
-            ? (
-                stats.win /
-                total *
-                100
-            )
-            : 0;
-
-
-    const setText = (
-        id,
-        value
-    ) => {
-
-        const el =
-            document.getElementById(
-                id
-            );
-
-        if (el) {
-
-            el.textContent =
-                value;
-        }
+    const stats = aiLearning.stats;
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
     };
 
-
-    setText(
-        "ai-learning-status",
-        aiLearning.lastReviewedIssue ? "🧠 历史复盘学习（本浏览器）" : "等待有效历史"
-    );
-
-
-    setText(
-        "ai-state",
-        learningSyncInfo.added > 0 ? `新增 ${learningSyncInfo.added} 笔` : aiLearning.lastReviewedIssue ? "已同步，等待新期" : "等待数据"
-    );
-
-
+    setText("ai-learning-status", aiLearning.lastReviewedIssue ? "🧠 历史复盘学习（本浏览器）" : "等待有效历史");
+    setText("ai-state", learningSyncInfo.added > 0 ? `新增 ${learningSyncInfo.added} 笔` : aiLearning.lastReviewedIssue ? "已同步，等待新期" : "等待数据");
     setText("learning-sync-detail", learningSyncInfo.checkedAt
         ? `最近检查 ${learningSyncInfo.checkedAt} MYT · 读取 ${learningSyncInfo.count} 笔 · 最新期号 ${learningSyncInfo.latest || "—"} · 已复盘至 ${aiLearning.lastReviewedIssue || "—"}。${learningSyncInfo.added ? `本次新增复盘 ${learningSyncInfo.added} 笔。` : "本次没有可复盘的新期号，次数保持不变。"}`
         : "正在检查历史数据…");
-
-    setText(
-        "ai-learning-count",
-        stats.win + stats.loss + stats.pass
-    );
-
-
-    setText(
-        "ai-learning-win",
-        stats.win
-    );
-
-
-    setText(
-        "ai-learning-loss",
-        stats.loss
-    );
-
-
-    setText(
-        "ai-learning-pass",
-        stats.pass
-    );
-
-
-    const passTotal =
-        stats.passCorrect +
-        stats.passMissed;
-
-
-    const passQuality =
-        passTotal > 0
-            ? (
-                stats.passCorrect /
-                passTotal *
-                100
-            )
-            : 0;
-
-
-    setText(
-        "ai-pass-quality",
-        `${passQuality.toFixed(0)}%`
-    );
-
-
-    setText(
-        "ai-weight-markov",
-        Number(
-            aiLearning.factors.markov.weight
-        ).toFixed(2)
-    );
-
-
-    setText(
-        "ai-weight-mean",
-        Number(
-            aiLearning.factors.mean.weight
-        ).toFixed(2)
-    );
-
-
-    setText(
-        "ai-weight-streak",
-        Number(
-            aiLearning.factors.streak.weight
-        ).toFixed(2)
-    );
-
-
-    setText(
-        "ai-weight-frequency",
-        Number(
-            aiLearning.factors.frequency.weight
-        ).toFixed(2)
-    );
-
-
-    setText(
-        "ai-weight-balance",
-        Number(
-            aiLearning.factors.balance.weight
-        ).toFixed(2)
-    );
-
-
-    setText(
-        "ai-pass-threshold",
-        Number(
-            aiLearning.passThreshold
-        ).toFixed(2)
-    );
-
-
-    setText(
-        "ai-last-learning",
-        aiLearning.lastLearningMessage
-    );
+    setText("ai-learning-count", stats.win + stats.loss);
+    setText("ai-learning-win", stats.win);
+    setText("ai-learning-loss", stats.loss);
+    setText("ai-weight-markov", Number(aiLearning.factors.markov.weight).toFixed(2));
+    setText("ai-weight-mean", Number(aiLearning.factors.mean.weight).toFixed(2));
+    setText("ai-weight-streak", Number(aiLearning.factors.streak.weight).toFixed(2));
+    setText("ai-weight-frequency", Number(aiLearning.factors.frequency.weight).toFixed(2));
+    setText("ai-last-learning", aiLearning.lastLearningMessage);
 }
 
 
@@ -2272,9 +994,7 @@ function getNumberColours(number) {
 
 function evaluateReview(row) {
     if (!row.prediction || row.outcome === "NO_DATA") return {number: "NO_DATA", colour: "NO_DATA", size: "NO_DATA"};
-    if (row.outcome === "PASS") return {number: "PASS", colour: "PASS", size: "PASS"};
     const predicted = row.prediction.num;
-    // Exact colour-set comparison: red+violet differs from red alone.
     return {
         number: predicted === row.draw.number ? "WIN" : "LOSS",
         colour: getNumberColours(predicted).join() === getNumberColours(row.draw.number).join() ? "WIN" : "LOSS",
@@ -2283,8 +1003,8 @@ function evaluateReview(row) {
 }
 
 function resultBadge(outcome, label = "") {
-    const names = {WIN: "WIN", LOSS: "LOSS", PASS: "PASS", NO_DATA: "数据不足"};
-    return `<span class="outcome outcome-${outcome.toLowerCase()}">${label}${names[outcome]}</span>`;
+    const names = {WIN: "WIN", LOSS: "LOSS", NO_DATA: "数据不足"};
+    return `<span class="outcome outcome-${outcome.toLowerCase()}">${label}${names[outcome] || outcome}</span>`;
 }
 
 function renderAIReview(draws) {
@@ -2292,38 +1012,41 @@ function renderAIReview(draws) {
     const row = rows[0];
     const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     if (!row || !row.prediction) {
-        for (const id of ["review-status", "review-prediction", "review-actual", "review-result", "review-message", "review-summary"]) set(id, "历史不足，至少需要该期之前 10 笔记录");
+        for (const id of ["review-status", "review-prediction", "review-actual", "review-result", "review-message", "review-summary"]) {
+            set(id, "历史不足，至少需要该期之前 10 笔记录");
+        }
         return;
     }
+
     const {draw, prediction, outcome} = row;
     const result = evaluateReview(row);
     set("review-status", `历史复盘 · ${draw.issue}`);
-    set("review-prediction", outcome === "PASS" ? "PASS · 观望"
-        : `${prediction.num} / ${prediction.size}`);
+    set("review-prediction", `${prediction.num} / ${prediction.size}`);
     set("review-actual", `${draw.number} / ${draw.size}`);
     const resultEl = document.getElementById("review-result");
     if (resultEl) resultEl.innerHTML = resultBadge(result.size);
-    const factorNames = {markov:"转移规律", mean:"均值回归", streak:"连续大小", frequency:"近期频率", balance:"大小分布"};
-    const factors = Object.entries(prediction.factorContributions || {}).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,3);
+
+    const factorNames = {markov:"转移规律", mean:"均值回归", streak:"连续大小", frequency:"近期频率"};
+    const factors = Object.entries(prediction.factorContributions || {})
+        .sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,3);
     const explanation = factors.map(([name,value]) => `${factorNames[name] || name} ${value > 0 ? "偏大" : value < 0 ? "偏小" : "中性"}（${value.toFixed(2)}）`).join("；");
-    set("review-message", `${outcome === "PASS" ? `观望原因：${prediction.passReason || "信号不足"}。` : "只比较大小：0–4 小，5–9 大；号码不同但大小相同也算 WIN。"}主要大小因素：${explanation || "暂无"}。这些是规则贡献，不是开奖原因。`);
+    set("review-message", `只比较大小：0–4 小，5–9 大；号码不同但大小相同也算 WIN。主要大小因素：${explanation || "暂无"}。这些是规则贡献，不是开奖原因。`);
+
     const summaries = [10,50].map(limit => {
         const sample = rows.slice(0,limit);
-        const decisions = sample.filter(r=>r.prediction && r.outcome !== "PASS" && r.outcome !== "NO_DATA");
-        const pass = sample.filter(r=>r.outcome === "PASS").length;
+        const decisions = sample.filter(r=>r.prediction && r.outcome !== "NO_DATA");
         const wins = decisions.filter(r=>r.outcome === "WIN").length;
-        const missing = sample.length - decisions.length - pass;
+        const missing = sample.length - decisions.length;
         const rate = decisions.length ? `${(wins / decisions.length * 100).toFixed(1)}%` : "暂无有效判断";
-        return `最近 ${sample.length} 期：大小 WIN ${wins} / LOSS ${decisions.length-wins} · 命中率 ${rate} · PASS ${pass}${missing ? ` · 历史不足 ${missing} 笔` : ""}。`;
+        return `最近 ${sample.length} 期：大小 WIN ${wins} / LOSS ${decisions.length-wins} · 命中率 ${rate}${missing ? ` · 历史不足 ${missing} 笔` : ""}。`;
     });
+
     let losses = 0;
     for (const entry of rows) {
-        if (entry.outcome === "NO_DATA") break;
-        if (entry.outcome === "PASS") continue;
-        if (entry.outcome !== "LOSS") break;
+        if (entry.outcome === "NO_DATA" || entry.outcome !== "LOSS") break;
         losses++;
     }
-    set("review-summary", `${summaries.join("\n")}\n最近有效大小判断连续失误 ${losses} 次（略过 PASS）。0–4 小，5–9 大；结果只比较大小。以上为固定初始权重的历史回测，不是预先保存的实盘预测。`);
+    set("review-summary", `${summaries.join("\n")}\n最近有效大小判断连续失误 ${losses} 次。0–4 小，5–9 大；结果只比较大小。以上为固定初始权重的历史回测，不是预先保存的实盘预测。`);
 }
 
 
@@ -2353,8 +1076,11 @@ async function loadDashboardSnapshot() {
             if (!response.ok) throw new Error(`data.json HTTP ${response.status}`);
             const data = await response.json();
             if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("无效的数据文件");
+            const buildEl = document.getElementById("build-version");
+            if (buildEl) buildEl.textContent = `Build ${data.build_version || "unknown"} · UI v17`;
             snapshotCache = data;
             snapshotLoadedAt = Date.now();
+            updateNextCountdown();
             return data;
         })().finally(() => { snapshotPromise = null; });
     }
@@ -3119,29 +1845,6 @@ function updatePredictionCard(
         return;
     }
 
-
-    /*
-     * PASS
-     */
-
-    if (
-        prediction.size === "PASS"
-    ) {
-
-        el.innerHTML = `
-            <strong>
-                ⏸ PASS
-            </strong>
-
-            <span>
-                ${prediction.confidence}%
-            </span>
-        `;
-
-        return;
-    }
-
-
     /*
      * 正常预测
      *
@@ -3154,14 +1857,11 @@ function updatePredictionCard(
      * WIN / LOSS 仍然只看大小
      */
 
+    const colours = getNumberColours(Number(prediction.num));
+    const colourText = colours.length ? colours.map(c => c === "red" ? "红" : c === "green" ? "绿" : "紫").join("+") : "-";
     el.innerHTML = `
-        <strong>
-            ${prediction.num ?? "-"} / ${prediction.size}
-        </strong>
-
-        <span>
-            ${prediction.confidence}%
-        </span>
+        <strong>${prediction.num ?? "-"} / ${prediction.size} / ${colourText}</strong>
+        <span>统计信心 ${prediction.confidence}%</span>
     `;
 }
 
@@ -3170,179 +1870,19 @@ function updatePredictionCard(
    MARKET ANALYSIS
 ========================================================= */
 
-function updateMarketAnalysis(
-    draws,
-    prediction
-) {
-
-    const sizes =
-        draws.map(
-            d =>
-                d.size
-        );
-
-
-    const nums =
-        draws.map(
-            d =>
-                safeNumber(
-                    d.number
-                )
-        );
-
-
-    const streak =
-        getCurrentStreak(
-            sizes
-        );
-
-
-    const features =
-        prediction.features ||
-        getFeatureSnapshot(
-            draws
-        );
-
-
-    const recent10 =
-        sizes.slice(
-            0,
-            10
-        );
-
-
-    const recent50 =
-        sizes.slice(
-            0,
-            50
-        );
-
-
-    const big10 =
-        recent10.filter(
-            x =>
-                x === "大"
-        ).length;
-
-
-    const small10 =
-        recent10.length -
-        big10;
-
-
-    const big50 =
-        recent50.filter(
-            x =>
-                x === "大"
-        ).length;
-
-
-    const small50 =
-        recent50.length -
-        big50;
-
-
-    const setText = (
-        id,
-        value
-    ) => {
-
-        const el =
-            document.getElementById(
-                id
-            );
-
-        if (el) {
-
-            el.textContent =
-                value;
-        }
+function updateMarketAnalysis(draws, prediction) {
+    const sizes = draws.map(d => d.size);
+    const nums = draws.map(d => safeNumber(d.number));
+    const streak = getCurrentStreak(sizes);
+    const features = prediction.features || getFeatureSnapshot(draws);
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
     };
-
-
-    setText(
-        "analysis-streak",
-        `${streak} 连${sizes[0] || ""}`
-    );
-
-
-    setText(
-        "analysis-markov",
-        features.markov >= 0
-            ? "大"
-            : "小"
-    );
-
-
-    setText(
-        "analysis-mean",
-        features.mean >= 0
-            ? "大"
-            : "小"
-    );
-
-
-    setText(
-        "analysis-number",
-        nums[0]
-    );
-
-
-    setText(
-        "analysis-big10",
-        big10
-    );
-
-
-    setText(
-        "analysis-small10",
-        small10
-    );
-
-
-    setText(
-        "analysis-big50",
-        big50
-    );
-
-
-    setText(
-        "analysis-small50",
-        small50
-    );
-
-
-    const score =
-        safeNumber(
-            prediction.weightedScore
-        );
-
-
-    setText(
-        "score-text",
-        score.toFixed(2)
-    );
-
-
-    const fill =
-        document.getElementById(
-            "score-fill"
-        );
-
-
-    if (fill) {
-
-        const percentage =
-            clamp(
-                50 +
-                score * 15,
-                5,
-                95
-            );
-
-        fill.style.width =
-            `${percentage}%`;
-    }
+    setText("analysis-streak", `${streak} 连${sizes[0] || ""}`);
+    setText("analysis-markov", features.markov >= 0 ? "大" : "小");
+    setText("analysis-mean", features.mean >= 0 ? "大" : "小");
+    setText("analysis-number", nums[0] ?? "--");
 }
 
 
@@ -3360,8 +1900,7 @@ function getHistoricalRows(draws) {
         const history = ordered.slice(index + 1);
         if (history.length < 10) return {draw, prediction: null, outcome: "NO_DATA"};
         const prediction = getLearnedPrediction(history, baseline);
-        const outcome = prediction.size === "PASS" ? "PASS"
-            : prediction.size === draw.size ? "WIN" : "LOSS";
+        const outcome = prediction.size === draw.size ? "WIN" : "LOSS";
         return {draw, prediction, outcome};
     });
 }
@@ -3369,9 +1908,9 @@ function getHistoricalRows(draws) {
 function runBacktest(draws) {
     const rows = getHistoricalRows(draws);
     const count = outcome => rows.filter(row => row.outcome === outcome).length;
-    const win = count("WIN"), loss = count("LOSS"), pass = count("PASS");
+    const win = count("WIN"), loss = count("LOSS");
     const valid = win + loss;
-    return {win, loss, pass, valid, rate: valid ? win / valid * 100 : 0};
+    return {win, loss, valid, rate: valid ? win / valid * 100 : 0};
 }
 
 
@@ -3409,7 +1948,6 @@ function updateWinRate(
         ">
             WIN ${result.win}
             · LOSS ${result.loss}
-            · PASS ${result.pass}
         </div>
     `;
 }
@@ -3426,7 +1964,7 @@ function renderDrawTable(draws) {
         <tr>
             <td>${draw.issue}</td>
             <td>${getNumberIconHtml(draw.number)} <span>${draw.size}</span></td>
-            <td>${!prediction ? "—" : outcome === "PASS" ? "PASS" : `${getNumberIconHtml(prediction.num)} <span>${prediction.size}</span>`}</td>
+            <td>${!prediction ? "—" : `${getNumberIconHtml(prediction.num)} <span>${prediction.size}</span>`}</td>
             <td>${resultBadge(outcome)}</td>
         </tr>
     `).join("") || '<tr><td colspan="4">暂无数据</td></tr>';
@@ -4152,25 +2690,8 @@ function predictBaccarat(
     history
 ) {
 
-    if (
-        !history ||
-        history.length < 3
-    ) {
-
-        return {
-
-            result:
-                "PASS",
-
-            confidence:
-                50,
-
-            action:
-                "PASS",
-
-            reason:
-                "数据不足"
-        };
+    if (!history || history.length === 0) {
+        return {result: "B", confidence: 50, action: "BANKER", reason: "尚未收到真实历史，暂以中性默认方向显示；有数据后自动重算"};
     }
 
 
@@ -4621,7 +3142,7 @@ function renderBaccarat(
                 ? "banker"
                 : prediction.result === "P"
                     ? "player"
-                    : "pass";
+                    : "neutral";
     }
 
 
@@ -4711,39 +3232,67 @@ async function safeFetchBaccaratData() {
 
 
 /* =========================================================
-   COUNTDOWN
+   NEXT DRAW COUNTDOWN
+   Uses MZPLAY issue end/service time for K3/5D/TRX.
+   WinGo 30s is aligned to the next 30-second wall-clock boundary.
 ========================================================= */
 
-setInterval(
-    () => {
+function parseMytApiTime(value) {
+    if (!value) return NaN;
+    let text = String(value).trim().replace(" ", "T");
+    if (!/[zZ]$|[+-]\d{2}:?\d{2}$/.test(text)) text += "+08:00";
+    return Date.parse(text);
+}
 
-        countdownVal--;
+function formatCountdown(seconds) {
+    const value = Math.max(0, Math.floor(seconds));
+    const minutes = Math.floor(value / 60);
+    const secs = value % 60;
+    return minutes > 0
+        ? `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
+        : `${String(secs).padStart(2, "0")}s`;
+}
 
-        if (
-            countdownVal <= 0
-        ) {
+function getIssueCountdown(state, defaultIntervalSeconds = 60) {
+    const issue = state?.current_issue || {};
+    const endMs = parseMytApiTime(issue.endTime);
+    const serviceMs = parseMytApiTime(issue.serviceTime);
+    if (!Number.isFinite(endMs)) return null;
 
-            countdownVal = 5;
+    const receivedMs = Number(state?.updated_at || 0) * 1000;
+    const serverNowMs = Number.isFinite(serviceMs) && receivedMs > 0
+        ? serviceMs + Math.max(0, Date.now() - receivedMs)
+        : Date.now();
 
-            safeRefreshDashboard();
-        }
+    const intervalSeconds = Math.max(1, Math.round(Number(issue.intervalM || 0) * 60) || defaultIntervalSeconds);
+    let remaining = Math.ceil((endMs - serverNowMs) / 1000);
+    while (remaining <= 0) remaining += intervalSeconds;
+    return remaining;
+}
 
+function updateNextCountdown() {
+    const el = document.getElementById("countdown");
+    if (!el) return;
 
-        const el =
-            document.getElementById(
-                "countdown"
-            );
+    if (currentMainTab === "baccarat") {
+        el.textContent = "LIVE";
+        return;
+    }
 
+    if (currentMainTab === "wingo") {
+        const second = Math.floor(Date.now() / 1000);
+        const remaining = 30 - (second % 30);
+        el.textContent = formatCountdown(remaining);
+        return;
+    }
 
-        if (el) {
+    const key = currentMainTab === "5d" ? "5d" : currentMainTab;
+    const remaining = getIssueCountdown(snapshotCache?.[key], 60);
+    el.textContent = remaining == null ? "--" : formatCountdown(remaining);
+}
 
-            el.textContent =
-                countdownVal;
-        }
-
-    },
-    1000
-);
+setInterval(updateNextCountdown, 250);
+setInterval(safeRefreshDashboard, 5000);
 
 
 /* =========================================================
@@ -4857,16 +3406,7 @@ async function initializeDashboard() {
        COUNTDOWN DISPLAY
     ----------------------------------------------------- */
 
-    const countdown =
-        document.getElementById(
-            "countdown"
-        );
-
-    if (countdown) {
-
-        countdown.textContent =
-            countdownVal;
-    }
+    updateNextCountdown();
 
 
     console.log(
@@ -4913,3 +3453,131 @@ if (
     initializeDashboard();
 
 }
+
+/* =========================================================
+   K3 / 5D / TRX FULL PREDICTION DASHBOARD
+========================================================= */
+function mgEsc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+}
+
+function mgTag(value) {
+    const text = String(value ?? "-");
+    let cls = "";
+    if (text === "大") cls = "tag-big";
+    else if (text === "小") cls = "tag-small";
+    else if (text === "单") cls = "tag-odd";
+    else if (text === "双") cls = "tag-even";
+    else if (text.includes("红")) cls = "tag-red";
+    else if (text.includes("绿")) cls = "tag-green";
+    else if (text.includes("紫")) cls = "tag-violet";
+    return `<span class="${cls}">${mgEsc(text)}</span>`;
+}
+
+function mgBalls(values) {
+    return `<span class="ball-line">${(values || []).map(n => `<span class="num-ball">${mgEsc(n)}</span>`).join("")}</span>`;
+}
+
+function mgTile(title, value, meta = "") {
+    return `<div class="prediction-tile"><div class="pt-title">${mgEsc(title)}</div><div class="pt-value">${value}</div>${meta ? `<div class="pt-meta">${meta}</div>` : ""}</div>`;
+}
+
+function mgSet(id, html, asText = false) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (asText) el.textContent = html;
+    else el.innerHTML = html;
+}
+
+function mgStatus(game, state, data) {
+    const msg = state?.status || "等待数据";
+    const count = Array.isArray(state?.draws) ? state.draws.length : 0;
+    const updated = state?.updated_at ? new Date(state.updated_at * 1000).toLocaleString("zh-CN", {timeZone:"Asia/Kuala_Lumpur"}) : "--";
+    mgSet(`${game}-data-status`, `${msg} · 历史 ${count} 笔 · ${updated} MYT`, true);
+}
+
+function mgReviewTable(game, reviews) {
+    if (!Array.isArray(reviews) || !reviews.length) {
+        return `<div class="multi-empty">等待下一期真实开奖后开始实盘复盘</div>`;
+    }
+    return `<div class="multi-row header"><span>期号</span><span>预测</span><span>实际</span><span>结果</span></div>` +
+        reviews.slice(0, 10).map(r => `<div class="multi-row"><span>${mgEsc(r.issueNumber)}</span><span>${mgEsc(r.prediction)}</span><span>${mgEsc(r.actual)}</span><span class="${r.win ? "win-text" : "loss-text"}">${mgEsc(r.score)}</span></div>`).join("");
+}
+
+function renderK3State(state, data) {
+    mgStatus("k3", state, data);
+    const latest = state?.draws?.[0];
+    const p = state?.prediction || {};
+    mgSet("k3-latest", latest ? mgBalls(latest.dice) : "--");
+    mgSet("k3-latest-meta", latest ? `${mgEsc(latest.issueNumber)} · Sum ${latest.sum} · ${latest.size} · ${latest.oddEven}` : "暂无开奖", true);
+    mgSet("k3-prediction", p.dice?.length ? mgBalls(p.dice) : "等待真实数据");
+    mgSet("k3-confidence", `统计信心 ${Number(p.confidence || 0)}%`, true);
+    mgSet("k3-target", p.issueNumber || state?.current_issue?.issueNumber || "--", true);
+    const dc = p.detailConfidence?.dice || [];
+    mgSet("k3-prediction-grid", p.dice?.length ? [
+        mgTile("三骰预测", mgBalls(p.dice), `位置置信 ${dc.map(x => `${x}%`).join(" / ")}`),
+        mgTile("大小", mgTag(p.size), `置信 ${p.detailConfidence?.size ?? "--"}%`),
+        mgTile("单双", mgTag(p.oddEven), `置信 ${p.detailConfidence?.oddEven ?? "--"}%`),
+        mgTile("Sum 区间", mgEsc(p.sumRange || "--"), `预测 Sum ${p.sum ?? "--"} · 置信 ${p.detailConfidence?.sumRange ?? "--"}%`)
+    ].join("") : "");
+    mgSet("k3-review", mgReviewTable("k3", state?.reviews));
+    const history = state?.draws || [];
+    mgSet("k3-history", history.length ? `<div class="multi-row header"><span>期号</span><span>骰子</span><span>Sum</span><span>分类</span></div>` + history.slice(0, 15).map(d => `<div class="multi-row"><span>${mgEsc(d.issueNumber)}</span><span>${mgEsc(d.premium)}</span><span>${d.sum}</span><span>${mgTag(d.size)} ${mgTag(d.oddEven)} · ${mgEsc(d.sumRange)}</span></div>`).join("") : `<div class="multi-empty">暂无 K3 历史</div>`);
+}
+
+function render5DState(state, data) {
+    mgStatus("5d", state, data);
+    const latest = state?.draws?.[0];
+    const p = state?.prediction || {};
+    mgSet("5d-latest", latest ? mgBalls(latest.digits) : "--");
+    mgSet("5d-latest-meta", latest ? `${mgEsc(latest.issueNumber)} · Sum ${latest.sum}` : "暂无开奖", true);
+    mgSet("5d-prediction", p.digits?.length ? mgBalls(p.digits) : "等待真实数据");
+    mgSet("5d-confidence", `统计信心 ${Number(p.confidence || 0)}%`, true);
+    mgSet("5d-target", p.issueNumber || state?.current_issue?.issueNumber || "--", true);
+    const labels = ["A", "B", "C", "D", "E"];
+    mgSet("5d-prediction-grid", p.digits?.length ? p.digits.map((n, i) => mgTile(`${labels[i]} 位`, `<span class="num-ball">${n}</span>`, `${mgTag(p.sizeByPosition?.[i])} ${mgTag(p.oddEvenByPosition?.[i])} · ${p.detailConfidence?.[i] ?? "--"}%`)).join("") : "");
+    mgSet("5d-review", mgReviewTable("5d", state?.reviews));
+    const history = state?.draws || [];
+    mgSet("5d-history", history.length ? `<div class="multi-row header"><span>期号</span><span>号码</span><span>Sum</span><span>A-E 大小/单双</span></div>` + history.slice(0, 15).map(d => `<div class="multi-row"><span>${mgEsc(d.issueNumber)}</span><span>${mgEsc(d.premium)}</span><span>${d.sum}</span><span>${d.digits.map((_,i)=>`${d.sizeByPosition[i]}${d.oddEvenByPosition[i]}`).join(" · ")}</span></div>`).join("") : `<div class="multi-empty">暂无 5D 历史</div>`);
+}
+
+function renderTrxState(state, data) {
+    mgStatus("trx", state, data);
+    const latest = state?.draws?.[0];
+    const p = state?.prediction || {};
+    mgSet("trx-latest", latest ? `<span class="num-ball">${latest.number}</span>` : "--");
+    mgSet("trx-latest-meta", latest ? `${mgEsc(latest.issueNumber)} · ${latest.size} · ${latest.colour}` : "暂无开奖", true);
+    mgSet("trx-prediction", Number.isInteger(p.number) ? `<span class="num-ball">${p.number}</span> ${mgTag(p.size)} ${mgTag(p.colour)}` : "等待真实数据");
+    mgSet("trx-confidence", `统计信心 ${Number(p.confidence || 0)}%`, true);
+    mgSet("trx-target", p.issueNumber || state?.current_issue?.issueNumber || "--", true);
+    mgSet("trx-prediction-grid", Number.isInteger(p.number) ? [
+        mgTile("号码", `<span class="num-ball">${p.number}</span>`, `置信 ${p.detailConfidence?.number ?? "--"}%`),
+        mgTile("大小", mgTag(p.size), `置信 ${p.detailConfidence?.size ?? "--"}%`),
+        mgTile("颜色", mgTag(p.colour), `置信 ${p.detailConfidence?.colour ?? "--"}%`),
+        mgTile("算法", mgEsc(p.method || "统计模型"), "每期固定输出")
+    ].join("") : "");
+    mgSet("trx-review", mgReviewTable("trx", state?.reviews));
+    const history = state?.draws || [];
+    mgSet("trx-history", history.length ? `<div class="multi-row header"><span>期号</span><span>号码</span><span>大小/颜色</span><span>Block</span></div>` + history.slice(0, 15).map(d => `<div class="multi-row"><span>${mgEsc(d.issueNumber)}</span><span><span class="num-ball">${d.number}</span></span><span>${mgTag(d.size)} ${mgTag(d.colour)}</span><span>${mgEsc(d.blockNumber || "-")}</span></div>`).join("") : `<div class="multi-empty">暂无 TRX 历史</div>`);
+}
+
+let multiGameRefreshRunning = false;
+async function refreshMultiGames() {
+    if (multiGameRefreshRunning) return;
+    multiGameRefreshRunning = true;
+    try {
+        snapshotLoadedAt = 0;
+        const data = await loadDashboardSnapshot();
+        renderK3State(data.k3 || {}, data);
+        render5DState(data["5d"] || {}, data);
+        renderTrxState(data.trx || {}, data);
+    } catch (error) {
+        console.warn("Multi-game refresh error:", error);
+        ["k3","5d","trx"].forEach(g => mgSet(`${g}-data-status`, "读取 data.json 失败，保留上次显示。", true));
+    } finally {
+        multiGameRefreshRunning = false;
+    }
+}
+
+setInterval(refreshMultiGames, 3000);
+setTimeout(refreshMultiGames, 250);
