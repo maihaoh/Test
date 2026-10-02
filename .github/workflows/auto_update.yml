@@ -21,7 +21,7 @@ jobs:
     env:
       MZPLAY_USERNAME: ${{ secrets.MZPLAY_USERNAME }}
       MZPLAY_PASSWORD: ${{ secrets.MZPLAY_PASSWORD }}
-      MZPLAY_DEVICE_ID: ${{ secrets.MZPLAY_DEVICE_ID }}
+      MZPLAY_DEVICE_ID: ${{ vars.MZPLAY_DEVICE_ID || secrets.MZPLAY_DEVICE_ID }}
 
     steps:
       - name: Checkout
@@ -36,7 +36,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests websocket-client
+          pip install -r requirements.txt
+          google-chrome --version || chromium --version || true
 
       - name: Verify required secrets
         shell: bash
@@ -44,7 +45,7 @@ jobs:
           missing=0
           for key in MZPLAY_USERNAME MZPLAY_PASSWORD MZPLAY_DEVICE_ID; do
             if [ -z "${!key}" ]; then
-              echo "::error::$key is not configured in GitHub Actions Secrets"
+              echo "::error::$key is not configured in GitHub Actions Secrets/Variables"
               missing=1
             fi
           done
