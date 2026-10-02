@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: test-realtime
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MZPLAY_USERNAME
+        sync: false
+      - key: MZPLAY_PASSWORD
+        sync: false
+      - key: MZPLAY_DEVICE_ID
+        sync: false
+      - key: DASHBOARD_ORIGIN
+        value: https://maihaoh.github.io
+      - key: CHOICE_HEADLESS
+        value: "1"
