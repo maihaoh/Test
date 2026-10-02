@@ -1,4 +1,32 @@
-python -u bot.py > bot.log 2>&1 &
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          google-chrome --version || chromium --version || true
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          missing=0
+          for key in MZPLAY_USERNAME MZPLAY_PASSWORD MZPLAY_DEVICE_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::error::$key is not configured in GitHub Actions Secrets/Variables"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Run collector and publish data.json every 5 minutes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          python -u bot.py > bot.log 2>&1 &
           BOT_PID=$!
           echo "Collector PID: $BOT_PID"
 
