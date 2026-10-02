@@ -771,10 +771,6 @@ button:focus-visible {
     background: rgba(239, 68, 68, 0.15);
 }
 
-.review-pass {
-    color: #facc15;
-    background: rgba(234, 179, 8, 0.15);
-}
 
 /* =========================================================
    AI LEARNING
@@ -845,10 +841,6 @@ button:focus-visible {
     border-top: 3px solid #ef4444;
 }
 
-.pass-item {
-    background: rgba(113, 63, 18, 0.14);
-    border-top: 3px solid #eab308;
-}
 
 .quality-item {
     background: rgba(88, 28, 135, 0.14);
@@ -890,9 +882,6 @@ button:focus-visible {
     color: #f87171;
 }
 
-.pass-item .ai-learning-value {
-    color: #facc15;
-}
 
 .quality-item .ai-learning-value {
     color: #d8b4fe;
@@ -1424,7 +1413,7 @@ tbody tr:hover {
     font-weight: 900;
 }
 
-#bc-action.pass {
+#bc-action.neutral {
     color: #facc15;
     background: rgba(250, 204, 21, 0.12);
 }
@@ -2025,6 +2014,61 @@ tbody tr:hover {
 .outcome { display: inline-block; font-weight: 700; padding: 3px 7px; border-radius: 5px; margin: 2px; }
 .outcome-win { color: #34d399; background: rgba(52,211,153,.12); }
 .outcome-loss { color: #f87171; background: rgba(248,113,113,.12); }
-.outcome-pass, .outcome-no_data { color: #cbd5e1; background: rgba(148,163,184,.1); }
+.outcome-no_data { color: #cbd5e1; background: rgba(148,163,184,.1); }
 .result-stack .outcome { display: block; width: max-content; }
 .review-summary { color: #cbd5e1; line-height: 1.9; white-space: pre-line; overflow-wrap: anywhere; }
+
+/* =========================================================
+   MULTI GAME PREDICTION PANELS
+========================================================= */
+.multi-game-section { display: none; }
+.multi-game-section.active { display: block; }
+.multi-shell { overflow: hidden; }
+.multi-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
+.multi-live { white-space:nowrap; padding:7px 11px; border-radius:999px; background:#122235; border:1px solid #334155; color:#93c5fd; font-size:12px; font-weight:800; }
+.multi-top-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:16px 0; }
+.multi-panel { background:#111a27; border:1px solid #2b3a4e; border-radius:14px; padding:16px; min-height:118px; }
+.multi-predict-panel { box-shadow: inset 0 0 0 1px rgba(96,165,250,.12); }
+.multi-label { color:#94a3b8; font-size:12px; font-weight:700; margin-bottom:10px; }
+.multi-latest,.multi-prediction { color:#f8fafc; font-size:28px; line-height:1.2; font-weight:900; letter-spacing:.04em; overflow-wrap:anywhere; }
+.multi-target { color:#e2e8f0; font-size:15px; font-weight:800; overflow-wrap:anywhere; }
+.multi-sub,.multi-confidence { margin-top:8px; color:#94a3b8; font-size:12px; line-height:1.55; }
+.multi-confidence { color:#34d399; font-weight:800; }
+.prediction-matrix { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:14px 0; }
+.prediction-matrix-5d { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.prediction-tile { background:#0d1724; border:1px solid #29384a; border-radius:12px; padding:14px; min-height:92px; }
+.prediction-tile .pt-title { color:#8ea0b7; font-size:11px; font-weight:800; text-transform:uppercase; }
+.prediction-tile .pt-value { color:#f8fafc; font-size:24px; font-weight:900; margin-top:7px; }
+.prediction-tile .pt-meta { color:#cbd5e1; font-size:12px; margin-top:5px; line-height:1.45; }
+.multi-note { border-left:3px solid #475569; background:#111827; color:#94a3b8; padding:10px 12px; border-radius:8px; font-size:12px; line-height:1.6; margin-bottom:16px; }
+.multi-columns { display:grid; grid-template-columns:1fr 1.1fr; gap:14px; }
+.multi-block-title { color:#e2e8f0; font-weight:900; margin:4px 0 10px; }
+.multi-review,.multi-history { background:#0b1320; border:1px solid #263447; border-radius:12px; overflow:hidden; }
+.multi-row { display:grid; grid-template-columns:1.2fr 1fr 1fr 1.4fr; gap:8px; padding:10px 12px; border-bottom:1px solid #1f2b3a; align-items:center; font-size:11px; color:#cbd5e1; }
+.multi-row:last-child { border-bottom:0; }
+.multi-row.header { background:#111c2b; color:#8fa4bd; font-weight:800; }
+.multi-review .multi-row { grid-template-columns:1.15fr 1fr 1fr 1.6fr; }
+.multi-empty { padding:18px; color:#64748b; font-size:12px; text-align:center; }
+.win-text { color:#34d399; font-weight:800; }
+.loss-text { color:#f87171; font-weight:800; }
+.ball-line { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+.num-ball { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:#1e293b; border:1px solid #475569; color:#f8fafc; font-weight:900; }
+.tag-small,.tag-big,.tag-odd,.tag-even,.tag-red,.tag-green,.tag-violet { display:inline-flex; padding:3px 7px; border-radius:6px; font-size:11px; font-weight:800; }
+.tag-small { background:rgba(59,130,246,.14); color:#93c5fd; }
+.tag-big { background:rgba(245,158,11,.14); color:#fbbf24; }
+.tag-odd { background:rgba(168,85,247,.14); color:#d8b4fe; }
+.tag-even { background:rgba(20,184,166,.14); color:#5eead4; }
+.tag-red { background:rgba(239,68,68,.14); color:#fca5a5; }
+.tag-green { background:rgba(34,197,94,.14); color:#86efac; }
+.tag-violet { background:rgba(168,85,247,.14); color:#d8b4fe; }
+@media (max-width: 900px) {
+  .multi-top-grid,.multi-columns { grid-template-columns:1fr; }
+  .prediction-matrix,.prediction-matrix-5d { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 520px) {
+  .multi-head { flex-direction:column; }
+  .prediction-matrix,.prediction-matrix-5d { grid-template-columns:1fr; }
+  .multi-latest,.multi-prediction { font-size:23px; }
+  .multi-row,.multi-review .multi-row { grid-template-columns:1fr; gap:4px; }
+  .multi-row.header { display:none; }
+}
