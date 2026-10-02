@@ -17,7 +17,7 @@ CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_c
 MIN_REQUEST_INTERVAL = 1.35
 LOGIN_RATE_LIMIT_BASE_SECONDS = 15 * 60
 LOGIN_RATE_LIMIT_MAX_SECONDS = 60 * 60
-LOGIN_FAILURE_RETRY_SECONDS = 60
+LOGIN_FAILURE_RETRY_SECONDS = 5 * 60
 GENERAL_RETRY_SECONDS = 12
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
@@ -503,7 +503,11 @@ class MZPlayClient:
                 raise MZPlayRateLimit(f"服务器限制登录频率；本程序不会继续撞接口，{mins} 分钟后再试（MYT {retry_dt}，{detail}）")
             self.next_login_at = time.time() + LOGIN_FAILURE_RETRY_SECONDS
             self.last_login_error = detail
-            raise RuntimeError(f"Login 未返回 token ({detail})")
+            self._save_auth_state()
+            retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
+            raise RuntimeError(
+                f"Login 未返回 token ({detail})；{LOGIN_FAILURE_RETRY_SECONDS // 60} 分钟后再试（MYT {retry_dt}）"
+            )
         self._clear_auth_state()
         self.rate_limit_hits = 0
         self._load_auth_state()
