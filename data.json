@@ -23,29 +23,185 @@
     "big50": "55%",
     "small50": "45%"
   },
-  "updated_at": 1790915610,
+  "updated_at": 1790916390,
   "wingo": {
     "stats": {
-      "streak_val": "大",
+      "streak_val": "小",
       "streak_cnt": 1,
-      "big_cnt": 127,
-      "small_cnt": 173
+      "big_cnt": 125,
+      "small_cnt": 175
     },
     "prediction": {
-      "num": 4,
+      "num": 0,
       "size": "小",
-      "signal": "观望",
-      "confidence": "避险观望",
+      "signal": "SELL",
+      "confidence": "普通",
       "big_score": 0.0,
       "small_score": 1.5,
       "difference": 1.5,
-      "markov_num": 4,
+      "markov_num": 0,
       "markov_size": "小",
       "mean_size": "平",
       "streak": 1,
-      "special": true
+      "special": false
     },
     "draws": [
+      {
+        "issueNumber": "20261002100050573",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050572",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050571",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050570",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050569",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050568",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050567",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050566",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050565",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050564",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050563",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050562",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050561",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050560",
+        "number": 3,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050559",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050558",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050557",
+        "number": 0,
+        "colour": "red,violet",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050556",
+        "number": 8,
+        "colour": "red",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050555",
+        "number": 5,
+        "colour": "green,violet",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050554",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050553",
+        "number": 4,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050552",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050551",
+        "number": 1,
+        "colour": "green",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050550",
+        "number": 2,
+        "colour": "red",
+        "size": "小"
+      },
+      {
+        "issueNumber": "20261002100050549",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100050548",
+        "number": 7,
+        "colour": "green",
+        "size": "大"
+      },
       {
         "issueNumber": "20261002100050547",
         "number": 5,
@@ -1689,162 +1845,6 @@
         "number": 1,
         "colour": "green",
         "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052872",
-        "number": 5,
-        "colour": "green,violet",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052871",
-        "number": 8,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052870",
-        "number": 1,
-        "colour": "green",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052869",
-        "number": 0,
-        "colour": "red,violet",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052868",
-        "number": 8,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052867",
-        "number": 3,
-        "colour": "green",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052866",
-        "number": 1,
-        "colour": "green",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052865",
-        "number": 2,
-        "colour": "red",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052540",
-        "number": 6,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052539",
-        "number": 5,
-        "colour": "green,violet",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052538",
-        "number": 3,
-        "colour": "green",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052537",
-        "number": 8,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052536",
-        "number": 8,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052535",
-        "number": 1,
-        "colour": "green",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052534",
-        "number": 4,
-        "colour": "red",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052533",
-        "number": 0,
-        "colour": "red,violet",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052532",
-        "number": 4,
-        "colour": "red",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052531",
-        "number": 5,
-        "colour": "green,violet",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052530",
-        "number": 6,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052529",
-        "number": 6,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052528",
-        "number": 8,
-        "colour": "red",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052527",
-        "number": 7,
-        "colour": "green",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052526",
-        "number": 2,
-        "colour": "red",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052525",
-        "number": 3,
-        "colour": "green",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261001100052524",
-        "number": 5,
-        "colour": "green,violet",
-        "size": "大"
-      },
-      {
-        "issueNumber": "20261001100052523",
-        "number": 4,
-        "colour": "red",
-        "size": "小"
       }
     ]
   },
@@ -1870,5 +1870,5052 @@
       "D57": [],
       "D58": []
     }
+  },
+  "k3": {
+    "reviews": [
+      {
+        "issueNumber": "20261002101010286",
+        "prediction": "253 / 大 / 单 / 8-13",
+        "actual": "612 / 小 / 单 / 8-13",
+        "score": "骰子 0/3 · 大小 LOSS · 单双 WIN · 区间 WIN",
+        "win": false
+      }
+    ],
+    "prediction": {
+      "dice": [
+        2,
+        5,
+        3
+      ],
+      "sum": 11,
+      "size": "小",
+      "oddEven": "单",
+      "sumRange": "8-13",
+      "confidence": 72,
+      "detailConfidence": {
+        "dice": [
+          68,
+          67,
+          67
+        ],
+        "size": 75,
+        "oddEven": 78,
+        "sumRange": 79
+      },
+      "method": "近期加权频率 + 状态转移",
+      "issueNumber": "20261002101010287",
+      "generatedAt": 1790916381
+    },
+    "draws": [
+      {
+        "issueNumber": "20261002101010286",
+        "dice": [
+          6,
+          1,
+          2
+        ],
+        "premium": "612",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010285",
+        "dice": [
+          5,
+          5,
+          1
+        ],
+        "premium": "551",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010284",
+        "dice": [
+          4,
+          4,
+          4
+        ],
+        "premium": "444",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010283",
+        "dice": [
+          3,
+          2,
+          2
+        ],
+        "premium": "322",
+        "sum": 7,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010282",
+        "dice": [
+          6,
+          2,
+          3
+        ],
+        "premium": "623",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010281",
+        "dice": [
+          1,
+          5,
+          5
+        ],
+        "premium": "155",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010280",
+        "dice": [
+          5,
+          3,
+          2
+        ],
+        "premium": "532",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010279",
+        "dice": [
+          2,
+          5,
+          5
+        ],
+        "premium": "255",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010278",
+        "dice": [
+          1,
+          1,
+          4
+        ],
+        "premium": "114",
+        "sum": 6,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010277",
+        "dice": [
+          1,
+          2,
+          2
+        ],
+        "premium": "122",
+        "sum": 5,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010276",
+        "dice": [
+          5,
+          6,
+          3
+        ],
+        "premium": "563",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010275",
+        "dice": [
+          2,
+          6,
+          4
+        ],
+        "premium": "264",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010274",
+        "dice": [
+          5,
+          6,
+          5
+        ],
+        "premium": "565",
+        "sum": 16,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010273",
+        "dice": [
+          6,
+          5,
+          4
+        ],
+        "premium": "654",
+        "sum": 15,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010272",
+        "dice": [
+          2,
+          1,
+          2
+        ],
+        "premium": "212",
+        "sum": 5,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010271",
+        "dice": [
+          5,
+          1,
+          3
+        ],
+        "premium": "513",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010270",
+        "dice": [
+          6,
+          4,
+          3
+        ],
+        "premium": "643",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010269",
+        "dice": [
+          3,
+          3,
+          2
+        ],
+        "premium": "332",
+        "sum": 8,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010268",
+        "dice": [
+          1,
+          5,
+          5
+        ],
+        "premium": "155",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010267",
+        "dice": [
+          6,
+          4,
+          5
+        ],
+        "premium": "645",
+        "sum": 15,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010266",
+        "dice": [
+          2,
+          5,
+          6
+        ],
+        "premium": "256",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010265",
+        "dice": [
+          5,
+          1,
+          6
+        ],
+        "premium": "516",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010264",
+        "dice": [
+          3,
+          5,
+          1
+        ],
+        "premium": "351",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010263",
+        "dice": [
+          2,
+          5,
+          3
+        ],
+        "premium": "253",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010262",
+        "dice": [
+          2,
+          1,
+          2
+        ],
+        "premium": "212",
+        "sum": 5,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010261",
+        "dice": [
+          2,
+          6,
+          1
+        ],
+        "premium": "261",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010260",
+        "dice": [
+          5,
+          4,
+          3
+        ],
+        "premium": "543",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010259",
+        "dice": [
+          4,
+          6,
+          3
+        ],
+        "premium": "463",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010258",
+        "dice": [
+          2,
+          4,
+          3
+        ],
+        "premium": "243",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010257",
+        "dice": [
+          5,
+          4,
+          6
+        ],
+        "premium": "546",
+        "sum": 15,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010256",
+        "dice": [
+          3,
+          5,
+          3
+        ],
+        "premium": "353",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010255",
+        "dice": [
+          3,
+          1,
+          2
+        ],
+        "premium": "312",
+        "sum": 6,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010254",
+        "dice": [
+          5,
+          3,
+          1
+        ],
+        "premium": "531",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010253",
+        "dice": [
+          3,
+          3,
+          4
+        ],
+        "premium": "334",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010252",
+        "dice": [
+          2,
+          2,
+          5
+        ],
+        "premium": "225",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010251",
+        "dice": [
+          6,
+          3,
+          6
+        ],
+        "premium": "636",
+        "sum": 15,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010250",
+        "dice": [
+          2,
+          1,
+          2
+        ],
+        "premium": "212",
+        "sum": 5,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010249",
+        "dice": [
+          4,
+          5,
+          6
+        ],
+        "premium": "456",
+        "sum": 15,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010248",
+        "dice": [
+          6,
+          6,
+          6
+        ],
+        "premium": "666",
+        "sum": 18,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010247",
+        "dice": [
+          5,
+          5,
+          3
+        ],
+        "premium": "553",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010246",
+        "dice": [
+          5,
+          2,
+          1
+        ],
+        "premium": "521",
+        "sum": 8,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010245",
+        "dice": [
+          2,
+          4,
+          3
+        ],
+        "premium": "243",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010244",
+        "dice": [
+          6,
+          5,
+          5
+        ],
+        "premium": "655",
+        "sum": 16,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010243",
+        "dice": [
+          3,
+          6,
+          5
+        ],
+        "premium": "365",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010242",
+        "dice": [
+          5,
+          4,
+          5
+        ],
+        "premium": "545",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010241",
+        "dice": [
+          2,
+          6,
+          1
+        ],
+        "premium": "261",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010240",
+        "dice": [
+          1,
+          4,
+          1
+        ],
+        "premium": "141",
+        "sum": 6,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010239",
+        "dice": [
+          4,
+          1,
+          2
+        ],
+        "premium": "412",
+        "sum": 7,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010238",
+        "dice": [
+          2,
+          2,
+          3
+        ],
+        "premium": "223",
+        "sum": 7,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010237",
+        "dice": [
+          1,
+          1,
+          5
+        ],
+        "premium": "115",
+        "sum": 7,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010236",
+        "dice": [
+          2,
+          4,
+          5
+        ],
+        "premium": "245",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010235",
+        "dice": [
+          1,
+          2,
+          2
+        ],
+        "premium": "122",
+        "sum": 5,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010234",
+        "dice": [
+          6,
+          2,
+          5
+        ],
+        "premium": "625",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010233",
+        "dice": [
+          3,
+          1,
+          3
+        ],
+        "premium": "313",
+        "sum": 7,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010232",
+        "dice": [
+          2,
+          2,
+          5
+        ],
+        "premium": "225",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010231",
+        "dice": [
+          5,
+          1,
+          5
+        ],
+        "premium": "515",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010230",
+        "dice": [
+          2,
+          1,
+          2
+        ],
+        "premium": "212",
+        "sum": 5,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010229",
+        "dice": [
+          6,
+          3,
+          3
+        ],
+        "premium": "633",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010228",
+        "dice": [
+          5,
+          6,
+          1
+        ],
+        "premium": "561",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010227",
+        "dice": [
+          5,
+          1,
+          6
+        ],
+        "premium": "516",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010226",
+        "dice": [
+          6,
+          1,
+          3
+        ],
+        "premium": "613",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010225",
+        "dice": [
+          2,
+          6,
+          2
+        ],
+        "premium": "262",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010224",
+        "dice": [
+          6,
+          2,
+          4
+        ],
+        "premium": "624",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010223",
+        "dice": [
+          2,
+          3,
+          3
+        ],
+        "premium": "233",
+        "sum": 8,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010222",
+        "dice": [
+          2,
+          6,
+          6
+        ],
+        "premium": "266",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010221",
+        "dice": [
+          6,
+          3,
+          2
+        ],
+        "premium": "632",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010220",
+        "dice": [
+          4,
+          6,
+          3
+        ],
+        "premium": "463",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010219",
+        "dice": [
+          6,
+          6,
+          6
+        ],
+        "premium": "666",
+        "sum": 18,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010218",
+        "dice": [
+          5,
+          1,
+          1
+        ],
+        "premium": "511",
+        "sum": 7,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010217",
+        "dice": [
+          3,
+          3,
+          3
+        ],
+        "premium": "333",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010216",
+        "dice": [
+          1,
+          5,
+          3
+        ],
+        "premium": "153",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010215",
+        "dice": [
+          5,
+          1,
+          4
+        ],
+        "premium": "514",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010214",
+        "dice": [
+          4,
+          1,
+          4
+        ],
+        "premium": "414",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010213",
+        "dice": [
+          1,
+          4,
+          1
+        ],
+        "premium": "141",
+        "sum": 6,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010212",
+        "dice": [
+          1,
+          5,
+          2
+        ],
+        "premium": "152",
+        "sum": 8,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010211",
+        "dice": [
+          5,
+          5,
+          1
+        ],
+        "premium": "551",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010210",
+        "dice": [
+          2,
+          1,
+          6
+        ],
+        "premium": "216",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010209",
+        "dice": [
+          6,
+          3,
+          5
+        ],
+        "premium": "635",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010208",
+        "dice": [
+          6,
+          5,
+          3
+        ],
+        "premium": "653",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010207",
+        "dice": [
+          5,
+          5,
+          4
+        ],
+        "premium": "554",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010206",
+        "dice": [
+          4,
+          5,
+          4
+        ],
+        "premium": "454",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010205",
+        "dice": [
+          5,
+          1,
+          2
+        ],
+        "premium": "512",
+        "sum": 8,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010204",
+        "dice": [
+          5,
+          5,
+          4
+        ],
+        "premium": "554",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010203",
+        "dice": [
+          4,
+          6,
+          1
+        ],
+        "premium": "461",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010202",
+        "dice": [
+          5,
+          2,
+          3
+        ],
+        "premium": "523",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010201",
+        "dice": [
+          1,
+          6,
+          6
+        ],
+        "premium": "166",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010200",
+        "dice": [
+          4,
+          1,
+          1
+        ],
+        "premium": "411",
+        "sum": 6,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010199",
+        "dice": [
+          4,
+          4,
+          1
+        ],
+        "premium": "441",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010198",
+        "dice": [
+          4,
+          2,
+          1
+        ],
+        "premium": "421",
+        "sum": 7,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010197",
+        "dice": [
+          1,
+          2,
+          2
+        ],
+        "premium": "122",
+        "sum": 5,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010196",
+        "dice": [
+          2,
+          1,
+          6
+        ],
+        "premium": "216",
+        "sum": 9,
+        "size": "小",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010195",
+        "dice": [
+          2,
+          6,
+          6
+        ],
+        "premium": "266",
+        "sum": 14,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "14-18"
+      },
+      {
+        "issueNumber": "20261002101010194",
+        "dice": [
+          6,
+          1,
+          6
+        ],
+        "premium": "616",
+        "sum": 13,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010193",
+        "dice": [
+          2,
+          1,
+          3
+        ],
+        "premium": "213",
+        "sum": 6,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "3-7"
+      },
+      {
+        "issueNumber": "20261002101010192",
+        "dice": [
+          2,
+          5,
+          5
+        ],
+        "premium": "255",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010191",
+        "dice": [
+          5,
+          2,
+          5
+        ],
+        "premium": "525",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010190",
+        "dice": [
+          1,
+          6,
+          4
+        ],
+        "premium": "164",
+        "sum": 11,
+        "size": "大",
+        "oddEven": "单",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010189",
+        "dice": [
+          1,
+          5,
+          4
+        ],
+        "premium": "154",
+        "sum": 10,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010188",
+        "dice": [
+          4,
+          1,
+          3
+        ],
+        "premium": "413",
+        "sum": 8,
+        "size": "小",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
+      {
+        "issueNumber": "20261002101010187",
+        "dice": [
+          5,
+          1,
+          6
+        ],
+        "premium": "516",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      }
+    ],
+    "current_issue": {
+      "issueNumber": "20261002101010287",
+      "startTime": "2026-10-02 12:46:00",
+      "endTime": "2026-10-02 12:47:00",
+      "serviceTime": "2026-10-02 12:46:21",
+      "intervalM": 1
+    },
+    "status": "v18-github-secrets | 实时 API 已连接",
+    "build_version": "v18-github-secrets",
+    "typeId": 9,
+    "updated_at": 1790916381
+  },
+  "5d": {
+    "reviews": [
+      {
+        "issueNumber": "20261002102010286",
+        "prediction": "65995",
+        "actual": "73725",
+        "score": "数字 1/5 · 大小 3/5 · 单双 3/5",
+        "win": true
+      }
+    ],
+    "prediction": {
+      "digits": [
+        0,
+        5,
+        7,
+        9,
+        0
+      ],
+      "premium": "05790",
+      "sizeByPosition": [
+        "小",
+        "大",
+        "大",
+        "大",
+        "小"
+      ],
+      "oddEvenByPosition": [
+        "双",
+        "单",
+        "单",
+        "单",
+        "双"
+      ],
+      "sum": 21,
+      "confidence": 63,
+      "detailConfidence": [
+        64,
+        63,
+        63,
+        64,
+        63
+      ],
+      "method": "每位近期加权频率 + 状态转移",
+      "issueNumber": "20261002102010287",
+      "generatedAt": 1790916383
+    },
+    "draws": [
+      {
+        "issueNumber": "20261002102010286",
+        "digits": [
+          7,
+          3,
+          7,
+          2,
+          5
+        ],
+        "premium": "73725",
+        "sum": 24,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010285",
+        "digits": [
+          6,
+          3,
+          4,
+          2,
+          6
+        ],
+        "premium": "63426",
+        "sum": 21,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010284",
+        "digits": [
+          0,
+          1,
+          5,
+          7,
+          5
+        ],
+        "premium": "01575",
+        "sum": 18,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010283",
+        "digits": [
+          7,
+          0,
+          1,
+          6,
+          3
+        ],
+        "premium": "70163",
+        "sum": 17,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010282",
+        "digits": [
+          5,
+          9,
+          1,
+          1,
+          5
+        ],
+        "premium": "59115",
+        "sum": 21,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010281",
+        "digits": [
+          4,
+          7,
+          9,
+          3,
+          2
+        ],
+        "premium": "47932",
+        "sum": 25,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010280",
+        "digits": [
+          2,
+          5,
+          8,
+          5,
+          4
+        ],
+        "premium": "25854",
+        "sum": 24,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010279",
+        "digits": [
+          0,
+          2,
+          9,
+          3,
+          0
+        ],
+        "premium": "02930",
+        "sum": 14,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010278",
+        "digits": [
+          9,
+          4,
+          4,
+          2,
+          0
+        ],
+        "premium": "94420",
+        "sum": 19,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010277",
+        "digits": [
+          8,
+          1,
+          9,
+          7,
+          5
+        ],
+        "premium": "81975",
+        "sum": 30,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010276",
+        "digits": [
+          1,
+          6,
+          6,
+          9,
+          3
+        ],
+        "premium": "16693",
+        "sum": 25,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010275",
+        "digits": [
+          1,
+          1,
+          2,
+          2,
+          1
+        ],
+        "premium": "11221",
+        "sum": 7,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010274",
+        "digits": [
+          2,
+          6,
+          5,
+          0,
+          3
+        ],
+        "premium": "26503",
+        "sum": 16,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010273",
+        "digits": [
+          7,
+          2,
+          7,
+          8,
+          6
+        ],
+        "premium": "72786",
+        "sum": 30,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010272",
+        "digits": [
+          3,
+          5,
+          9,
+          9,
+          6
+        ],
+        "premium": "35996",
+        "sum": 32,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010271",
+        "digits": [
+          1,
+          0,
+          6,
+          2,
+          3
+        ],
+        "premium": "10623",
+        "sum": 12,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010270",
+        "digits": [
+          0,
+          7,
+          5,
+          0,
+          2
+        ],
+        "premium": "07502",
+        "sum": 14,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010269",
+        "digits": [
+          0,
+          2,
+          4,
+          2,
+          4
+        ],
+        "premium": "02424",
+        "sum": 12,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010268",
+        "digits": [
+          3,
+          5,
+          7,
+          5,
+          9
+        ],
+        "premium": "35759",
+        "sum": 29,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010267",
+        "digits": [
+          6,
+          0,
+          6,
+          8,
+          7
+        ],
+        "premium": "60687",
+        "sum": 27,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010266",
+        "digits": [
+          8,
+          5,
+          8,
+          4,
+          1
+        ],
+        "premium": "85841",
+        "sum": 26,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010265",
+        "digits": [
+          3,
+          2,
+          8,
+          5,
+          7
+        ],
+        "premium": "32857",
+        "sum": 25,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010264",
+        "digits": [
+          3,
+          7,
+          7,
+          9,
+          8
+        ],
+        "premium": "37798",
+        "sum": 34,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010263",
+        "digits": [
+          7,
+          4,
+          0,
+          2,
+          0
+        ],
+        "premium": "74020",
+        "sum": 13,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010262",
+        "digits": [
+          2,
+          6,
+          4,
+          8,
+          6
+        ],
+        "premium": "26486",
+        "sum": 26,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010261",
+        "digits": [
+          7,
+          4,
+          8,
+          1,
+          7
+        ],
+        "premium": "74817",
+        "sum": 27,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010260",
+        "digits": [
+          9,
+          0,
+          4,
+          7,
+          1
+        ],
+        "premium": "90471",
+        "sum": 21,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010259",
+        "digits": [
+          2,
+          6,
+          9,
+          0,
+          3
+        ],
+        "premium": "26903",
+        "sum": 20,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010258",
+        "digits": [
+          5,
+          4,
+          4,
+          9,
+          1
+        ],
+        "premium": "54491",
+        "sum": 23,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010257",
+        "digits": [
+          8,
+          2,
+          2,
+          1,
+          0
+        ],
+        "premium": "82210",
+        "sum": 13,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010256",
+        "digits": [
+          1,
+          5,
+          4,
+          2,
+          7
+        ],
+        "premium": "15427",
+        "sum": 19,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010255",
+        "digits": [
+          5,
+          7,
+          1,
+          4,
+          8
+        ],
+        "premium": "57148",
+        "sum": 25,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010254",
+        "digits": [
+          4,
+          3,
+          0,
+          6,
+          6
+        ],
+        "premium": "43066",
+        "sum": 19,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010253",
+        "digits": [
+          4,
+          1,
+          5,
+          7,
+          0
+        ],
+        "premium": "41570",
+        "sum": 17,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010252",
+        "digits": [
+          0,
+          0,
+          6,
+          7,
+          0
+        ],
+        "premium": "00670",
+        "sum": 13,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010251",
+        "digits": [
+          1,
+          0,
+          0,
+          1,
+          0
+        ],
+        "premium": "10010",
+        "sum": 2,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010250",
+        "digits": [
+          0,
+          8,
+          0,
+          2,
+          5
+        ],
+        "premium": "08025",
+        "sum": 15,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010249",
+        "digits": [
+          7,
+          1,
+          3,
+          8,
+          6
+        ],
+        "premium": "71386",
+        "sum": 25,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010248",
+        "digits": [
+          2,
+          3,
+          7,
+          9,
+          8
+        ],
+        "premium": "23798",
+        "sum": 29,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010247",
+        "digits": [
+          9,
+          5,
+          4,
+          6,
+          5
+        ],
+        "premium": "95465",
+        "sum": 29,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010246",
+        "digits": [
+          6,
+          7,
+          8,
+          4,
+          4
+        ],
+        "premium": "67844",
+        "sum": 29,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010245",
+        "digits": [
+          1,
+          3,
+          0,
+          7,
+          6
+        ],
+        "premium": "13076",
+        "sum": 17,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010244",
+        "digits": [
+          5,
+          8,
+          9,
+          4,
+          9
+        ],
+        "premium": "58949",
+        "sum": 35,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010243",
+        "digits": [
+          7,
+          3,
+          3,
+          7,
+          3
+        ],
+        "premium": "73373",
+        "sum": 23,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010242",
+        "digits": [
+          0,
+          2,
+          1,
+          8,
+          4
+        ],
+        "premium": "02184",
+        "sum": 15,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010241",
+        "digits": [
+          8,
+          5,
+          7,
+          9,
+          9
+        ],
+        "premium": "85799",
+        "sum": 38,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010240",
+        "digits": [
+          2,
+          4,
+          6,
+          3,
+          4
+        ],
+        "premium": "24634",
+        "sum": 19,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010239",
+        "digits": [
+          3,
+          8,
+          3,
+          2,
+          8
+        ],
+        "premium": "38328",
+        "sum": 24,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010238",
+        "digits": [
+          5,
+          4,
+          8,
+          9,
+          9
+        ],
+        "premium": "54899",
+        "sum": 35,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010237",
+        "digits": [
+          6,
+          1,
+          1,
+          3,
+          3
+        ],
+        "premium": "61133",
+        "sum": 14,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010236",
+        "digits": [
+          6,
+          6,
+          2,
+          3,
+          5
+        ],
+        "premium": "66235",
+        "sum": 22,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010235",
+        "digits": [
+          1,
+          2,
+          4,
+          9,
+          0
+        ],
+        "premium": "12490",
+        "sum": 16,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010234",
+        "digits": [
+          4,
+          4,
+          3,
+          9,
+          8
+        ],
+        "premium": "44398",
+        "sum": 28,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010233",
+        "digits": [
+          9,
+          5,
+          3,
+          9,
+          3
+        ],
+        "premium": "95393",
+        "sum": 29,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010232",
+        "digits": [
+          9,
+          2,
+          6,
+          4,
+          2
+        ],
+        "premium": "92642",
+        "sum": 23,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010231",
+        "digits": [
+          7,
+          6,
+          1,
+          6,
+          5
+        ],
+        "premium": "76165",
+        "sum": 25,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010230",
+        "digits": [
+          0,
+          6,
+          2,
+          4,
+          7
+        ],
+        "premium": "06247",
+        "sum": 19,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010229",
+        "digits": [
+          8,
+          5,
+          8,
+          3,
+          1
+        ],
+        "premium": "85831",
+        "sum": 25,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010228",
+        "digits": [
+          9,
+          9,
+          5,
+          2,
+          5
+        ],
+        "premium": "99525",
+        "sum": 30,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010227",
+        "digits": [
+          8,
+          9,
+          9,
+          3,
+          7
+        ],
+        "premium": "89937",
+        "sum": 36,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010226",
+        "digits": [
+          5,
+          6,
+          7,
+          7,
+          3
+        ],
+        "premium": "56773",
+        "sum": 28,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010225",
+        "digits": [
+          7,
+          2,
+          7,
+          8,
+          8
+        ],
+        "premium": "72788",
+        "sum": 32,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010224",
+        "digits": [
+          8,
+          5,
+          0,
+          8,
+          7
+        ],
+        "premium": "85087",
+        "sum": 28,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010223",
+        "digits": [
+          3,
+          5,
+          8,
+          7,
+          9
+        ],
+        "premium": "35879",
+        "sum": 32,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010222",
+        "digits": [
+          4,
+          0,
+          0,
+          3,
+          6
+        ],
+        "premium": "40036",
+        "sum": 13,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010221",
+        "digits": [
+          5,
+          4,
+          8,
+          2,
+          8
+        ],
+        "premium": "54828",
+        "sum": 27,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010220",
+        "digits": [
+          6,
+          8,
+          3,
+          0,
+          7
+        ],
+        "premium": "68307",
+        "sum": 24,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010219",
+        "digits": [
+          9,
+          5,
+          9,
+          7,
+          2
+        ],
+        "premium": "95972",
+        "sum": 32,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010218",
+        "digits": [
+          6,
+          0,
+          5,
+          1,
+          1
+        ],
+        "premium": "60511",
+        "sum": 13,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010217",
+        "digits": [
+          6,
+          4,
+          7,
+          1,
+          5
+        ],
+        "premium": "64715",
+        "sum": 23,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010216",
+        "digits": [
+          6,
+          0,
+          5,
+          0,
+          3
+        ],
+        "premium": "60503",
+        "sum": 14,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010215",
+        "digits": [
+          6,
+          8,
+          9,
+          8,
+          9
+        ],
+        "premium": "68989",
+        "sum": 40,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010214",
+        "digits": [
+          3,
+          7,
+          3,
+          1,
+          8
+        ],
+        "premium": "37318",
+        "sum": 22,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010213",
+        "digits": [
+          5,
+          5,
+          1,
+          8,
+          5
+        ],
+        "premium": "55185",
+        "sum": 24,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010212",
+        "digits": [
+          2,
+          9,
+          7,
+          9,
+          4
+        ],
+        "premium": "29794",
+        "sum": 31,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010211",
+        "digits": [
+          9,
+          3,
+          7,
+          3,
+          6
+        ],
+        "premium": "93736",
+        "sum": 28,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010210",
+        "digits": [
+          9,
+          9,
+          0,
+          1,
+          0
+        ],
+        "premium": "99010",
+        "sum": 19,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010209",
+        "digits": [
+          0,
+          0,
+          1,
+          7,
+          0
+        ],
+        "premium": "00170",
+        "sum": 8,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010208",
+        "digits": [
+          7,
+          3,
+          4,
+          5,
+          4
+        ],
+        "premium": "73454",
+        "sum": 23,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010207",
+        "digits": [
+          3,
+          9,
+          3,
+          8,
+          4
+        ],
+        "premium": "39384",
+        "sum": 27,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010206",
+        "digits": [
+          3,
+          2,
+          3,
+          4,
+          1
+        ],
+        "premium": "32341",
+        "sum": 13,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010205",
+        "digits": [
+          2,
+          5,
+          2,
+          4,
+          2
+        ],
+        "premium": "25242",
+        "sum": 15,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010204",
+        "digits": [
+          1,
+          3,
+          3,
+          5,
+          8
+        ],
+        "premium": "13358",
+        "sum": 20,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010203",
+        "digits": [
+          4,
+          5,
+          1,
+          6,
+          7
+        ],
+        "premium": "45167",
+        "sum": 23,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010202",
+        "digits": [
+          1,
+          2,
+          7,
+          8,
+          5
+        ],
+        "premium": "12785",
+        "sum": 23,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010201",
+        "digits": [
+          3,
+          7,
+          6,
+          1,
+          6
+        ],
+        "premium": "37616",
+        "sum": 23,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010200",
+        "digits": [
+          8,
+          5,
+          4,
+          9,
+          7
+        ],
+        "premium": "85497",
+        "sum": 33,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "双",
+          "单",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010199",
+        "digits": [
+          5,
+          9,
+          6,
+          6,
+          6
+        ],
+        "premium": "59666",
+        "sum": 32,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010198",
+        "digits": [
+          3,
+          1,
+          4,
+          3,
+          0
+        ],
+        "premium": "31430",
+        "sum": 11,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010197",
+        "digits": [
+          1,
+          2,
+          8,
+          9,
+          4
+        ],
+        "premium": "12894",
+        "sum": 24,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010196",
+        "digits": [
+          4,
+          6,
+          4,
+          1,
+          4
+        ],
+        "premium": "46414",
+        "sum": 19,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "双",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010195",
+        "digits": [
+          1,
+          8,
+          2,
+          4,
+          0
+        ],
+        "premium": "18240",
+        "sum": 15,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "小",
+          "小",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010194",
+        "digits": [
+          1,
+          3,
+          6,
+          9,
+          8
+        ],
+        "premium": "13698",
+        "sum": 27,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010193",
+        "digits": [
+          9,
+          9,
+          5,
+          2,
+          9
+        ],
+        "premium": "99529",
+        "sum": 34,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010192",
+        "digits": [
+          1,
+          5,
+          5,
+          7,
+          0
+        ],
+        "premium": "15570",
+        "sum": 18,
+        "sizeByPosition": [
+          "小",
+          "大",
+          "大",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010191",
+        "digits": [
+          7,
+          6,
+          4,
+          6,
+          2
+        ],
+        "premium": "76462",
+        "sum": 25,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "大",
+          "小"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010190",
+        "digits": [
+          0,
+          3,
+          3,
+          8,
+          6
+        ],
+        "premium": "03386",
+        "sum": 20,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "双",
+          "单",
+          "单",
+          "双",
+          "双"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010189",
+        "digits": [
+          7,
+          2,
+          6,
+          6,
+          5
+        ],
+        "premium": "72665",
+        "sum": 26,
+        "sizeByPosition": [
+          "大",
+          "小",
+          "大",
+          "大",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010188",
+        "digits": [
+          3,
+          0,
+          0,
+          2,
+          9
+        ],
+        "premium": "30029",
+        "sum": 14,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "双",
+          "双",
+          "双",
+          "单"
+        ]
+      },
+      {
+        "issueNumber": "20261002102010187",
+        "digits": [
+          7,
+          7,
+          3,
+          3,
+          6
+        ],
+        "premium": "77336",
+        "sum": 26,
+        "sizeByPosition": [
+          "大",
+          "大",
+          "小",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "单",
+          "单",
+          "双"
+        ]
+      }
+    ],
+    "current_issue": {
+      "issueNumber": "20261002102010287",
+      "startTime": "2026-10-02 12:46:00",
+      "endTime": "2026-10-02 12:47:00",
+      "serviceTime": "2026-10-02 12:46:23",
+      "intervalM": 1.0
+    },
+    "status": "v18-github-secrets | 实时 API 已连接",
+    "build_version": "v18-github-secrets",
+    "typeId": 5,
+    "updated_at": 1790916383
+  },
+  "trx": {
+    "reviews": [
+      {
+        "issueNumber": "20261002103010286",
+        "prediction": "7 / 小 / 绿",
+        "actual": "6 / 大 / 红",
+        "score": "号码 LOSS · 大小 LOSS · 颜色 LOSS",
+        "win": false
+      }
+    ],
+    "prediction": {
+      "number": 7,
+      "size": "小",
+      "colour": "绿",
+      "confidence": 73,
+      "detailConfidence": {
+        "number": 65,
+        "size": 76,
+        "colour": 79
+      },
+      "method": "近期加权频率 + 状态转移",
+      "issueNumber": "20261002103010287",
+      "generatedAt": 1790916386
+    },
+    "draws": [
+      {
+        "issueNumber": "20261002103010286",
+        "number": 6,
+        "premium": "00276",
+        "size": "大",
+        "colour": "红",
+        "blockID": "00000000052bab0ae65cffa45d85bffde3cd67442ed936073bb85d50bca02e76",
+        "blockNumber": 86747914,
+        "blockTime": "2026-10-02 12:45:54"
+      },
+      {
+        "issueNumber": "20261002103010285",
+        "number": 5,
+        "premium": "58715",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052baaf688e46256fb986aeed0cdb6cff51f2c939f0b5405e8df715a",
+        "blockNumber": 86747894,
+        "blockTime": "2026-10-02 12:44:54"
+      },
+      {
+        "issueNumber": "20261002103010284",
+        "number": 9,
+        "premium": "67819",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052baae2eef63e2cc9778f9e655bf2380f631a992513651867bfe819",
+        "blockNumber": 86747874,
+        "blockTime": "2026-10-02 12:43:54"
+      },
+      {
+        "issueNumber": "20261002103010283",
+        "number": 4,
+        "premium": "49764",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052baace9e75174a59fd79ef047e0f1af764dfb375de6b29c4a9764a",
+        "blockNumber": 86747854,
+        "blockTime": "2026-10-02 12:42:54"
+      },
+      {
+        "issueNumber": "20261002103010282",
+        "number": 0,
+        "premium": "44930",
+        "size": "小",
+        "colour": "红+紫",
+        "blockID": "00000000052baaba636e24518ad33171249c3f59caf62153314affff493aced0",
+        "blockNumber": 86747834,
+        "blockTime": "2026-10-02 12:41:54"
+      },
+      {
+        "issueNumber": "20261002103010281",
+        "number": 7,
+        "premium": "20487",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052baaa60e4d483fbe7f73904788b801746e276a7dc1a51820fb4f87",
+        "blockNumber": 86747814,
+        "blockTime": "2026-10-02 12:40:54"
+      },
+      {
+        "issueNumber": "20261002103010280",
+        "number": 8,
+        "premium": "76558",
+        "size": "大",
+        "colour": "红",
+        "blockID": "00000000052baa9222b72b16262d0b92a998211d7eb6b643b985e88577d76558",
+        "blockNumber": 86747794,
+        "blockTime": "2026-10-02 12:39:54"
+      },
+      {
+        "issueNumber": "20261002103010279",
+        "number": 1,
+        "premium": "06971",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052baa7e0387dafef7de2993fd7f84857f50138a918b364d30697fa1",
+        "blockNumber": 86747774,
+        "blockTime": "2026-10-02 12:38:54"
+      },
+      {
+        "issueNumber": "20261002103010278",
+        "number": 2,
+        "premium": "76292",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052baa6a4355023299dd7d97a31640652f429503a41407fbaf76f292",
+        "blockNumber": 86747754,
+        "blockTime": "2026-10-02 12:37:54"
+      },
+      {
+        "issueNumber": "20261002103010277",
+        "number": 1,
+        "premium": "70861",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052baa5637c1be0f4ae0f5855ffe28305d5a5c6b45bdddda270861ef",
+        "blockNumber": 86747734,
+        "blockTime": "2026-10-02 12:36:54"
+      },
+      {
+        "issueNumber": "20261002103010276",
+        "number": 4,
+        "premium": "74714",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052baa4269325eeac52bdefd12cd971b5bf05e9e1a63e6374d7ef1a4",
+        "blockNumber": 86747714,
+        "blockTime": "2026-10-02 12:35:54"
+      },
+      {
+        "issueNumber": "20261002103010275",
+        "number": 9,
+        "premium": "21989",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052baa2eb1398ea5894324ec2c9990a26d7b3917d5ea359c21fe98d9",
+        "blockNumber": 86747694,
+        "blockTime": "2026-10-02 12:34:54"
+      },
+      {
+        "issueNumber": "20261002103010274",
+        "number": 2,
+        "premium": "24322",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052baa1a7f2fd0775d4ce469ae7f37af0e8264a9fd24ca3d2dfeb2fd",
+        "blockNumber": 86747674,
+        "blockTime": "2026-10-02 12:33:54"
+      },
+      {
+        "issueNumber": "20261002103010273",
+        "number": 0,
+        "premium": "18920",
+        "size": "小",
+        "colour": "红+紫",
+        "blockID": "00000000052baa065bd11b89a9aa1903c5c5ca36e3574ebf439f1664189a2e0e",
+        "blockNumber": 86747654,
+        "blockTime": "2026-10-02 12:32:54"
+      },
+      {
+        "issueNumber": "20261002103010272",
+        "number": 3,
+        "premium": "48953",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba9f2bc3e605d8fb71ad3b6985d10af1462409554d748cab95f3b",
+        "blockNumber": 86747634,
+        "blockTime": "2026-10-02 12:31:54"
+      },
+      {
+        "issueNumber": "20261002103010271",
+        "number": 7,
+        "premium": "74587",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba9de8a9b53b823a4e8ac26b0aa6f763c28f36ea1ef57a4b587dc",
+        "blockNumber": 86747614,
+        "blockTime": "2026-10-02 12:30:54"
+      },
+      {
+        "issueNumber": "20261002103010270",
+        "number": 7,
+        "premium": "55847",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba9ca39c93e6d6e09479e51b03bd4e8b35d6335c163a35a5f847c",
+        "blockNumber": 86747594,
+        "blockTime": "2026-10-02 12:29:54"
+      },
+      {
+        "issueNumber": "20261002103010269",
+        "number": 2,
+        "premium": "71382",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba9b6a86a41cac67a3ca37c2a5a2e8914b8c7e9ee1ddf371c382f",
+        "blockNumber": 86747574,
+        "blockTime": "2026-10-02 12:28:54"
+      },
+      {
+        "issueNumber": "20261002103010268",
+        "number": 9,
+        "premium": "91989",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba9a28c8d32c5d3d98b03c84b4dd33047f5b565ae040c91989edb",
+        "blockNumber": 86747554,
+        "blockTime": "2026-10-02 12:27:54"
+      },
+      {
+        "issueNumber": "20261002103010267",
+        "number": 5,
+        "premium": "60455",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba98eab3abbde2a4ecbf675505890d676b62bbd77e156dd0a4e55",
+        "blockNumber": 86747534,
+        "blockTime": "2026-10-02 12:26:54"
+      },
+      {
+        "issueNumber": "20261002103010266",
+        "number": 9,
+        "premium": "16089",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba97a468c7a3c598cdd6f6dacf29598257f1b3e3258cc16cb089d",
+        "blockNumber": 86747514,
+        "blockTime": "2026-10-02 12:25:54"
+      },
+      {
+        "issueNumber": "20261002103010265",
+        "number": 4,
+        "premium": "30304",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba966d0573761ff166c3951b31c2a7c8c9c3da237463a030f4efa",
+        "blockNumber": 86747494,
+        "blockTime": "2026-10-02 12:24:54"
+      },
+      {
+        "issueNumber": "20261002103010264",
+        "number": 4,
+        "premium": "70914",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba952c43b5b0ee9dcffefb2dd3928acdd8e48466015577a0b91c4",
+        "blockNumber": 86747474,
+        "blockTime": "2026-10-02 12:23:54"
+      },
+      {
+        "issueNumber": "20261002103010263",
+        "number": 8,
+        "premium": "36318",
+        "size": "大",
+        "colour": "红",
+        "blockID": "00000000052ba93e7737b50577ef5bbf6fc0374def1f223d5948963b00236318",
+        "blockNumber": 86747454,
+        "blockTime": "2026-10-02 12:22:54"
+      },
+      {
+        "issueNumber": "20261002103010262",
+        "number": 0,
+        "premium": "14890",
+        "size": "小",
+        "colour": "红+紫",
+        "blockID": "00000000052ba92a1bbf7a533e5d2db4fe33c188dc38669233321a4ccfe8b90d",
+        "blockNumber": 86747434,
+        "blockTime": "2026-10-02 12:21:54"
+      },
+      {
+        "issueNumber": "20261002103010261",
+        "number": 2,
+        "premium": "30322",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba916c486f74d81968ef154ce45648f19a27de4305b2b33e0322b",
+        "blockNumber": 86747414,
+        "blockTime": "2026-10-02 12:20:54"
+      },
+      {
+        "issueNumber": "20261002103010260",
+        "number": 3,
+        "premium": "90123",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba902010ef06b51150378e53950bb7e2cbefc453bea9bd012aab3",
+        "blockNumber": 86747394,
+        "blockTime": "2026-10-02 12:19:54"
+      },
+      {
+        "issueNumber": "20261002103010259",
+        "number": 4,
+        "premium": "13564",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba8ee1473cddd1d6d0ec67bb88cb26e892a923a85bd159135b64f",
+        "blockNumber": 86747374,
+        "blockTime": "2026-10-02 12:18:54"
+      },
+      {
+        "issueNumber": "20261002103010258",
+        "number": 2,
+        "premium": "68002",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba8da3b7fb86c45476fb07c9e769692e8dc9d70e226ffaf80bf02",
+        "blockNumber": 86747354,
+        "blockTime": "2026-10-02 12:17:54"
+      },
+      {
+        "issueNumber": "20261002103010257",
+        "number": 5,
+        "premium": "74945",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba8c6a407c699065efb6b624f9c1c7ef0e23449498e160bd74945",
+        "blockNumber": 86747334,
+        "blockTime": "2026-10-02 12:16:54"
+      },
+      {
+        "issueNumber": "20261002103010256",
+        "number": 1,
+        "premium": "16991",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba8b2c6e9a1645adf3173ec30973d853d2d26f1bf6bf9fc9dabb1",
+        "blockNumber": 86747314,
+        "blockTime": "2026-10-02 12:15:54"
+      },
+      {
+        "issueNumber": "20261002103010255",
+        "number": 6,
+        "premium": "60916",
+        "size": "大",
+        "colour": "红",
+        "blockID": "00000000052ba89ee4a4600dbac748c50eaa7df9f9498c1896c0cfb6a0c916ed",
+        "blockNumber": 86747294,
+        "blockTime": "2026-10-02 12:14:54"
+      },
+      {
+        "issueNumber": "20261002103010254",
+        "number": 7,
+        "premium": "72687",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba88a0238313d64eb7ffab39c939eddf68d5fdc26c2fb37268e7b",
+        "blockNumber": 86747274,
+        "blockTime": "2026-10-02 12:13:54"
+      },
+      {
+        "issueNumber": "20261002103010253",
+        "number": 4,
+        "premium": "44624",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba8769e410b6f7a3e586e658ce7b68f23fc0b32afab5d4b462da4",
+        "blockNumber": 86747254,
+        "blockTime": "2026-10-02 12:12:54"
+      },
+      {
+        "issueNumber": "20261002103010252",
+        "number": 7,
+        "premium": "43377",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba862e6106e0cdee770ca87d27a11fec26e5f05d625cd44d33f77",
+        "blockNumber": 86747234,
+        "blockTime": "2026-10-02 12:11:54"
+      },
+      {
+        "issueNumber": "20261002103010251",
+        "number": 4,
+        "premium": "45214",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba84e183a12adbe0173a366215dc89336030107c759e2274521b4",
+        "blockNumber": 86747214,
+        "blockTime": "2026-10-02 12:10:54"
+      },
+      {
+        "issueNumber": "20261002103010250",
+        "number": 7,
+        "premium": "92317",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba83a078fcf15c76c5458d8f81289abdcf4dd792815b69231f7ed",
+        "blockNumber": 86747194,
+        "blockTime": "2026-10-02 12:09:54"
+      },
+      {
+        "issueNumber": "20261002103010249",
+        "number": 5,
+        "premium": "14675",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba8263edf7c4be43091e81e99e7bc6d912a6744a96d45e2314675",
+        "blockNumber": 86747174,
+        "blockTime": "2026-10-02 12:08:54"
+      },
+      {
+        "issueNumber": "20261002103010248",
+        "number": 5,
+        "premium": "82495",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba812cbd2705a2dc2af87b0896274f9fc91f8003ec98bfc2d495a",
+        "blockNumber": 86747154,
+        "blockTime": "2026-10-02 12:07:54"
+      },
+      {
+        "issueNumber": "20261002103010247",
+        "number": 9,
+        "premium": "69919",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba7fea4ce27629ea3011bea8e9d337f19967f02c83c3826991d9d",
+        "blockNumber": 86747134,
+        "blockTime": "2026-10-02 12:06:54"
+      },
+      {
+        "issueNumber": "20261002103010246",
+        "number": 3,
+        "premium": "65983",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba7ea231f967b5e20b50c0d7f4880b6cbeed4ff3075f101659f83",
+        "blockNumber": 86747114,
+        "blockTime": "2026-10-02 12:05:54"
+      },
+      {
+        "issueNumber": "20261002103010245",
+        "number": 7,
+        "premium": "36427",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba7d6931bcb93a3775470f89869bf2d6ada02f4fd037f736b427e",
+        "blockNumber": 86747094,
+        "blockTime": "2026-10-02 12:04:54"
+      },
+      {
+        "issueNumber": "20261002103010244",
+        "number": 3,
+        "premium": "65373",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba7c28aea71befe718c4b39061517d928483c50cfa446b5deb373",
+        "blockNumber": 86747074,
+        "blockTime": "2026-10-02 12:03:54"
+      },
+      {
+        "issueNumber": "20261002103010243",
+        "number": 1,
+        "premium": "07691",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba7ae0ad5c3e63c161cf3b40619a3d68e080d6298959b28207691",
+        "blockNumber": 86747054,
+        "blockTime": "2026-10-02 12:02:54"
+      },
+      {
+        "issueNumber": "20261002103010242",
+        "number": 7,
+        "premium": "74767",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba79aa0a0ef1c1e40f8e7fc43882ab82f19a791d1565fa74db767",
+        "blockNumber": 86747034,
+        "blockTime": "2026-10-02 12:01:54"
+      },
+      {
+        "issueNumber": "20261002103010241",
+        "number": 7,
+        "premium": "04177",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba786215f88a67c9c24faaeb9d58ff6c8dfed2af121000c417ce7",
+        "blockNumber": 86747014,
+        "blockTime": "2026-10-02 12:00:54"
+      },
+      {
+        "issueNumber": "20261002103010240",
+        "number": 7,
+        "premium": "09767",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba772d26a6214f7073ba96710feac802a9613da4bdcd0ec9767fc",
+        "blockNumber": 86746994,
+        "blockTime": "2026-10-02 11:59:54"
+      },
+      {
+        "issueNumber": "20261002103010239",
+        "number": 3,
+        "premium": "19863",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba75e6c53bae2e345a79f052774176b24a3329ca03ed44c19b863",
+        "blockNumber": 86746974,
+        "blockTime": "2026-10-02 11:58:54"
+      },
+      {
+        "issueNumber": "20261002103010238",
+        "number": 7,
+        "premium": "39807",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba74adb9f099fa34a99e2b1410d7877b282801d4f2839807cddad",
+        "blockNumber": 86746954,
+        "blockTime": "2026-10-02 11:57:54"
+      },
+      {
+        "issueNumber": "20261002103010237",
+        "number": 3,
+        "premium": "08993",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba736f16cee5e4f589b5d664c1c0c7578eaad7f35c9a08ecda993",
+        "blockNumber": 86746934,
+        "blockTime": "2026-10-02 11:56:54"
+      },
+      {
+        "issueNumber": "20261002103010236",
+        "number": 1,
+        "premium": "92501",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba72207bc4f7638b6c6e5fda89c2437c3fb58f879a2a50da1acde",
+        "blockNumber": 86746914,
+        "blockTime": "2026-10-02 11:55:54"
+      },
+      {
+        "issueNumber": "20261002103010235",
+        "number": 3,
+        "premium": "89253",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba70e848f26ca679ad46324aa1c88161e5664b2849ec8fa9ce253",
+        "blockNumber": 86746894,
+        "blockTime": "2026-10-02 11:54:54"
+      },
+      {
+        "issueNumber": "20261002103010234",
+        "number": 2,
+        "premium": "09612",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba6faaf8e7ee17213565bc6390bebdacd16d9dab65fec3f009612",
+        "blockNumber": 86746874,
+        "blockTime": "2026-10-02 11:53:54"
+      },
+      {
+        "issueNumber": "20261002103010233",
+        "number": 7,
+        "premium": "70277",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba6e652fb286cd37dc25b8fe91e0b7f7182c70fa978e70f27af7d",
+        "blockNumber": 86746854,
+        "blockTime": "2026-10-02 11:52:54"
+      },
+      {
+        "issueNumber": "20261002103010232",
+        "number": 4,
+        "premium": "14334",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba6d2dbe65b348960d66df109078422ee834adc73fd56b414334e",
+        "blockNumber": 86746834,
+        "blockTime": "2026-10-02 11:51:54"
+      },
+      {
+        "issueNumber": "20261002103010231",
+        "number": 9,
+        "premium": "05509",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba6be3746e4a89692b909dfe38ab77dc2ee6bee5c70bb4055fe09",
+        "blockNumber": 86746814,
+        "blockTime": "2026-10-02 11:50:54"
+      },
+      {
+        "issueNumber": "20261002103010230",
+        "number": 7,
+        "premium": "56327",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba6aadeb8114964b8defe8ac8a6aba39d29df455bcc156d32c7ac",
+        "blockNumber": 86746794,
+        "blockTime": "2026-10-02 11:49:54"
+      },
+      {
+        "issueNumber": "20261002103010229",
+        "number": 7,
+        "premium": "63107",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba6965b799990f41b51dad35708f69cb7d4c37af5bcb6ecd31f07",
+        "blockNumber": 86746774,
+        "blockTime": "2026-10-02 11:48:54"
+      },
+      {
+        "issueNumber": "20261002103010228",
+        "number": 1,
+        "premium": "49991",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba68204362a3afaf16753209b0ae92d608614bef6d7070499c91b",
+        "blockNumber": 86746754,
+        "blockTime": "2026-10-02 11:47:54"
+      },
+      {
+        "issueNumber": "20261002103010227",
+        "number": 7,
+        "premium": "08957",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba66e5cf672f293e0a09c62229d6ac67f1f40aa177d780b895c7a",
+        "blockNumber": 86746734,
+        "blockTime": "2026-10-02 11:46:54"
+      },
+      {
+        "issueNumber": "20261002103010226",
+        "number": 4,
+        "premium": "69424",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba65ab4fdf83a98e18948744a487af7c0c91ee836694ee2469424",
+        "blockNumber": 86746714,
+        "blockTime": "2026-10-02 11:45:54"
+      },
+      {
+        "issueNumber": "20261002103010225",
+        "number": 0,
+        "premium": "70970",
+        "size": "小",
+        "colour": "红+紫",
+        "blockID": "00000000052ba6462810c94d3056f8ad1330d3b6e57c04208c6f3a3709e70ecd",
+        "blockNumber": 86746694,
+        "blockTime": "2026-10-02 11:44:54"
+      },
+      {
+        "issueNumber": "20261002103010224",
+        "number": 2,
+        "premium": "45432",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba632dfbb30657f6bb567129b3833240e27f3345132d454cbd3c2",
+        "blockNumber": 86746674,
+        "blockTime": "2026-10-02 11:43:54"
+      },
+      {
+        "issueNumber": "20261002103010223",
+        "number": 6,
+        "premium": "71636",
+        "size": "大",
+        "colour": "红",
+        "blockID": "00000000052ba61e45ca916476acedd65280df992e14d72698143bc871636cae",
+        "blockNumber": 86746654,
+        "blockTime": "2026-10-02 11:42:54"
+      },
+      {
+        "issueNumber": "20261002103010222",
+        "number": 7,
+        "premium": "81387",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba60a2631a6529eaca50223a52305209655f7c084ddd8df1e38e7",
+        "blockNumber": 86746634,
+        "blockTime": "2026-10-02 11:41:54"
+      },
+      {
+        "issueNumber": "20261002103010221",
+        "number": 5,
+        "premium": "46875",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba5f690a637e7cbbd79ec2ad45ce0c79f2f4556c230f6d4a687f5",
+        "blockNumber": 86746614,
+        "blockTime": "2026-10-02 11:40:54"
+      },
+      {
+        "issueNumber": "20261002103010220",
+        "number": 9,
+        "premium": "71289",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba5e2f0d5d010c0499ad84f9cbf06c234f132b339b0f3c7128f9d",
+        "blockNumber": 86746594,
+        "blockTime": "2026-10-02 11:39:54"
+      },
+      {
+        "issueNumber": "20261002103010219",
+        "number": 2,
+        "premium": "90362",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba5ce013e838b34a67508b42ee9630cb58cb6e61b5da748190362",
+        "blockNumber": 86746574,
+        "blockTime": "2026-10-02 11:38:54"
+      },
+      {
+        "issueNumber": "20261002103010218",
+        "number": 3,
+        "premium": "86293",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba5ba96a67aac10d546d7a61a8e76399948b7c5ab3f8c62d93cee",
+        "blockNumber": 86746554,
+        "blockTime": "2026-10-02 11:37:54"
+      },
+      {
+        "issueNumber": "20261002103010217",
+        "number": 2,
+        "premium": "55542",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba5a625d69721e2a22d5ec250760ba91865a53275a7b75554daf2",
+        "blockNumber": 86746534,
+        "blockTime": "2026-10-02 11:36:54"
+      },
+      {
+        "issueNumber": "20261002103010216",
+        "number": 7,
+        "premium": "91757",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba59272504c5e81032ac05bf03533f50704d391c894147b9e1757",
+        "blockNumber": 86746514,
+        "blockTime": "2026-10-02 11:35:54"
+      },
+      {
+        "issueNumber": "20261002103010215",
+        "number": 9,
+        "premium": "44579",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba57ea71c2f10561161c7e963a0e0841c044372b4178445db7df9",
+        "blockNumber": 86746494,
+        "blockTime": "2026-10-02 11:34:54"
+      },
+      {
+        "issueNumber": "20261002103010214",
+        "number": 3,
+        "premium": "19543",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba56af4f44a7a8057f7ead543ff3ec03f4e27dd5cad8f61d9c543",
+        "blockNumber": 86746474,
+        "blockTime": "2026-10-02 11:33:54"
+      },
+      {
+        "issueNumber": "20261002103010213",
+        "number": 5,
+        "premium": "40275",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba5564db99103bcc11df900f93539bb456d0c3335ffb4ea0f275b",
+        "blockNumber": 86746454,
+        "blockTime": "2026-10-02 11:32:54"
+      },
+      {
+        "issueNumber": "20261002103010212",
+        "number": 3,
+        "premium": "59603",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba542181700bf864a30a7a6ded1c02fcc3825f89559f60fdafb3f",
+        "blockNumber": 86746434,
+        "blockTime": "2026-10-02 11:31:54"
+      },
+      {
+        "issueNumber": "20261002103010211",
+        "number": 1,
+        "premium": "76851",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba52ec76c609e7d90854d12e6604357f6f5302058b35067685ad1",
+        "blockNumber": 86746414,
+        "blockTime": "2026-10-02 11:30:54"
+      },
+      {
+        "issueNumber": "20261002103010210",
+        "number": 3,
+        "premium": "66873",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba51a3be034ffa9916758d06e0bd39f45f4d83311a70c6e6b8f73",
+        "blockNumber": 86746394,
+        "blockTime": "2026-10-02 11:29:54"
+      },
+      {
+        "issueNumber": "20261002103010209",
+        "number": 3,
+        "premium": "51453",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba506bf0c5412cf66c726bdaa466ddd5bc8680a865df1e4f53cca",
+        "blockNumber": 86746374,
+        "blockTime": "2026-10-02 11:28:54"
+      },
+      {
+        "issueNumber": "20261002103010208",
+        "number": 5,
+        "premium": "70825",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba4f2e67c4c2334b884b4d3d6c76f035009780e36ef09cd70825a",
+        "blockNumber": 86746354,
+        "blockTime": "2026-10-02 11:27:54"
+      },
+      {
+        "issueNumber": "20261002103010207",
+        "number": 3,
+        "premium": "07323",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba4de5d834cfffd8d51b773ed6938b7c36476e504fad1180732e3",
+        "blockNumber": 86746334,
+        "blockTime": "2026-10-02 11:26:54"
+      },
+      {
+        "issueNumber": "20261002103010206",
+        "number": 8,
+        "premium": "77018",
+        "size": "大",
+        "colour": "红",
+        "blockID": "00000000052ba4ca9b275b675753c085438fd01f8945470f40790fa01e7a7018",
+        "blockNumber": 86746314,
+        "blockTime": "2026-10-02 11:25:54"
+      },
+      {
+        "issueNumber": "20261002103010205",
+        "number": 3,
+        "premium": "05953",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba4b64a93b4c55be064ab3b3ebf70be1e8711733875d030595ab3",
+        "blockNumber": 86746294,
+        "blockTime": "2026-10-02 11:24:54"
+      },
+      {
+        "issueNumber": "20261002103010204",
+        "number": 7,
+        "premium": "86817",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba4a256723e9932d9bd830e5b2aafc65a87f3bd793bab186eb817",
+        "blockNumber": 86746274,
+        "blockTime": "2026-10-02 11:23:54"
+      },
+      {
+        "issueNumber": "20261002103010203",
+        "number": 9,
+        "premium": "96199",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba48e2009d2ef571fe610d887fbaac2bd2aa7943711e596a199fa",
+        "blockNumber": 86746254,
+        "blockTime": "2026-10-02 11:22:54"
+      },
+      {
+        "issueNumber": "20261002103010202",
+        "number": 4,
+        "premium": "19564",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba47a10083aefe23588411df576699316d4b02d1e501dde719564",
+        "blockNumber": 86746234,
+        "blockTime": "2026-10-02 11:21:54"
+      },
+      {
+        "issueNumber": "20261002103010201",
+        "number": 3,
+        "premium": "83953",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba466e9131759a95357e607ee07bcbb3e46e6888e6683be95f3cd",
+        "blockNumber": 86746214,
+        "blockTime": "2026-10-02 11:20:54"
+      },
+      {
+        "issueNumber": "20261002103010200",
+        "number": 7,
+        "premium": "78467",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba4520156a67f59b3569625c7212d27e79ff3b51e62a17846da7c",
+        "blockNumber": 86746194,
+        "blockTime": "2026-10-02 11:19:54"
+      },
+      {
+        "issueNumber": "20261002103010199",
+        "number": 0,
+        "premium": "43870",
+        "size": "小",
+        "colour": "红+紫",
+        "blockID": "00000000052ba43ee4c8bdbc40e020b21793d477537c0aaf6bf4304ad3f87d0e",
+        "blockNumber": 86746174,
+        "blockTime": "2026-10-02 11:18:54"
+      },
+      {
+        "issueNumber": "20261002103010198",
+        "number": 9,
+        "premium": "70869",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba42a40effecd8b69bdecd99249b8c0cdaa846edc232e17fb0869",
+        "blockNumber": 86746154,
+        "blockTime": "2026-10-02 11:17:54"
+      },
+      {
+        "issueNumber": "20261002103010197",
+        "number": 9,
+        "premium": "09169",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba4169302cfeba91fdebede4a566c3559d708f2ae00041ff09169",
+        "blockNumber": 86746134,
+        "blockTime": "2026-10-02 11:16:54"
+      },
+      {
+        "issueNumber": "20261002103010196",
+        "number": 9,
+        "premium": "17249",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba402060fd758e67605fc323505173963685b6fa17eeb249edefe",
+        "blockNumber": 86746114,
+        "blockTime": "2026-10-02 11:15:54"
+      },
+      {
+        "issueNumber": "20261002103010195",
+        "number": 5,
+        "premium": "03815",
+        "size": "大",
+        "colour": "绿+紫",
+        "blockID": "00000000052ba3eeb10355a37f2ce06c0bd883488e25854d1e303aecf81eb5dd",
+        "blockNumber": 86746094,
+        "blockTime": "2026-10-02 11:14:54"
+      },
+      {
+        "issueNumber": "20261002103010194",
+        "number": 9,
+        "premium": "88319",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba3dae07ac4e48acc20f6035bb7f79c32399271984e6f488319ba",
+        "blockNumber": 86746074,
+        "blockTime": "2026-10-02 11:13:54"
+      },
+      {
+        "issueNumber": "20261002103010193",
+        "number": 1,
+        "premium": "67511",
+        "size": "小",
+        "colour": "绿",
+        "blockID": "00000000052ba3c6b6bda5e0bd5efe12f6e3e6f3b2ac5a3f15cc6ef3f76751f1",
+        "blockNumber": 86746054,
+        "blockTime": "2026-10-02 11:12:54"
+      },
+      {
+        "issueNumber": "20261002103010192",
+        "number": 0,
+        "premium": "07240",
+        "size": "小",
+        "colour": "红+紫",
+        "blockID": "00000000052ba3b29f48d02c3368b9635656702abeeefddfab657d2495b07240",
+        "blockNumber": 86746034,
+        "blockTime": "2026-10-02 11:11:54"
+      },
+      {
+        "issueNumber": "20261002103010191",
+        "number": 9,
+        "premium": "73769",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba39ec9506aa4dce7f8c9449426711074c251112f82317a37a6d9",
+        "blockNumber": 86746014,
+        "blockTime": "2026-10-02 11:10:54"
+      },
+      {
+        "issueNumber": "20261002103010190",
+        "number": 4,
+        "premium": "48134",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba38a09302c90820fd5a5f27055c9ad8542b6feb7ae6fe481e34a",
+        "blockNumber": 86745994,
+        "blockTime": "2026-10-02 11:09:54"
+      },
+      {
+        "issueNumber": "20261002103010189",
+        "number": 6,
+        "premium": "48886",
+        "size": "大",
+        "colour": "红",
+        "blockID": "00000000052ba376b2ff44d79eb3804b40d41921df14898c5f4a204c88ce8e6f",
+        "blockNumber": 86745974,
+        "blockTime": "2026-10-02 11:08:54"
+      },
+      {
+        "issueNumber": "20261002103010188",
+        "number": 4,
+        "premium": "61164",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052ba362f5ee587936f021bc202ec4f7c9177ae36e7467261aaa16f4",
+        "blockNumber": 86745954,
+        "blockTime": "2026-10-02 11:07:54"
+      },
+      {
+        "issueNumber": "20261002103010187",
+        "number": 9,
+        "premium": "48779",
+        "size": "大",
+        "colour": "绿",
+        "blockID": "00000000052ba34edf8ff23e4e9ca581ecd527a1079c351744ef6414def8779f",
+        "blockNumber": 86745934,
+        "blockTime": "2026-10-02 11:06:54"
+      }
+    ],
+    "current_issue": {
+      "issueNumber": "20261002103010287",
+      "startTime": "2026-10-02 12:46:00",
+      "endTime": "2026-10-02 12:47:00",
+      "serviceTime": "2026-10-02 12:46:26",
+      "intervalM": 1
+    },
+    "status": "v18-github-secrets | 实时 API 已连接",
+    "build_version": "v18-github-secrets",
+    "typeId": 13,
+    "updated_at": 1790916386
   }
 }
