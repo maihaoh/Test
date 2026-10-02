@@ -8,7 +8,8 @@ import threading
 import websocket
 from collections import Counter
 
-from mzplay_multi import MultiGameCollector
+from mzplay_multi import MultiGameCollector, MZPlayClient, load_config
+from choice_collector import ChoiceHeadlessCollector
 
 
 # ============================================================
@@ -2340,6 +2341,107 @@ def initialize_data():
 
 
 # ============================================================
+# Choice D051-D058 Snapshot 整合（由官方 Choice 页面的 WS 提供）
+# ============================================================
+
+def _choice_result_cn(code):
+    return {"B": "庄", "P": "闲", "T": "和"}.get(str(code or "").upper())
+
+
+def update_choice_snapshot(snapshot):
+    """Replace one room history from a verified BAC_FULL_RESULT_LIST snapshot.
+
+    FullResultList is a replacement roadmap snapshot, not an append event.  The
+    protocol source does not provide a verified per-row gmcode/shoe number here,
+    therefore dashboard `game` is only the roadmap position (1..N).
+    """
+    if not isinstance(snapshot, dict):
+        return
+    vid = str(snapshot.get("vid") or "")
+    if not (len(vid) == 4 and vid.startswith("D0") and vid[2:].isdigit()):
+        return
+    room = "D" + vid[2:]
+    if room not in BACCARAT_ROOMS:
+        return
+
+    payload = snapshot.get("payload") if isinstance(snapshot.get("payload"), dict) else {}
+    rows = snapshot.get("results") if isinstance(snapshot.get("results"), list) else []
+    records_oldest = []
+    for idx, row in enumerate(rows):
+        if not isinstance(row, dict) or row.get("issues"):
+            continue
+        result_cn = _choice_result_cn(row.get("result"))
+        if not result_cn:
+            continue
+        pair_mask = (1 if row.get("bankerPair") else 0) | (2 if row.get("playerPair") else 0)
+        raw_value = row.get("raw_wininfo")
+        records_oldest.append({
+            "room": room,
+            "game": idx + 1,
+            "round": idx + 1,
+            "game_id": f"{room}-road-{idx + 1}-{raw_value}",
+            "result": result_cn,
+            "winNum": row.get("winNum", 0),
+            "num": row.get("winNum", 0),
+            "bval": 0,
+            "pval": 0,
+            "pair": pair_mask,
+            "bankerPair": bool(row.get("bankerPair")),
+            "playerPair": bool(row.get("playerPair")),
+            "raw_wininfo": raw_value,
+            "source": "Choice BAC_FULL_RESULT_LIST",
+        })
+
+    records_latest = list(reversed(records_oldest))[:MAX_BACCARAT_HISTORY]
+    with data_lock:
+        bacc = global_data.setdefault("baccarat", {})
+        rooms = bacc.setdefault("rooms", {})
+        rooms[room] = records_latest
+        bacc.setdefault("collector", {})
+        bacc["collector"].update({
+            "mode": "headless_official_client_ws",
+            "status": "connected",
+            "last_room": room,
+            "last_vid": vid,
+            "last_snapshot_seq": payload.get("seqno", 0),
+            "last_snapshot_version": payload.get("version", 0),
+            "updated_at": int(time.time()),
+        })
+
+        current_room = bacc.get("current_room") or "D51"
+        if current_room not in BACCARAT_ROOMS:
+            current_room = "D51"
+            bacc["current_room"] = current_room
+        current_history = rooms.get(current_room, [])
+        if current_history:
+            latest = current_history[0]
+            bacc["latest_result"] = latest.get("result", "--")
+            # This is roadmap position, not a claimed official gmcode.
+            bacc["game_no"] = str(latest.get("game", "--"))
+            bacc["predicted_result"] = predict_baccarat_next(current_history)
+        else:
+            bacc["latest_result"] = "--"
+            bacc["game_no"] = "--"
+            bacc["predicted_result"] = "--"
+        # FullResultList alone does not expose a verified shoe identifier.
+        bacc["shoe_no"] = bacc.get("shoe_no") or "--"
+        rebuild_baccarat_stats(current_room)
+
+    save_data_json()
+    if records_latest:
+        print(
+            f"🃏 [Choice {room}] snapshot={len(records_latest)} "
+            f"latest={records_latest[0]['result']} "
+            f"road#{records_latest[0]['game']}"
+        )
+
+
+def start_choice_baccarat(mz_client):
+    collector = ChoiceHeadlessCollector(mz_client, update_choice_snapshot)
+    collector.run()
+
+
+# ============================================================
 # K3 / 5D / TRX 整合
 # ============================================================
 
@@ -2358,8 +2460,8 @@ def update_multi_games(states):
     save_data_json()
 
 
-def start_multi_games():
-    collector = MultiGameCollector(update_multi_games, poll_interval=8)
+def start_multi_games(mz_client):
+    collector = MultiGameCollector(update_multi_games, poll_interval=8, client=mz_client)
     collector.run()
 
 
@@ -2415,22 +2517,33 @@ def main():
     wingo_thread.start()
 
     # --------------------------------------------------------
-    # Baccarat
+    # Shared MZPlay authenticated session
+    # --------------------------------------------------------
+
+    mz_client = MZPlayClient(load_config())
+
+    # --------------------------------------------------------
+    # Choice Baccarat
+    #
+    # MZPlay Login -> GetGameUrl(AG_Video) -> headless Choice page
+    # -> official Choice WebSocket -> BAC_FULL_RESULT_LIST D051-D058
     # --------------------------------------------------------
 
     baccarat_thread = threading.Thread(
-        target=start_baccarat_ws,
+        target=start_choice_baccarat,
+        args=(mz_client,),
         daemon=True
     )
 
     baccarat_thread.start()
 
     # --------------------------------------------------------
-    # K3 / 5D / TRX (MZPLAY authenticated API)
+    # K3 / 5D / TRX (same MZPLAY authenticated session)
     # --------------------------------------------------------
 
     multi_thread = threading.Thread(
         target=start_multi_games,
+        args=(mz_client,),
         daemon=True
     )
 
