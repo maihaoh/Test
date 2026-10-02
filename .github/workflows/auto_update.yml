@@ -2,7 +2,9 @@ name: Auto Update Dashboard
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # Keep one runner/session alive for almost 4 hours.
+    # This avoids logging in to MZPLAY every 5 minutes.
+    - cron: "0 */4 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -15,10 +17,17 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      MZPLAY_USERNAME: ${{ secrets.MZPLAY_USERNAME }}
+      MZPLAY_PASSWORD: ${{ secrets.MZPLAY_PASSWORD }}
+      MZPLAY_DEVICE_ID: ${{ secrets.MZPLAY_DEVICE_ID }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -29,24 +38,57 @@ jobs:
         run: |
           pip install requests websocket-client
 
-      - name: Run bot
+      - name: Verify required secrets
+        shell: bash
         run: |
-          set +e
-          timeout --signal=INT 240 python -u bot.py
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 130 ]; then
-            exit "$status"
-          fi
-          python -m json.tool data.json > /dev/null
+          missing=0
+          for key in MZPLAY_USERNAME MZPLAY_PASSWORD MZPLAY_DEVICE_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::error::$key is not configured in GitHub Actions Secrets"
+              missing=1
+            fi
+          done
+          exit "$missing"
 
-      - name: Commit data.json
+      - name: Run collector and publish data.json every 5 minutes
+        shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          set -euo pipefail
 
-          git add data.json
+          python -u bot.py > bot.log 2>&1 &
+          BOT_PID=$!
+          echo "Collector PID: $BOT_PID"
 
-          git diff --cached --quiet || git commit -m "Auto update data.json"
+          cleanup() {
+            kill -INT "$BOT_PID" 2>/dev/null || true
+            wait "$BOT_PID" 2>/dev/null || true
+            tail -n 120 bot.log || true
+          }
+          trap cleanup EXIT
 
-          git push
+          # 47 x 5 minutes = 3h55m. The workflow itself is capped at 4h.
+          for i in $(seq 1 47); do
+            sleep 300
+
+            if ! kill -0 "$BOT_PID" 2>/dev/null; then
+              echo "::error::Collector stopped unexpectedly"
+              tail -n 160 bot.log || true
+              exit 1
+            fi
+
+            python -m json.tool data.json > /dev/null
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data.json
+
+            if git diff --cached --quiet; then
+              echo "[$i/47] No data change"
+              continue
+            fi
+
+            git commit -m "Auto update data.json"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "[$i/47] data.json published"
+          done
