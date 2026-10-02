@@ -23,29 +23,41 @@
     "big50": "55%",
     "small50": "45%"
   },
-  "updated_at": 1790930670,
+  "updated_at": 1790930732,
   "wingo": {
     "stats": {
       "streak_val": "大",
-      "streak_cnt": 1,
-      "big_cnt": 129,
-      "small_cnt": 171
+      "streak_cnt": 3,
+      "big_cnt": 130,
+      "small_cnt": 170
     },
     "prediction": {
       "num": 2,
       "size": "小",
-      "signal": "SELL",
-      "confidence": "普通",
-      "big_score": 0.0,
+      "signal": "观望",
+      "confidence": "避险观望",
+      "big_score": 1.2,
       "small_score": 1.5,
-      "difference": 1.5,
+      "difference": 0.3,
       "markov_num": 2,
       "markov_size": "小",
       "mean_size": "平",
-      "streak": 1,
+      "streak": 3,
       "special": false
     },
     "draws": [
+      {
+        "issueNumber": "20261002100051051",
+        "number": 9,
+        "colour": "green",
+        "size": "大"
+      },
+      {
+        "issueNumber": "20261002100051050",
+        "number": 6,
+        "colour": "red",
+        "size": "大"
+      },
       {
         "issueNumber": "20261002100051049",
         "number": 9,
@@ -1833,18 +1845,6 @@
         "number": 8,
         "colour": "red",
         "size": "大"
-      },
-      {
-        "issueNumber": "20261002100050447",
-        "number": 0,
-        "colour": "red,violet",
-        "size": "小"
-      },
-      {
-        "issueNumber": "20261002100050446",
-        "number": 7,
-        "colour": "green",
-        "size": "大"
       }
     ]
   },
@@ -1873,6 +1873,13 @@
   },
   "k3": {
     "reviews": [
+      {
+        "issueNumber": "20261002101010525",
+        "prediction": "115 / 小 / 双 / 8-13",
+        "actual": "543 / 大 / 双 / 8-13",
+        "score": "骰子 0/3 · 大小 LOSS · 单双 WIN · 区间 WIN",
+        "win": false
+      },
       {
         "issueNumber": "20261002101010524",
         "prediction": "655 / 小 / 双 / 8-13",
@@ -2058,30 +2065,43 @@
     ],
     "prediction": {
       "dice": [
-        1,
-        1,
+        6,
+        5,
         5
       ],
       "sum": 10,
-      "size": "小",
+      "size": "大",
       "oddEven": "双",
       "sumRange": "8-13",
       "confidence": 71,
       "detailConfidence": {
         "dice": [
-          65,
           66,
-          66
+          66,
+          67
         ],
         "size": 76,
         "oddEven": 76,
         "sumRange": 77
       },
       "method": "近期加权频率 + 状态转移",
-      "issueNumber": "20261002101010525",
-      "generatedAt": 1790930658
+      "issueNumber": "20261002101010526",
+      "generatedAt": 1790930718
     },
     "draws": [
+      {
+        "issueNumber": "20261002101010525",
+        "dice": [
+          5,
+          4,
+          3
+        ],
+        "premium": "543",
+        "sum": 12,
+        "size": "大",
+        "oddEven": "双",
+        "sumRange": "8-13"
+      },
       {
         "issueNumber": "20261002101010524",
         "dice": [
@@ -3368,35 +3388,29 @@
         "size": "小",
         "oddEven": "单",
         "sumRange": "8-13"
-      },
-      {
-        "issueNumber": "20261002101010425",
-        "dice": [
-          1,
-          6,
-          2
-        ],
-        "premium": "162",
-        "sum": 9,
-        "size": "小",
-        "oddEven": "单",
-        "sumRange": "8-13"
       }
     ],
     "current_issue": {
-      "issueNumber": "20261002101010525",
-      "startTime": "2026-10-02 16:44:00",
-      "endTime": "2026-10-02 16:45:00",
-      "serviceTime": "2026-10-02 16:44:18",
+      "issueNumber": "20261002101010526",
+      "startTime": "2026-10-02 16:45:00",
+      "endTime": "2026-10-02 16:46:00",
+      "serviceTime": "2026-10-02 16:45:18",
       "intervalM": 1
     },
     "status": "v18-github-secrets | 实时 API 已连接",
     "build_version": "v18-github-secrets",
     "typeId": 9,
-    "updated_at": 1790930658
+    "updated_at": 1790930718
   },
   "5d": {
     "reviews": [
+      {
+        "issueNumber": "20261002102010525",
+        "prediction": "90677",
+        "actual": "31828",
+        "score": "数字 0/5 · 大小 3/5 · 单双 2/5",
+        "win": true
+      },
       {
         "issueNumber": "20261002102010524",
         "prediction": "67179",
@@ -3575,13 +3589,13 @@
     ],
     "prediction": {
       "digits": [
-        9,
+        6,
         0,
         6,
         7,
-        7
+        9
       ],
-      "premium": "90677",
+      "premium": "60679",
       "sizeByPosition": [
         "大",
         "小",
@@ -3590,26 +3604,52 @@
         "大"
       ],
       "oddEvenByPosition": [
-        "单",
+        "双",
         "双",
         "双",
         "单",
         "单"
       ],
-      "sum": 29,
-      "confidence": 63,
+      "sum": 28,
+      "confidence": 64,
       "detailConfidence": [
-        63,
+        64,
         63,
         64,
         63,
         64
       ],
       "method": "每位近期加权频率 + 状态转移",
-      "issueNumber": "20261002102010525",
-      "generatedAt": 1790930661
+      "issueNumber": "20261002102010526",
+      "generatedAt": 1790930721
     },
     "draws": [
+      {
+        "issueNumber": "20261002102010525",
+        "digits": [
+          3,
+          1,
+          8,
+          2,
+          8
+        ],
+        "premium": "31828",
+        "sum": 22,
+        "sizeByPosition": [
+          "小",
+          "小",
+          "大",
+          "小",
+          "大"
+        ],
+        "oddEvenByPosition": [
+          "单",
+          "单",
+          "双",
+          "双",
+          "双"
+        ]
+      },
       {
         "issueNumber": "20261002102010524",
         "digits": [
@@ -6183,48 +6223,29 @@
           "双",
           "双"
         ]
-      },
-      {
-        "issueNumber": "20261002102010425",
-        "digits": [
-          4,
-          1,
-          0,
-          8,
-          2
-        ],
-        "premium": "41082",
-        "sum": 15,
-        "sizeByPosition": [
-          "小",
-          "小",
-          "小",
-          "大",
-          "小"
-        ],
-        "oddEvenByPosition": [
-          "双",
-          "单",
-          "双",
-          "双",
-          "双"
-        ]
       }
     ],
     "current_issue": {
-      "issueNumber": "20261002102010525",
-      "startTime": "2026-10-02 16:44:00",
-      "endTime": "2026-10-02 16:45:00",
-      "serviceTime": "2026-10-02 16:44:21",
+      "issueNumber": "20261002102010526",
+      "startTime": "2026-10-02 16:45:00",
+      "endTime": "2026-10-02 16:46:00",
+      "serviceTime": "2026-10-02 16:45:21",
       "intervalM": 1.0
     },
     "status": "v18-github-secrets | 实时 API 已连接",
     "build_version": "v18-github-secrets",
     "typeId": 5,
-    "updated_at": 1790930661
+    "updated_at": 1790930721
   },
   "trx": {
     "reviews": [
+      {
+        "issueNumber": "20261002103010525",
+        "prediction": "6 / 小 / 红",
+        "actual": "4 / 小 / 红",
+        "score": "号码 LOSS · 大小 WIN · 颜色 WIN",
+        "win": true
+      },
       {
         "issueNumber": "20261002103010524",
         "prediction": "4 / 小 / 红",
@@ -6402,20 +6423,30 @@
       }
     ],
     "prediction": {
-      "number": 6,
+      "number": 4,
       "size": "小",
       "colour": "红",
-      "confidence": 71,
+      "confidence": 72,
       "detailConfidence": {
-        "number": 63,
-        "size": 77,
+        "number": 65,
+        "size": 78,
         "colour": 74
       },
       "method": "近期加权频率 + 状态转移",
-      "issueNumber": "20261002103010525",
-      "generatedAt": 1790930663
+      "issueNumber": "20261002103010526",
+      "generatedAt": 1790930723
     },
     "draws": [
+      {
+        "issueNumber": "20261002103010525",
+        "number": 4,
+        "premium": "29914",
+        "size": "小",
+        "colour": "红",
+        "blockID": "00000000052bbdb42adfe5701a52a0d776eb1900fd2e79634985a5f731a29914",
+        "blockNumber": 86752692,
+        "blockTime": "2026-10-02 16:44:54"
+      },
       {
         "issueNumber": "20261002103010524",
         "number": 2,
@@ -7405,28 +7436,18 @@
         "blockID": "00000000052bb5f842938ec45f9e31bf53b9a19b6bb2a57031f596051705914f",
         "blockNumber": 86750712,
         "blockTime": "2026-10-02 15:05:54"
-      },
-      {
-        "issueNumber": "20261002103010425",
-        "number": 8,
-        "premium": "11908",
-        "size": "大",
-        "colour": "红",
-        "blockID": "00000000052bb5e4d40bb8fa36f955544944d9877b0b06532ab8bc2b8311f908",
-        "blockNumber": 86750692,
-        "blockTime": "2026-10-02 15:04:54"
       }
     ],
     "current_issue": {
-      "issueNumber": "20261002103010525",
-      "startTime": "2026-10-02 16:44:00",
-      "endTime": "2026-10-02 16:45:00",
-      "serviceTime": "2026-10-02 16:44:23",
+      "issueNumber": "20261002103010526",
+      "startTime": "2026-10-02 16:45:00",
+      "endTime": "2026-10-02 16:46:00",
+      "serviceTime": "2026-10-02 16:45:23",
       "intervalM": 1
     },
     "status": "v18-github-secrets | 实时 API 已连接",
     "build_version": "v18-github-secrets",
     "typeId": 13,
-    "updated_at": 1790930663
+    "updated_at": 1790930723
   }
 }
