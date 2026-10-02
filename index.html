@@ -1,1253 +1,584 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>WinGo & Baccarat AI Dashboard</title>
-
-
-
-    <script async src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-
-    <link
-        rel="stylesheet"
-        href="style.css?v=3"
-    >
-
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WinGo &amp; Baccarat AI Dashboard</title>
+<script async="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<link href="style.css?v=4" rel="stylesheet"/>
 </head>
-
-
 <body>
-
 <div class="container">
-
-
-    <!-- =====================================================
+<!-- =====================================================
          HEADER
     ====================================================== -->
-
-    <header class="header">
-
-        <div>
-
-            <h1>
+<header class="header">
+<div>
+<h1>
                 🎯 AI GAMING DASHBOARD
             </h1>
-
-            <div class="subtitle">
-                WinGo + Baccarat 独立分析系统
-            </div>
-
-        </div>
-
-
-        <div class="header-info">
-
-            <div class="time-box">
-
-                <span>MYT</span>
-
-                <strong id="myt-clock">
+<div class="subtitle">
+                WinGo + Baccarat 独立分析系统 · <span id="build-version">Build -- · UI v17</span>
+</div>
+</div>
+<div class="header-info">
+<div class="time-box">
+<span>MYT</span>
+<strong id="myt-clock">
                     --:--:--
                 </strong>
-
-            </div>
-
-
-            <div class="countdown-box">
-
-                <span>NEXT</span>
-
-                <strong id="countdown">
+</div>
+<div class="countdown-box">
+<span>NEXT</span>
+<strong id="countdown">
                     5s
                 </strong>
-
-            </div>
-
-        </div>
-
-    </header>
-
-
-
-    <!-- =====================================================
+</div>
+</div>
+</header>
+<!-- =====================================================
          MAIN TAB
     ====================================================== -->
-
-    <div class="main-tabs">
-
-        <button
-            class="main-tab active"
-            onclick="switchMainTab('wingo', this)"
-        >
+<div class="main-tabs">
+<button class="main-tab active" onclick="switchMainTab('wingo', this)">
             🎯 WinGo AI
         </button>
-
-
-        <button
-            class="main-tab"
-            onclick="switchMainTab('baccarat', this)"
-        >
+<button class="main-tab" onclick="switchMainTab('baccarat', this)">
             🃏 Baccarat
         </button>
-
-        <button class="main-tab" onclick="switchMainTab('k3', this)">🎲 K3 Lotre</button>
-        <button class="main-tab" onclick="switchMainTab('5d', this)">🔢 5D Lotre</button>
-        <button class="main-tab" onclick="switchMainTab('trx', this)">🪙 Trx Win</button>
-
-    </div>
-
-
-
-    <!-- =====================================================
+<button class="main-tab" onclick="switchMainTab('k3', this)">🎲 K3 Lotre</button>
+<button class="main-tab" onclick="switchMainTab('5d', this)">🔢 5D Lotre</button>
+<button class="main-tab" onclick="switchMainTab('trx', this)">🪙 Trx Win</button>
+</div>
+<!-- =====================================================
          WINGO
     ====================================================== -->
-
-    <section
-        id="wingo-section"
-        class="main-section active"
-    >
-        <p id="wingo-data-status" class="data-status" role="status">正在读取数据…</p>
-
-
-        <!-- TOP -->
-
-        <div class="grid-cards">
-
-
-            <div class="card latest-card">
-
-                <div class="card-title">
+<section class="main-section active" id="wingo-section">
+<p class="data-status" id="wingo-data-status" role="status">正在读取数据…</p>
+<!-- TOP -->
+<div class="grid-cards">
+<div class="card latest-card">
+<div class="card-title">
                     🎯 最新开奖
                 </div>
-
-                <div
-                    id="latest-issue"
-                    class="card-value"
-                >
+<div class="card-value" id="latest-issue">
                     ----
                 </div>
-
-                <div
-                    id="latest-result"
-                    class="result-box"
-                >
+<div class="result-box" id="latest-result">
                     --
                 </div>
-
-            </div>
-
-
-
-            <div class="card prediction-card">
-
-                <div class="card-title">
+</div>
+<div class="card prediction-card">
+<div class="card-title">
                     🔮 下一期预测
                 </div>
-
-                <div
-                    id="predicted-result"
-                    class="prediction-box"
-                >
-                    <span class="tag-wait">
+<div class="prediction-box" id="predicted-result">
+<span class="tag-wait">
                         等待数据
                     </span>
-                </div>
-
-            </div>
-
-
-
-            <div class="card winrate-card">
-
-                <div class="card-title">
+</div>
+</div>
+<div class="card winrate-card">
+<div class="card-title">
                     📈 大小回测胜率
                 </div>
-
-                <div
-                    id="win-rate"
-                    class="win-rate-box"
-                >
-
-                    <div
-                        style="
+<div class="win-rate-box" id="win-rate">
+<div style="
                             font-size:2rem;
                             font-weight:800;
                             color:#34d399;
-                        "
-                    >
+                        ">
                         --%
                     </div>
-
-                    <div
-                        style="
+<div style="
                             font-size:.8rem;
                             color:#94a3b8;
                             margin-top:4px;
-                        "
-                    >
+                        ">
                         最近 50 局
                     </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <!-- =================================================
+</div>
+</div>
+</div>
+<!-- =================================================
              MARKET ANALYSIS
         ================================================== -->
-
-        <div class="section-card market-analysis-card">
-
-            <div class="section-title">
+<div class="section-card market-analysis-card">
+<div class="section-title">
                 📊 WinGo 市场分析
             </div>
-
-
-            <div class="analysis-grid">
-
-
-                <div class="analysis-item blue-item">
-
-                    <div class="analysis-label">
+<div class="analysis-grid">
+<div class="analysis-item blue-item">
+<div class="analysis-label">
                         🔥 当前长龙
                     </div>
-
-                    <div
-                        id="analysis-streak"
-                        class="analysis-value"
-                    >
+<div class="analysis-value" id="analysis-streak">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item purple-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item purple-item">
+<div class="analysis-label">
                         🧠 Markov
                     </div>
-
-                    <div
-                        id="analysis-markov"
-                        class="analysis-value"
-                    >
+<div class="analysis-value" id="analysis-markov">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item orange-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item orange-item">
+<div class="analysis-label">
                         📉 均值回归
                     </div>
-
-                    <div
-                        id="analysis-mean"
-                        class="analysis-value"
-                    >
+<div class="analysis-value" id="analysis-mean">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item cyan-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item cyan-item">
+<div class="analysis-label">
                         🎯 目标号码
                     </div>
-
-                    <div
-                        id="analysis-number"
-                        class="analysis-value"
-                    >
+<div class="analysis-value" id="analysis-number">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item green-item">
-
-                    <div class="analysis-label">
-                        大 10
-                    </div>
-
-                    <div
-                        id="analysis-big10"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-
-                <div class="analysis-item red-item">
-
-                    <div class="analysis-label">
-                        小 10
-                    </div>
-
-                    <div
-                        id="analysis-small10"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-
-                <div class="analysis-item teal-item">
-
-                    <div class="analysis-label">
-                        大 50
-                    </div>
-
-                    <div
-                        id="analysis-big50"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-
-                <div class="analysis-item yellow-item">
-
-                    <div class="analysis-label">
-                        小 50
-                    </div>
-
-                    <div
-                        id="analysis-small50"
-                        class="analysis-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="score-section">
-
-                <div class="score-header">
-
-                    <span>
-                        大 / 小 分布
-                    </span>
-
-                    <strong id="score-text">
-                        大 --% / 小 --%
-                    </strong>
-
-                </div>
-
-
-                <div class="score-bar">
-
-                    <div
-                        id="score-fill"
-                        class="score-fill"
-                    ></div>
-
-                </div>
-
-            </div>
-
-        </div>
+</div>
 
 
 
-        <!-- =================================================
+
+</div>
+
+</div>
+<!-- =================================================
              AI REVIEW
         ================================================== -->
-
-        <div class="section-card ai-review-card">
-
-            <div class="section-title">
+<div class="section-card ai-review-card">
+<div class="section-title">
 
                 🤖 AI 智能复盘
 
-                <span
-                    id="review-status"
-                    class="review-status review-wait"
-                >
+                <span class="review-status review-wait" id="review-status">
                     等待
                 </span>
-
-            </div>
-
-
-            <div class="review-grid">
-
-
-                <div class="review-item review-prediction">
-
-                    <div class="review-label">
+</div>
+<div class="review-grid">
+<div class="review-item review-prediction">
+<div class="review-label">
                         🔮 历史回测判断
                     </div>
-
-                    <div
-                        id="review-prediction"
-                        class="review-value"
-                    >
+<div class="review-value" id="review-prediction">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="review-item review-actual">
-
-                    <div class="review-label">
+</div>
+<div class="review-item review-actual">
+<div class="review-label">
                         🎯 实际结果
                     </div>
-
-                    <div
-                        id="review-actual"
-                        class="review-value"
-                    >
+<div class="review-value" id="review-actual">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="review-item review-result">
-
-                    <div class="review-label">
+</div>
+<div class="review-item review-result">
+<div class="review-label">
                         📌 结果
                     </div>
-
-                    <div
-                        id="review-result"
-                        class="review-value"
-                    >
+<div class="review-value" id="review-result">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="review-item review-learning">
-
-                    <div class="review-label">
+</div>
+<div class="review-item review-learning">
+<div class="review-label">
                         🧠 复盘分析
                     </div>
-
-                    <div
-                        id="review-message"
-                        class="review-value review-action-text"
-                    >
+<div class="review-value review-action-text" id="review-message">
                         等待复盘
                     </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="section-card"><div class="section-title">📊 近期复盘汇总</div><div id="review-summary" class="review-summary">等待数据</div></div>
-
-        <!-- =================================================
+</div>
+</div>
+</div>
+<div class="section-card"><div class="section-title">📊 近期复盘汇总</div><div class="review-summary" id="review-summary">等待数据</div></div>
+<!-- =================================================
              AI SMART LEARNING
         ================================================== -->
-
-        <div class="section-card ai-learning-card">
-
-            <div class="section-title">
+<div class="section-card ai-learning-card">
+<div class="section-title">
 
                 🤖 AI 智能学习
 
-                <span
-                    id="ai-learning-status"
-                    class="ai-status"
-                >
+                <span class="ai-status" id="ai-learning-status">
                     学习中
                 </span>
-
-            </div>
-
-
-            <!-- STATUS -->
-
-            <div class="ai-learning-grid">
-
-
-                <div class="ai-learning-item state-item">
-
-                    <div class="ai-learning-label">
+</div>
+<!-- STATUS -->
+<div class="ai-learning-grid">
+<div class="ai-learning-item state-item">
+<div class="ai-learning-label">
                         🧠 AI 状态
                     </div>
-
-                    <div
-                        id="ai-state"
-                        class="ai-learning-value"
-                    >
+<div class="ai-learning-value" id="ai-state">
                         初始化
                     </div>
-
-                </div>
-
-
-                <div class="ai-learning-item count-item">
-
-                    <div class="ai-learning-label">
+</div>
+<div class="ai-learning-item count-item">
+<div class="ai-learning-label">
                         📚 学习次数
                     </div>
-
-                    <div
-                        id="ai-learning-count"
-                        class="ai-learning-value"
-                    >
+<div class="ai-learning-value" id="ai-learning-count">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="ai-learning-item win-item">
-
-                    <div class="ai-learning-label">
+</div>
+<div class="ai-learning-item win-item">
+<div class="ai-learning-label">
                         ✅ WIN
                     </div>
-
-                    <div
-                        id="ai-learning-win"
-                        class="ai-learning-value"
-                    >
+<div class="ai-learning-value" id="ai-learning-win">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="ai-learning-item loss-item">
-
-                    <div class="ai-learning-label">
+</div>
+<div class="ai-learning-item loss-item">
+<div class="ai-learning-label">
                         ❌ LOSS
                     </div>
-
-                    <div
-                        id="ai-learning-loss"
-                        class="ai-learning-value"
-                    >
+<div class="ai-learning-value" id="ai-learning-loss">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="ai-learning-item pass-item">
-
-                    <div class="ai-learning-label">
-                        ⚪ PASS
-                    </div>
-
-                    <div
-                        id="ai-learning-pass"
-                        class="ai-learning-value"
-                    >
-                        0
-                    </div>
-
-                </div>
+</div>
 
 
-                <div class="ai-learning-item quality-item">
-
-                    <div class="ai-learning-label">
-                        🎯 PASS 判断
-                    </div>
-
-                    <div
-                        id="ai-pass-quality"
-                        class="ai-learning-value"
-                    >
-                        --%
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- WEIGHTS -->
-
-            <div class="ai-factor-title">
+</div>
+<!-- WEIGHTS -->
+<div class="ai-factor-title">
                 📊 当前学习权重
             </div>
-
-
-            <div class="ai-factor-grid">
-
-
-                <div class="ai-factor markov-factor">
-
-                    <span>
+<div class="ai-factor-grid">
+<div class="ai-factor markov-factor">
+<span>
                         🧠 Markov
                     </span>
-
-                    <strong id="ai-weight-markov">
+<strong id="ai-weight-markov">
                         1.00
                     </strong>
-
-                </div>
-
-
-                <div class="ai-factor mean-factor">
-
-                    <span>
+</div>
+<div class="ai-factor mean-factor">
+<span>
                         📉 均值回归
                     </span>
-
-                    <strong id="ai-weight-mean">
+<strong id="ai-weight-mean">
                         1.00
                     </strong>
-
-                </div>
-
-
-                <div class="ai-factor streak-factor">
-
-                    <span>
+</div>
+<div class="ai-factor streak-factor">
+<span>
                         🔥 长龙
                     </span>
-
-                    <strong id="ai-weight-streak">
+<strong id="ai-weight-streak">
                         0.80
                     </strong>
-
-                </div>
-
-
-                <div class="ai-factor frequency-factor">
-
-                    <span>
+</div>
+<div class="ai-factor frequency-factor">
+<span>
                         📊 频率
                     </span>
-
-                    <strong id="ai-weight-frequency">
+<strong id="ai-weight-frequency">
                         0.70
                     </strong>
-
-                </div>
-
-
-                <div class="ai-factor balance-factor">
-
-                    <span>
-                        ⚖️ 平衡
-                    </span>
-
-                    <strong id="ai-weight-balance">
-                        0.60
-                    </strong>
-
-                </div>
+</div>
 
 
-                <div class="ai-factor threshold-factor">
-
-                    <span>
-                        🎯 PASS 阈值
-                    </span>
-
-                    <strong id="ai-pass-threshold">
-                        0.80
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- LAST LEARNING -->
-
-            <div class="ai-learning-message">
-
-                <div class="ai-learning-label">
+</div>
+<!-- LAST LEARNING -->
+<div class="ai-learning-message">
+<div class="ai-learning-label">
                     🔄 最近一次 AI 复盘
                 </div>
-
-                <div
-                    id="ai-last-learning"
-                    class="ai-learning-text"
-                >
+<div class="ai-learning-text" id="ai-last-learning">
                     等待第一笔复盘数据……
                 </div>
-
-            </div>
-
-        </div>
-
-
-
-        <!-- =================================================
+</div>
+</div>
+<!-- =================================================
              HISTORY
         ================================================== -->
-
-        <div class="section-card">
-
-            <div class="section-title">
+<div class="section-card">
+<div class="section-title">
                 📜 WinGo 最近 50 局 · 历史回测
             </div>
-            <p class="data-status">号码、颜色为历史回测预测；结果分别比较号码、完整颜色组合及大小。上方胜率只统计大小。PASS 与数据不足不计胜负；历史回测不代表未来表现。</p>
-
-
-            <div class="table-wrapper">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>期号</th>
-
-                            <th>实际开奖</th>
-
-                            <th>号码</th>
-
-                            <th>颜色</th>
-
-                            <th>回测结果</th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody id="draw-table">
-
-                        <tr>
-
-                            <td colspan="5">
+<p class="data-status">号码、颜色为历史回测预测；结果分别比较号码、完整颜色组合及大小。上方胜率只统计大小。每期固定给出预测；数据不足时不计胜负；历史回测不代表未来表现。</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr>
+<th>期号</th>
+<th>实际开奖</th>
+<th>号码</th>
+<th>颜色</th>
+<th>回测结果</th>
+</tr>
+</thead>
+<tbody id="draw-table">
+<tr>
+<td colspan="5">
                                 等待数据……
                             </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-
-    <!-- =====================================================
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- =====================================================
          BACCARAT
     ====================================================== -->
-
-    <section
-        id="baccarat-section"
-        class="main-section"
-    >
-        <p id="baccarat-data-status" class="data-status" role="status">正在读取数据…</p>
-
-
-        <div class="section-card">
-
-            <div class="section-title">
+<section class="main-section" id="baccarat-section">
+<p class="data-status" id="baccarat-data-status" role="status">正在读取数据…</p>
+<div class="section-card">
+<div class="section-title">
                 🃏 Baccarat 台选择
             </div>
-
-
-            <div class="baccarat-table-buttons">
-
-
-                <button
-                    class="baccarat-table-btn active"
-                    onclick="switchBaccaratTable('D51', this)"
-                >
+<div class="baccarat-table-buttons">
+<button class="baccarat-table-btn active" onclick="switchBaccaratTable('D51', this)">
                     D51
                 </button>
-
-
-                <button
-                    class="baccarat-table-btn"
-                    onclick="switchBaccaratTable('D52', this)"
-                >
+<button class="baccarat-table-btn" onclick="switchBaccaratTable('D52', this)">
                     D52
                 </button>
-
-
-                <button
-                    class="baccarat-table-btn"
-                    onclick="switchBaccaratTable('D53', this)"
-                >
+<button class="baccarat-table-btn" onclick="switchBaccaratTable('D53', this)">
                     D53
                 </button>
-
-
-                <button
-                    class="baccarat-table-btn"
-                    onclick="switchBaccaratTable('D54', this)"
-                >
+<button class="baccarat-table-btn" onclick="switchBaccaratTable('D54', this)">
                     D54
                 </button>
-
-
-                <button
-                    class="baccarat-table-btn"
-                    onclick="switchBaccaratTable('D55', this)"
-                >
+<button class="baccarat-table-btn" onclick="switchBaccaratTable('D55', this)">
                     D55
                 </button>
-
-
-                <button
-                    class="baccarat-table-btn"
-                    onclick="switchBaccaratTable('D56', this)"
-                >
+<button class="baccarat-table-btn" onclick="switchBaccaratTable('D56', this)">
                     D56
                 </button>
-
-
-                <button
-                    class="baccarat-table-btn"
-                    onclick="switchBaccaratTable('D57', this)"
-                >
+<button class="baccarat-table-btn" onclick="switchBaccaratTable('D57', this)">
                     D57
                 </button>
-
-
-                <button
-                    class="baccarat-table-btn"
-                    onclick="switchBaccaratTable('D58', this)"
-                >
+<button class="baccarat-table-btn" onclick="switchBaccaratTable('D58', this)">
                     D58
                 </button>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="grid-cards">
-
-            <div class="card">
-
-                <div class="card-title">
+</div>
+</div>
+<div class="grid-cards">
+<div class="card">
+<div class="card-title">
                     🎰 当前台
                 </div>
-
-                <div
-                    id="bc-table-name"
-                    class="card-value"
-                >
+<div class="card-value" id="bc-table-name">
                     D51
                 </div>
-
-                <div
-                    id="bc-round"
-                    class="card-subvalue"
-                >
+<div class="card-subvalue" id="bc-round">
                     #128
                 </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="card-title">
+</div>
+<div class="card">
+<div class="card-title">
                     🎯 最新结果
                 </div>
-
-                <div
-                    id="bc-latest"
-                    class="baccarat-result"
-                >
+<div class="baccarat-result" id="bc-latest">
                     --
                 </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="card-title">
+</div>
+<div class="card">
+<div class="card-title">
                     🔥 当前走势
                 </div>
-
-                <div
-                    id="bc-streak"
-                    class="card-value"
-                >
+<div class="card-value" id="bc-streak">
                     --
                 </div>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="section-card">
-
-            <div
-                id="big-road-title"
-                class="section-title"
-            >
+</div>
+</div>
+<div class="section-card">
+<div class="section-title" id="big-road-title">
                 📍 D51 大路
             </div>
-
-            <div
-                id="big-road"
-                class="big-road"
-            ></div>
-
-        </div>
-
-
-
-        <div class="road-grid">
-
-
-            <div class="section-card">
-
-                <div class="section-title">
+<div class="big-road" id="big-road"></div>
+</div>
+<div class="road-grid">
+<div class="section-card">
+<div class="section-title">
 
                     👁️ 眼路
 
                     <span id="eye-road-label">
                         D51
                     </span>
-
-                </div>
-
-                <div
-                    id="eye-road"
-                    class="small-road"
-                ></div>
-
-            </div>
-
-
-            <div class="section-card">
-
-                <div class="section-title">
+</div>
+<div class="small-road" id="eye-road"></div>
+</div>
+<div class="section-card">
+<div class="section-title">
 
                     🔴 小路
 
                     <span id="small-road-label">
                         D51
                     </span>
-
-                </div>
-
-                <div
-                    id="small-road"
-                    class="small-road"
-                ></div>
-
-            </div>
-
-
-            <div class="section-card">
-
-                <div class="section-title">
+</div>
+<div class="small-road" id="small-road"></div>
+</div>
+<div class="section-card">
+<div class="section-title">
 
                     🪳 蟑螂路
 
                     <span id="cockroach-road-label">
                         D51
                     </span>
-
-                </div>
-
-                <div
-                    id="cockroach-road"
-                    class="small-road"
-                ></div>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="section-card">
-
-            <div
-                id="stats-title"
-                class="section-title"
-            >
+</div>
+<div class="small-road" id="cockroach-road"></div>
+</div>
+</div>
+<div class="section-card">
+<div class="section-title" id="stats-title">
                 📊 D51 走势统计
             </div>
-
-
-            <div class="analysis-grid">
-
-
-                <div class="analysis-item banker-item">
-
-                    <div class="analysis-label">
+<div class="analysis-grid">
+<div class="analysis-item banker-item">
+<div class="analysis-label">
                         庄
                     </div>
-
-                    <div
-                        id="bc-banker-count"
-                        class="analysis-value banker-color"
-                    >
+<div class="analysis-value banker-color" id="bc-banker-count">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item player-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item player-item">
+<div class="analysis-label">
                         闲
                     </div>
-
-                    <div
-                        id="bc-player-count"
-                        class="analysis-value player-color"
-                    >
+<div class="analysis-value player-color" id="bc-player-count">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item tie-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item tie-item">
+<div class="analysis-label">
                         和
                     </div>
-
-                    <div
-                        id="bc-tie-count"
-                        class="analysis-value tie-color"
-                    >
+<div class="analysis-value tie-color" id="bc-tie-count">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item">
+<div class="analysis-label">
                         庄率
                     </div>
-
-                    <div
-                        id="bc-banker-rate"
-                        class="analysis-value banker-color"
-                    >
+<div class="analysis-value banker-color" id="bc-banker-rate">
                         0%
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item">
+<div class="analysis-label">
                         闲率
                     </div>
-
-                    <div
-                        id="bc-player-rate"
-                        class="analysis-value player-color"
-                    >
+<div class="analysis-value player-color" id="bc-player-rate">
                         0%
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item">
+<div class="analysis-label">
                         当前连
                     </div>
-
-                    <div
-                        id="bc-current-streak"
-                        class="analysis-value"
-                    >
+<div class="analysis-value" id="bc-current-streak">
                         --
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item">
+<div class="analysis-label">
                         最大庄连
                     </div>
-
-                    <div
-                        id="bc-max-banker"
-                        class="analysis-value banker-color"
-                    >
+<div class="analysis-value banker-color" id="bc-max-banker">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item">
+<div class="analysis-label">
                         最大闲连
                     </div>
-
-                    <div
-                        id="bc-max-player"
-                        class="analysis-value player-color"
-                    >
+<div class="analysis-value player-color" id="bc-max-player">
                         0
                     </div>
-
-                </div>
-
-
-                <div class="analysis-item">
-
-                    <div class="analysis-label">
+</div>
+<div class="analysis-item">
+<div class="analysis-label">
                         总局数
                     </div>
-
-                    <div
-                        id="bc-total-rounds"
-                        class="analysis-value"
-                    >
+<div class="analysis-value" id="bc-total-rounds">
                         0
                     </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="section-card">
-
-            <div
-                id="history-title"
-                class="section-title"
-            >
+</div>
+</div>
+</div>
+<div class="section-card">
+<div class="section-title" id="history-title">
                 📜 D51 最近20局
             </div>
-
-            <div
-                id="bc-history"
-                class="history-list"
-            ></div>
-
-        </div>
-
-
-
-        <div class="section-card baccarat-prediction-card">
-
-            <div class="section-title">
+<div class="history-list" id="bc-history"></div>
+</div>
+<div class="section-card baccarat-prediction-card">
+<div class="section-title">
 
                 🔮 Baccarat AI 预测
 
                 <span id="prediction-table-name">
                     D51
                 </span>
-
-            </div>
-
-
-            <div class="baccarat-prediction">
-
-                <div
-                    id="bc-prediction"
-                    class="prediction-result"
-                >
-                    ⚪ PASS
+</div>
+<div class="baccarat-prediction">
+<div class="prediction-result" id="bc-prediction">
+                    🎯 强制预测
                 </div>
-
-
-                <div
-                    id="bc-confidence"
-                    class="prediction-confidence"
-                >
+<div class="prediction-confidence" id="bc-confidence">
                     信心：50%
                 </div>
-
-
-                <div
-                    id="bc-action"
-                    class="pass"
-                >
-                    PASS
+<div class="neutral" id="bc-action">
+                    PREDICT
                 </div>
-
-            </div>
-
-
-            <div
-                id="bc-reason"
-                class="prediction-reason"
-            ></div>
-
-        </div>
-
-
-    </section>
-
-
-    <section id="k3-section" class="main-section local-game-section">
-      <div class="section-card"><div class="section-title">🎲 K3 Lotre</div><p class="data-status">本地 Result 模式（之后再接真实开奖）</p><div class="local-game-grid"><div><label>Period</label><input id="k3-period" class="local-input" value="20260929101010850"></div><div><label>Result（三颗骰子，1-6）</label><input id="k3-result" class="local-input" value="1,4,5"></div></div><button class="local-save" onclick="saveLocalGame('k3')">保存 Result</button><div id="k3-preview" class="local-preview"></div><div id="k3-history" class="local-history"></div></div>
-    </section>
-
-    <section id="5d-section" class="main-section local-game-section">
-      <div class="section-card"><div class="section-title">🔢 5D Lotre</div><p class="data-status">本地 Result 模式（之后再接真实开奖）</p><div class="local-game-grid"><div><label>Period</label><input id="5d-period" class="local-input" value="20260929102010850"></div><div><label>Result（5位数字）</label><input id="5d-result" class="local-input" value="8,5,9,2,7"></div></div><button class="local-save" onclick="saveLocalGame('5d')">保存 Result</button><div id="5d-preview" class="local-preview"></div><div id="5d-history" class="local-history"></div></div>
-    </section>
-
-    <section id="trx-section" class="main-section local-game-section">
-      <div class="section-card"><div class="section-title">🪙 Trx Win</div><p class="data-status">本地 Result 模式（之后再接 Hash / Block Result）</p><div class="local-game-grid"><div><label>Period</label><input id="trx-period" class="local-input" value="20260929103010850"></div><div><label>Result（0-9）</label><input id="trx-result" class="local-input" value="5"></div></div><button class="local-save" onclick="saveLocalGame('trx')">保存 Result</button><div id="trx-preview" class="local-preview"></div><div id="trx-history" class="local-history"></div></div>
-    </section>
-
 </div>
-
-
-<script src="script.js?v=3"></script>
-
+<div class="prediction-reason" id="bc-reason"></div>
+</div>
+</section>
+<section class="main-section multi-game-section" id="k3-section">
+<div class="section-card multi-shell">
+<div class="multi-head"><div><div class="section-title">🎲 K3 Lotre · AI 预测</div><p class="data-status" id="k3-data-status">正在读取 K3 数据…</p></div><div class="multi-live">1Min · typeId 9</div></div>
+<div class="multi-top-grid">
+<div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="k3-latest">--</div><div class="multi-sub" id="k3-latest-meta">--</div></div>
+<div class="multi-panel multi-predict-panel"><div class="multi-label">下一期预测</div><div class="multi-prediction" id="k3-prediction">等待真实数据</div><div class="multi-confidence" id="k3-confidence">统计信心 --%</div></div>
+<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="k3-target">--</div><div class="multi-sub">每期固定给出预测</div></div>
+</div>
+<div class="prediction-matrix" id="k3-prediction-grid"></div>
+<div class="multi-note">预测依据：近期加权频率 + 状态转移。仅用于历史统计分析，随机开奖无法保证预测准确。</div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 实盘复盘</div><div class="multi-review" id="k3-review"></div></div><div><div class="multi-block-title">📜 最近开奖</div><div class="multi-history" id="k3-history"></div></div></div>
+</div>
+</section>
+<section class="main-section multi-game-section" id="5d-section">
+<div class="section-card multi-shell">
+<div class="multi-head"><div><div class="section-title">🔢 5D Lotre · AI 预测</div><p class="data-status" id="5d-data-status">正在读取 5D 数据…</p></div><div class="multi-live">1Min · typeId 5</div></div>
+<div class="multi-top-grid">
+<div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="5d-latest">--</div><div class="multi-sub" id="5d-latest-meta">--</div></div>
+<div class="multi-panel multi-predict-panel"><div class="multi-label">下一期 5 位预测</div><div class="multi-prediction" id="5d-prediction">等待真实数据</div><div class="multi-confidence" id="5d-confidence">统计信心 --%</div></div>
+<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="5d-target">--</div><div class="multi-sub">A/B/C/D/E 每位都预测号码 + 大小 + 单双</div></div>
+</div>
+<div class="prediction-matrix prediction-matrix-5d" id="5d-prediction-grid"></div>
+<div class="multi-note">每一位独立使用近期加权频率与状态转移计算。</div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 实盘复盘</div><div class="multi-review" id="5d-review"></div></div><div><div class="multi-block-title">📜 最近开奖</div><div class="multi-history" id="5d-history"></div></div></div>
+</div>
+</section>
+<section class="main-section multi-game-section" id="trx-section">
+<div class="section-card multi-shell">
+<div class="multi-head"><div><div class="section-title">🪙 TRX Win · AI 预测</div><p class="data-status" id="trx-data-status">正在读取 TRX 数据…</p></div><div class="multi-live">1Min · typeId 13</div></div>
+<div class="multi-top-grid">
+<div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="trx-latest">--</div><div class="multi-sub" id="trx-latest-meta">--</div></div>
+<div class="multi-panel multi-predict-panel"><div class="multi-label">下一期预测</div><div class="multi-prediction" id="trx-prediction">等待真实数据</div><div class="multi-confidence" id="trx-confidence">统计信心 --%</div></div>
+<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="trx-target">--</div><div class="multi-sub">号码 / 大小 / 颜色 全部预测</div></div>
+</div>
+<div class="prediction-matrix" id="trx-prediction-grid"></div>
+<div class="multi-note">号码、大小、颜色同时给出统计预测。</div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 实盘复盘</div><div class="multi-review" id="trx-review"></div></div><div><div class="multi-block-title">📜 最近开奖</div><div class="multi-history" id="trx-history"></div></div></div>
+</div>
+</section>
+</div>
+<script src="script.js?v=5"></script>
 </body>
-
 </html>
