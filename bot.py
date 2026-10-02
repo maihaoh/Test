@@ -8,6 +8,8 @@ import threading
 import websocket
 from collections import Counter
 
+from mzplay_multi import MultiGameCollector
+
 
 # ============================================================
 # 基本路径
@@ -2338,6 +2340,30 @@ def initialize_data():
 
 
 # ============================================================
+# K3 / 5D / TRX 整合
+# ============================================================
+
+def update_multi_games(states):
+    """Merge MZPLAY multi-game state into the same data.json used by the dashboard."""
+    if not isinstance(states, dict):
+        return
+
+    with data_lock:
+        for game in ("k3", "5d", "trx"):
+            state = states.get(game)
+            if isinstance(state, dict):
+                # Deep copy so collector mutations cannot race with JSON serialization.
+                global_data[game] = json.loads(json.dumps(state, ensure_ascii=False))
+
+    save_data_json()
+
+
+def start_multi_games():
+    collector = MultiGameCollector(update_multi_games, poll_interval=8)
+    collector.run()
+
+
+# ============================================================
 # MAIN
 # ============================================================
 
@@ -2346,7 +2372,7 @@ def main():
     print("=" * 70)
 
     print(
-        "🚀 WinGo + Choice Baccarat"
+        "🚀 WinGo + Choice Baccarat + K3 + 5D + TRX"
     )
 
     print(
@@ -2398,6 +2424,17 @@ def main():
     )
 
     baccarat_thread.start()
+
+    # --------------------------------------------------------
+    # K3 / 5D / TRX (MZPLAY authenticated API)
+    # --------------------------------------------------------
+
+    multi_thread = threading.Thread(
+        target=start_multi_games,
+        daemon=True
+    )
+
+    multi_thread.start()
 
     # --------------------------------------------------------
     # 主线程
