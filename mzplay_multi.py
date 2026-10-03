@@ -19,9 +19,11 @@ LOGIN_RATE_LIMIT_BASE_SECONDS = 5 * 60
 LOGIN_RATE_LIMIT_MAX_SECONDS = 15 * 60
 LOGIN_FAILURE_RETRY_SECONDS = 5 * 60
 GENERAL_RETRY_SECONDS = 12
+NETWORK_RETRY_SECONDS = 45
+TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v20-session-first"
+BUILD_VERSION = "v16-network-backoff"
 
 GAME_DEFS = {
     "k3": {
@@ -341,6 +343,13 @@ class MZPlayRateLimit(RuntimeError):
         self.path = path or ""
 
 
+class MZPlayTransientError(RuntimeError):
+    def __init__(self, message, *, retry_after=NETWORK_RETRY_SECONDS, path=""):
+        super().__init__(message)
+        self.retry_after = max(5, int(retry_after or NETWORK_RETRY_SECONDS))
+        self.path = path or ""
+
+
 class MZPlayClient:
     def __init__(self, config):
         self.config = config or {}
@@ -375,6 +384,7 @@ class MZPlayClient:
         self.last_login_error = ""
         self.rate_limit_hits = 0
         self.api_cooldowns = {}
+        self.next_network_retry_at = 0.0
         self._load_auth_state()
         print("ℹ️ [MZPlay] Web 参数模式：phonetype=-1 / GetGameUrl deviceType=3（可用环境变量覆盖）")
 
@@ -472,6 +482,38 @@ class MZPlayClient:
         self._throttle()
         return self.session.post(BASE_URL + path, json=payload, headers=headers or {}, timeout=timeout)
 
+    def _network_retry_message(self, path, reason, retry_after=NETWORK_RETRY_SECONDS):
+        retry_after = max(5, int(retry_after or NETWORK_RETRY_SECONDS))
+        self.next_network_retry_at = max(self.next_network_retry_at, time.time() + retry_after)
+        retry_dt = datetime.fromtimestamp(self.next_network_retry_at, MYT).strftime("%H:%M:%S")
+        return f"{path} 网络临时错误：{reason}；{retry_after}s 后自动重试（MYT {retry_dt}）"
+
+    def _raise_transient_http(self, path, response):
+        status = int(getattr(response, "status_code", 0) or 0)
+        if status in TRANSIENT_HTTP_STATUS:
+            message = self._network_retry_message(path, f"HTTP {status}")
+            print(f"⚠️ [MZPlay{path}] {message}")
+            raise MZPlayTransientError(message, retry_after=NETWORK_RETRY_SECONDS, path=path)
+
+    def _post_with_network_backoff(self, path, payload, headers=None, timeout=20):
+        if self.next_network_retry_at > time.time():
+            retry_after = max(1, int(self.next_network_retry_at - time.time()))
+            raise MZPlayTransientError(
+                f"{path} 网络冷却中，{retry_after}s 后自动重试",
+                retry_after=retry_after,
+                path=path,
+            )
+        try:
+            response = self._post_json(path, payload, headers=headers, timeout=timeout)
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            message = self._network_retry_message(path, type(exc).__name__)
+            print(f"⚠️ [MZPlay{path}] {message}")
+            raise MZPlayTransientError(message, retry_after=NETWORK_RETRY_SECONDS, path=path) from exc
+        self._raise_transient_http(path, response)
+        # A successful/non-transient response clears only the temporary network backoff.
+        self.next_network_retry_at = 0.0
+        return response
+
     def _login_cooldown_message(self):
         remaining = int(max(0, self.next_login_at - time.time()))
         retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S") if self.next_login_at else "--:--:--"
@@ -549,7 +591,7 @@ class MZPlayClient:
             f"(loginType={payload['logintype']}, phoneType={payload['phonetype']}, deviceId=已配置)"
         )
         login_headers = {"Ar-Real-Ip": str(os.getenv("MZPLAY_AR_REAL_IP") or "")}
-        response = self._post_json("/Login", self._signed(payload), headers=login_headers, timeout=20)
+        response = self._post_with_network_backoff("/Login", self._signed(payload), headers=login_headers, timeout=20)
         try:
             body = response.json()
         except Exception:
@@ -643,7 +685,7 @@ class MZPlayClient:
 
         print("ℹ️ [MZPlay/RefreshToken] 优先尝试恢复既有 session")
         headers = {"Authorization": self._auth_header(refresh=True)}
-        response = self._post_json("/RefreshToken", self._signed({}), headers=headers, timeout=20)
+        response = self._post_with_network_backoff("/RefreshToken", self._signed({}), headers=headers, timeout=20)
         try:
             body = response.json()
         except Exception:
@@ -742,7 +784,8 @@ class MZPlayClient:
         now = time.time()
         login_left = max(0, int(float(self.next_login_at or 0) - now))
         api_left = max(0, int(float(self.api_cooldowns.get("/GetGameUrl", 0) or 0) - now))
-        return max(login_left, api_left)
+        network_left = max(0, int(float(self.next_network_retry_at or 0) - now))
+        return max(login_left, api_left, network_left)
 
     def get_choice_launch_url(self):
         """Get Choice URL using one reusable authenticated MZPlay session.
@@ -798,12 +841,12 @@ class MZPlayClient:
             if not self.token:
                 self.ensure_login()
             headers = {"Authorization": self._auth_header()}
-            response = self._post_json(path, self._signed(data or {}), headers=headers, timeout=20)
+            response = self._post_with_network_backoff(path, self._signed(data or {}), headers=headers, timeout=20)
             if response.status_code == 401:
                 print(f"ℹ️ [MZPlay{path}] HTTP 401，先 RefreshToken 后重试")
                 self.refresh()
                 headers["Authorization"] = self._auth_header()
-                response = self._post_json(path, self._signed(data or {}), headers=headers, timeout=20)
+                response = self._post_with_network_backoff(path, self._signed(data or {}), headers=headers, timeout=20)
             response.raise_for_status()
             body = response.json()
             if isinstance(body, dict) and body.get("code") not in (None, 0):
@@ -949,6 +992,14 @@ class MultiGameCollector:
             if not self.client.token:
                 try:
                     self.client.ensure_login()
+                except MZPlayTransientError as exc:
+                    status = f"{BUILD_VERSION} | 网络临时错误：{exc}"
+                    for game in self.states:
+                        self.states[game]["status"] = status
+                        self.states[game]["updated_at"] = int(time.time())
+                    self.on_update(self.states)
+                    self.stop_event.wait(max(5, int(getattr(exc, "retry_after", NETWORK_RETRY_SECONDS))))
+                    continue
                 except MZPlayRateLimit as exc:
                     status = f"{BUILD_VERSION} | 服务器限频：{exc}"
                     for game in self.states:
@@ -971,6 +1022,12 @@ class MultiGameCollector:
             for game in GAME_DEFS:
                 try:
                     self.poll_game(game)
+                except MZPlayTransientError as exc:
+                    rate_limited = True
+                    self.states[game]["status"] = f"{BUILD_VERSION} | 网络临时错误：{exc}"
+                    self.states[game]["updated_at"] = int(time.time())
+                    self.stop_event.wait(max(5, int(getattr(exc, "retry_after", NETWORK_RETRY_SECONDS))))
+                    break
                 except MZPlayRateLimit as exc:
                     rate_limited = True
                     self.states[game]["status"] = f"{BUILD_VERSION} | 服务器限频：{exc}"
