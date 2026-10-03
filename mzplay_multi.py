@@ -585,27 +585,115 @@ class MZPlayClient:
                 self.login()
         return True
 
-    def get_choice_launch_url(self):
-        """Get a fresh authorized Choice/AG Video launch URL from MZPlay.
-
-        The returned URL contains short-lived authorization material and must not be
-        logged or persisted.  This follows the same GetGameUrl call used by the web UI.
-        """
-        body = self.post(
-            "/GetGameUrl",
-            {
-                "vendorCode": "AG_Video",
-                "returnUrl": ORIGIN,
-                "deviceType": 0,
-            },
-        )
+    def _choice_url_from_body(self, body):
         data = body.get("data") if isinstance(body, dict) else None
         if isinstance(data, dict) and isinstance(data.get("data"), dict):
             data = data["data"]
         url = str(data.get("url") or "").strip() if isinstance(data, dict) else ""
-        if not url.startswith("https://gci.arvideo.video/forwardGame.do?"):
-            raise RuntimeError("GetGameUrl 未返回有效的 Choice launch URL")
-        print("✅ [MZPlay/GetGameUrl] 已取得 Choice 授权入口（URL 已隐藏）")
+        return url if url.startswith("https://gci.arvideo.video/forwardGame.do?") else ""
+
+    def _body_error_detail(self, body):
+        if not isinstance(body, dict):
+            return "code=? msgCode= msg="
+        return (
+            f"code={body.get('code')} "
+            f"msgCode={body.get('msgCode') or ''} "
+            f"msg={body.get('msg') or body.get('message') or ''}"
+        )
+
+    def _is_rate_limit_body(self, body):
+        if not isinstance(body, dict):
+            return False
+        code = body.get("code")
+        msg_code = body.get("msgCode")
+        msg = str(body.get("msg") or body.get("message") or "")
+        return (
+            str(code) == "13"
+            or str(msg_code) == "13"
+            or "frequent" in msg.lower()
+            or "频繁" in msg
+        )
+
+    def _looks_auth_required(self, response, body):
+        if getattr(response, "status_code", 0) in (401, 403):
+            return True
+        if not isinstance(body, dict):
+            return False
+        text = " ".join(
+            str(body.get(k) or "") for k in ("msg", "message", "msgCode", "code")
+        ).lower()
+        return any(word in text for word in ("token", "login", "auth", "unauthor", "登录", "授权"))
+
+    def choice_retry_after(self):
+        """Seconds until Choice should retry without causing noisy tight loops."""
+        now = time.time()
+        login_left = max(0, int(float(self.next_login_at or 0) - now))
+        api_left = max(0, int(float(self.api_cooldowns.get("/GetGameUrl", 0) or 0) - now))
+        return max(login_left, api_left)
+
+    def get_choice_launch_url(self):
+        """Get a fresh Choice/AG Video launch URL.
+
+        Important: the verified browser HAR shows GetGameUrl succeeding without an
+        Authorization header.  Therefore Choice first mirrors that exact signed request
+        instead of forcing /Login.  Only if the endpoint explicitly asks for auth do we
+        fall back to the authenticated session flow.  This avoids unnecessary /Login
+        calls and prevents a Login-rate-limit loop on Render.
+        """
+        path = "/GetGameUrl"
+        payload = {
+            "vendorCode": "AG_Video",
+            "returnUrl": ORIGIN,
+            "deviceType": 0,
+        }
+
+        with self.lock:
+            until = float(self.api_cooldowns.get(path, 0) or 0)
+            if until > time.time():
+                retry_after = max(1, int(until - time.time()))
+                raise MZPlayRateLimit(
+                    f"{path} 接口冷却中，{retry_after}s 后再试",
+                    scope="api", retry_after=retry_after, path=path,
+                )
+
+            # First try exactly like the captured successful browser request: signed
+            # payload + normal browser headers, but no Authorization requirement.
+            anon_headers = {"Authorization": ""}
+            response = self._post_json(path, self._signed(payload), headers=anon_headers, timeout=20)
+            body = None
+            try:
+                body = response.json()
+            except Exception:
+                body = {}
+
+            if response.ok:
+                url = self._choice_url_from_body(body)
+                if url:
+                    self.api_cooldowns.pop(path, None)
+                    print("✅ [MZPlay/GetGameUrl] 匿名签名请求成功，已取得 Choice 授权入口（URL 已隐藏）")
+                    return url
+
+            if self._is_rate_limit_body(body):
+                retry_after = self._api_rate_limit_seconds(response, body, default=60)
+                self.api_cooldowns[path] = time.time() + retry_after
+                raise MZPlayRateLimit(
+                    f"{path} 被限频（{self._body_error_detail(body)}），{retry_after}s 后自动重试",
+                    scope="api", retry_after=retry_after, path=path,
+                )
+
+            # Only an explicit auth failure is allowed to trigger Login/RefreshToken.
+            if self._looks_auth_required(response, body):
+                print("ℹ️ [MZPlay/GetGameUrl] 服务器要求认证，才改走 Login/RefreshToken")
+            else:
+                response.raise_for_status()
+                raise RuntimeError(f"{path} API error: {self._body_error_detail(body)}")
+
+        # Do authenticated fallback outside the lock because post() owns the lock.
+        body = self.post(path, payload)
+        url = self._choice_url_from_body(body)
+        if not url:
+            raise RuntimeError(f"{path} 未返回有效的 Choice launch URL")
+        print("✅ [MZPlay/GetGameUrl] 认证请求成功，已取得 Choice 授权入口（URL 已隐藏）")
         return url
 
     def _api_rate_limit_seconds(self, response, body, default=60):
