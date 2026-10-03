@@ -15,13 +15,13 @@ LANGUAGE = 0
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_config.json")
 
 MIN_REQUEST_INTERVAL = 1.35
-LOGIN_RATE_LIMIT_BASE_SECONDS = 15 * 60
-LOGIN_RATE_LIMIT_MAX_SECONDS = 60 * 60
+LOGIN_RATE_LIMIT_BASE_SECONDS = 5 * 60
+LOGIN_RATE_LIMIT_MAX_SECONDS = 15 * 60
 LOGIN_FAILURE_RETRY_SECONDS = 5 * 60
 GENERAL_RETRY_SECONDS = 12
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v19-direct-getgameurl"
+BUILD_VERSION = "v20-session-first"
 
 GAME_DEFS = {
     "k3": {
@@ -368,7 +368,7 @@ class MZPlayClient:
         self.token_header = ""
         self.token = ""
         self.refresh_token = ""
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.rate_lock = threading.Lock()
         self.last_request_at = 0.0
         self.next_login_at = 0.0
@@ -398,6 +398,8 @@ class MZPlayClient:
             self.token_header = str(state.get("tokenHeader") or "")
             self.token = str(state.get("token") or "")
             self.refresh_token = str(state.get("refreshToken") or "")
+            if self.token or self.refresh_token:
+                print(f"ℹ️ [MZPlay/Auth] 已恢复本机 session 状态 (token={'yes' if self.token else 'no'}, refresh={'yes' if self.refresh_token else 'no'})")
         except Exception:
             self.next_login_at = 0.0
             self.rate_limit_hits = 0
@@ -473,17 +475,65 @@ class MZPlayClient:
         remaining = int(max(0, self.next_login_at - time.time()))
         retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S") if self.next_login_at else "--:--:--"
         minutes = max(1, (remaining + 59) // 60) if remaining else 0
-        return f"登录限频冷却中，约 {minutes} 分钟后自动重试（MYT {retry_dt}）"
+        return f"登录冷却中，约 {minutes} 分钟后自动重试（MYT {retry_dt}）"
+
+    def _safe_response_detail(self, body, response=None):
+        """Return only non-secret server status fields for diagnostics."""
+        code = body.get("code") if isinstance(body, dict) else "?"
+        msg_code = body.get("msgCode") if isinstance(body, dict) else ""
+        msg = ""
+        if isinstance(body, dict):
+            msg = str(body.get("msg") or body.get("message") or "").strip()
+        # Defensive redaction in case a gateway unexpectedly echoes credentials/tokens.
+        for secret in (self.password, self.token, self.refresh_token, self.device_id, self.username):
+            if secret:
+                msg = msg.replace(str(secret), "[REDACTED]")
+        http = getattr(response, "status_code", "?") if response is not None else "?"
+        return f"HTTP={http} code={code} msgCode={msg_code or ''} msg={msg}"
+
+    def _retry_after_seconds(self, response, body, default=300):
+        try:
+            value = response.headers.get("Retry-After")
+            if value:
+                return max(5, min(LOGIN_RATE_LIMIT_MAX_SECONDS, int(float(value))))
+        except Exception:
+            pass
+        if isinstance(body, dict):
+            for key in ("retryAfter", "retry_after", "waitSeconds", "wait"):
+                try:
+                    value = body.get(key)
+                    if value is not None:
+                        return max(5, min(LOGIN_RATE_LIMIT_MAX_SECONDS, int(float(value))))
+                except Exception:
+                    pass
+        return int(default)
+
+    def _needs_human_verification(self, body):
+        if not isinstance(body, dict):
+            return False
+        msg_code = str(body.get("msgCode") or "")
+        msg = str(body.get("msg") or body.get("message") or "").lower()
+        return msg_code in {"33", "122"} or any(
+            word in msg for word in ("captcha", "verification", "verify code", "vcode", "验证码", "验证")
+        )
 
     def login(self):
         if not self.configured:
             raise RuntimeError("未配置 MZPLAY username/password")
+        if time.time() < self.next_login_at:
+            remaining = max(1, int(self.next_login_at - time.time()))
+            raise MZPlayRateLimit(
+                self._login_cooldown_message(), scope="login", retry_after=remaining, path="/Login"
+            )
+
         payload = {
             "username": self.username,
+            "captchaId": "",
+            "track": "",
             "pwd": self.password,
-            "phonetype": 0,
-            "logintype": "mobile",
-            "packId": "",
+            "phonetype": int(os.getenv("MZPLAY_PHONE_TYPE") or self.config.get("phonetype") or 0),
+            "logintype": str(os.getenv("MZPLAY_LOGIN_TYPE") or self.config.get("logintype") or "mobile"),
+            "packId": str(os.getenv("MZPLAY_PACK_ID") or self.config.get("packId") or ""),
             "deviceId": self.device_id,
             "pixelId": "",
             "fbcId": "",
@@ -491,99 +541,136 @@ class MZPlayClient:
             "fbp": "",
             "adId": "",
         }
-        if time.time() < self.next_login_at:
-            remaining = max(1, int(self.next_login_at - time.time()))
-            raise MZPlayRateLimit(
-                self._login_cooldown_message(), scope="login", retry_after=remaining, path="/Login"
-            )
-        # The official frontend sends AR-REAL-IP on Login, but Login itself has no Authorization header.
-        login_headers = {"Ar-Real-Ip": ""}
+        print(
+            "ℹ️ [MZPlay/Login] 开始认证 "
+            f"(loginType={payload['logintype']}, phoneType={payload['phonetype']}, deviceId=已配置)"
+        )
+        login_headers = {"Ar-Real-Ip": str(os.getenv("MZPLAY_AR_REAL_IP") or "")}
         response = self._post_json("/Login", self._signed(payload), headers=login_headers, timeout=20)
-        response.raise_for_status()
-        body = response.json()
+        try:
+            body = response.json()
+        except Exception:
+            body = {}
+
         data = body.get("data") if isinstance(body, dict) else None
         if isinstance(data, dict) and isinstance(data.get("data"), dict):
             data = data["data"]
         if not isinstance(data, dict):
             data = body if isinstance(body, dict) else {}
         token = data.get("token")
-        if not token:
-            code = body.get("code") if isinstance(body, dict) else "?"
-            msg = ""
-            msg_code = ""
-            if isinstance(body, dict):
-                msg = str(body.get("msg") or body.get("message") or "").strip()
-                msg_code = str(body.get("msgCode") or "").strip()
-            detail = f"code={code}"
-            if msg_code:
-                detail += f", msgCode={msg_code}"
-            if msg:
-                detail += f", msg={msg}"
-            if str(msg_code) == "13" or str(code) == "13" or "frequent" in msg.lower():
-                self.rate_limit_hits = max(0, self.rate_limit_hits) + 1
-                cooldown = min(
-                    LOGIN_RATE_LIMIT_MAX_SECONDS,
-                    LOGIN_RATE_LIMIT_BASE_SECONDS * (2 ** min(self.rate_limit_hits - 1, 2)),
-                )
-                self.next_login_at = time.time() + cooldown
-                self.last_login_error = detail
-                self._save_auth_state()
-                mins = max(1, cooldown // 60)
-                retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
-                raise MZPlayRateLimit(
-                    f"Login 被服务器限频；{mins} 分钟后再试（MYT {retry_dt}，{detail}）",
-                    scope="login", retry_after=cooldown, path="/Login"
-                )
+
+        if token:
+            self.next_login_at = 0.0
+            self.rate_limit_hits = 0
+            self.last_login_error = ""
+            self.token_header = str(data.get("tokenHeader") or "")
+            self.token = str(token)
+            self.refresh_token = str(data.get("refreshToken") or "")
+            self._save_auth_state()
+            print("✅ [MZPlay/Login] 登录成功，已保存 session + refreshToken（敏感值不输出）")
+            return True
+
+        detail = self._safe_response_detail(body, response)
+        print(f"⚠️ [MZPlay/Login] 认证失败：{detail}")
+
+        if self._needs_human_verification(body):
             self.next_login_at = time.time() + LOGIN_FAILURE_RETRY_SECONDS
             self.last_login_error = detail
             self._save_auth_state()
-            retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
             raise RuntimeError(
-                f"Login 未返回 token ({detail})；{LOGIN_FAILURE_RETRY_SECONDS // 60} 分钟后再试（MYT {retry_dt}）"
+                "MZPlay 要求验证码/额外验证；程序不会绕过验证。"
+                f"服务器返回：{detail}"
             )
-        self.next_login_at = 0.0
-        self.rate_limit_hits = 0
-        self.last_login_error = ""
-        self.token_header = str(data.get("tokenHeader") or "")
-        self.token = str(token)
-        self.refresh_token = str(data.get("refreshToken") or "")
+
+        msg = str(body.get("msg") or body.get("message") or "") if isinstance(body, dict) else ""
+        code = body.get("code") if isinstance(body, dict) else "?"
+        msg_code = body.get("msgCode") if isinstance(body, dict) else ""
+        is_rate = (
+            response.status_code == 429
+            or str(msg_code) == "13"
+            or str(code) == "13"
+            or "frequent" in msg.lower()
+            or "频繁" in msg
+        )
+        if is_rate:
+            self.rate_limit_hits = max(0, self.rate_limit_hits) + 1
+            cooldown = self._retry_after_seconds(response, body, default=LOGIN_RATE_LIMIT_BASE_SECONDS)
+            self.next_login_at = time.time() + cooldown
+            self.last_login_error = detail
+            self._save_auth_state()
+            retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
+            raise MZPlayRateLimit(
+                f"Login 被服务器限频；{cooldown}s 后再试（MYT {retry_dt}，{detail}）",
+                scope="login", retry_after=cooldown, path="/Login"
+            )
+
+        # For credential/device/parameter errors, do not hammer Login repeatedly.
+        self.next_login_at = time.time() + LOGIN_FAILURE_RETRY_SECONDS
+        self.last_login_error = detail
         self._save_auth_state()
-        print("✅ [MZPlay/Login] 登录成功，已取得 session token（敏感值不输出）")
-        return True
+        response.raise_for_status()
+        retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
+        raise RuntimeError(
+            f"Login 未取得 token；{LOGIN_FAILURE_RETRY_SECONDS // 60} 分钟后再试（MYT {retry_dt}，{detail}）"
+        )
 
     def refresh(self):
         if not self.refresh_token:
             print("ℹ️ [MZPlay/RefreshToken] 没有 refreshToken，改走 Login")
             return self.login()
+
+        print("ℹ️ [MZPlay/RefreshToken] 优先尝试恢复既有 session")
         headers = {"Authorization": self._auth_header(refresh=True)}
         response = self._post_json("/RefreshToken", self._signed({}), headers=headers, timeout=20)
-        response.raise_for_status()
-        body = response.json()
+        try:
+            body = response.json()
+        except Exception:
+            body = {}
         data = body.get("data") if isinstance(body, dict) else None
         if isinstance(data, dict) and isinstance(data.get("data"), dict):
             data = data["data"]
-        if not isinstance(data, dict) or not data.get("token"):
-            code = body.get("code") if isinstance(body, dict) else "?"
-            msg_code = body.get("msgCode") if isinstance(body, dict) else ""
-            msg = (body.get("msg") or body.get("message") or "") if isinstance(body, dict) else ""
-            print(f"⚠️ [MZPlay/RefreshToken] 失败 code={code} msgCode={msg_code or ''} msg={msg}")
-            self._drop_tokens()
-            return self.login()
-        self.token_header = str(data.get("tokenHeader") or self.token_header)
-        self.token = str(data.get("token") or "")
-        self.refresh_token = str(data.get("refreshToken") or self.refresh_token)
-        self.next_login_at = 0.0
-        self.last_login_error = ""
-        self._save_auth_state()
-        print("✅ [MZPlay/RefreshToken] 刷新成功（敏感值不输出）")
-        return True
+
+        if isinstance(data, dict) and data.get("token"):
+            self.token_header = str(data.get("tokenHeader") or self.token_header)
+            self.token = str(data.get("token") or "")
+            self.refresh_token = str(data.get("refreshToken") or self.refresh_token)
+            self.next_login_at = 0.0
+            self.rate_limit_hits = 0
+            self.last_login_error = ""
+            self._save_auth_state()
+            print("✅ [MZPlay/RefreshToken] session 恢复成功（敏感值不输出）")
+            return True
+
+        detail = self._safe_response_detail(body, response)
+        print(f"⚠️ [MZPlay/RefreshToken] 刷新失败：{detail}")
+        msg = str(body.get("msg") or body.get("message") or "") if isinstance(body, dict) else ""
+        code = body.get("code") if isinstance(body, dict) else "?"
+        msg_code = body.get("msgCode") if isinstance(body, dict) else ""
+        if (
+            response.status_code == 429
+            or str(code) == "13"
+            or str(msg_code) == "13"
+            or "frequent" in msg.lower()
+            or "频繁" in msg
+        ):
+            retry_after = self._retry_after_seconds(response, body, default=60)
+            raise MZPlayRateLimit(
+                f"RefreshToken 被限频；{retry_after}s 后重试（{detail}）",
+                scope="refresh", retry_after=retry_after, path="/RefreshToken"
+            )
+
+        # Expired/revoked refresh token: discard it and perform one normal Login.
+        self._drop_tokens()
+        return self.login()
 
     def ensure_login(self):
-        """Ensure one authenticated MZPlay session without duplicate concurrent logins."""
+        """Restore an existing session first; use /Login only when required."""
         with self.lock:
-            if not self.token:
-                self.login()
-        return True
+            if self.token:
+                return True
+            if self.refresh_token:
+                return self.refresh()
+            return self.login()
 
     def _choice_url_from_body(self, body):
         data = body.get("data") if isinstance(body, dict) else None
@@ -595,11 +682,15 @@ class MZPlayClient:
     def _body_error_detail(self, body):
         if not isinstance(body, dict):
             return "code=? msgCode= msg="
-        return (
+        detail = (
             f"code={body.get('code')} "
             f"msgCode={body.get('msgCode') or ''} "
             f"msg={body.get('msg') or body.get('message') or ''}"
         )
+        for secret in (self.password, self.token, self.refresh_token, self.device_id, self.username):
+            if secret:
+                detail = detail.replace(str(secret), "[REDACTED]")
+        return detail
 
     def _is_rate_limit_body(self, body):
         if not isinstance(body, dict):
@@ -625,20 +716,18 @@ class MZPlayClient:
         return any(word in text for word in ("token", "login", "auth", "unauthor", "登录", "授权"))
 
     def choice_retry_after(self):
-        """Seconds until Choice should retry without causing noisy tight loops."""
+        """Seconds until Choice should retry without hammering auth/game-url endpoints."""
         now = time.time()
         login_left = max(0, int(float(self.next_login_at or 0) - now))
         api_left = max(0, int(float(self.api_cooldowns.get("/GetGameUrl", 0) or 0) - now))
         return max(login_left, api_left)
 
     def get_choice_launch_url(self):
-        """Get a fresh Choice/AG Video launch URL.
+        """Get Choice URL using one reusable authenticated MZPlay session.
 
-        Important: the verified browser HAR shows GetGameUrl succeeding without an
-        Authorization header.  Therefore Choice first mirrors that exact signed request
-        instead of forcing /Login.  Only if the endpoint explicitly asks for auth do we
-        fall back to the authenticated session flow.  This avoids unnecessary /Login
-        calls and prevents a Login-rate-limit loop on Render.
+        Current live Render evidence shows this account's GetGameUrl requires auth.
+        Therefore do not spend an extra anonymous request on every reconnect. Restore
+        refreshToken/token first; only perform /Login when there is no reusable session.
         """
         path = "/GetGameUrl"
         payload = {
@@ -646,58 +735,12 @@ class MZPlayClient:
             "returnUrl": ORIGIN,
             "deviceType": 0,
         }
-
-        with self.lock:
-            until = float(self.api_cooldowns.get(path, 0) or 0)
-            if until > time.time():
-                retry_after = max(1, int(until - time.time()))
-                raise MZPlayRateLimit(
-                    f"{path} 接口冷却中，{retry_after}s 后再试",
-                    scope="api", retry_after=retry_after, path=path,
-                )
-
-            # First try exactly like the captured successful browser request: signed
-            # payload + normal browser headers, but no Authorization requirement.
-            # IMPORTANT: the verified successful browser HAR contains NO Authorization
-            # header on GetGameUrl.  An empty `Authorization:` header is not equivalent
-            # to an absent header on some gateways and can force an auth failure.
-            # `None` tells requests to remove any inherited session header for this call.
-            anon_headers = {"Authorization": None, "Ar-Real-Ip": None}
-            response = self._post_json(path, self._signed(payload), headers=anon_headers, timeout=20)
-            body = None
-            try:
-                body = response.json()
-            except Exception:
-                body = {}
-
-            if response.ok:
-                url = self._choice_url_from_body(body)
-                if url:
-                    self.api_cooldowns.pop(path, None)
-                    print("✅ [MZPlay/GetGameUrl] 匿名签名请求成功，已取得 Choice 授权入口（URL 已隐藏）")
-                    return url
-
-            if self._is_rate_limit_body(body):
-                retry_after = self._api_rate_limit_seconds(response, body, default=60)
-                self.api_cooldowns[path] = time.time() + retry_after
-                raise MZPlayRateLimit(
-                    f"{path} 被限频（{self._body_error_detail(body)}），{retry_after}s 后自动重试",
-                    scope="api", retry_after=retry_after, path=path,
-                )
-
-            # Only an explicit auth failure is allowed to trigger Login/RefreshToken.
-            if self._looks_auth_required(response, body):
-                print("ℹ️ [MZPlay/GetGameUrl] 服务器要求认证，才改走 Login/RefreshToken")
-            else:
-                response.raise_for_status()
-                raise RuntimeError(f"{path} API error: {self._body_error_detail(body)}")
-
-        # Do authenticated fallback outside the lock because post() owns the lock.
+        print("ℹ️ [MZPlay/GetGameUrl] 使用已认证 session 取得 Choice 入口")
         body = self.post(path, payload)
         url = self._choice_url_from_body(body)
         if not url:
-            raise RuntimeError(f"{path} 未返回有效的 Choice launch URL")
-        print("✅ [MZPlay/GetGameUrl] 认证请求成功，已取得 Choice 授权入口（URL 已隐藏）")
+            raise RuntimeError(f"{path} 未返回有效的 Choice launch URL ({self._body_error_detail(body)})")
+        print("✅ [MZPlay/GetGameUrl] 已取得 Choice 授权入口（URL 已隐藏）")
         return url
 
     def _api_rate_limit_seconds(self, response, body, default=60):
@@ -730,7 +773,7 @@ class MZPlayClient:
                 )
 
             if not self.token:
-                self.login()
+                self.ensure_login()
             headers = {"Authorization": self._auth_header()}
             response = self._post_json(path, self._signed(data or {}), headers=headers, timeout=20)
             if response.status_code == 401:
