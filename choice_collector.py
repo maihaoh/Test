@@ -132,9 +132,11 @@ class ChoiceHeadlessCollector:
                 "缺少 Playwright。请先运行 INSTALL_CHOICE_BROWSER.cmd"
             ) from exc
 
-        # The URL is an authorization artifact.  Never print/persist it.
-        launch_url = self.client.get_choice_launch_url()
-        print("✅ [Choice] 已从 MZPlay 取得新的授权入口（URL 已隐藏）")
+        # Browser-first auth: Render's direct /Login returned msgCode=2
+        # (No operation permission). Open the official MZPlay origin first and let
+        # Chromium perform Login/GetGameUrl from that browser context. The launch
+        # URL is an authorization artifact and is never printed/persisted.
+        launch_url = None
 
         self._assemblers.clear()
         self.status.browser_started = False
@@ -201,10 +203,36 @@ class ChoiceHeadlessCollector:
                 viewport={"width": 1365, "height": 768},
                 locale="en-US",
             )
+            # Match the official web app's browser device id source (localStorage.arvId).
+            try:
+                import json as _json
+                device_js = _json.dumps(str(getattr(self.client, "device_id", "") or ""))
+                context.add_init_script(
+                    script=f"try {{ localStorage.setItem('arvId', {device_js}); }} catch (e) {{}}"
+                )
+            except Exception:
+                pass
+
             page = context.new_page()
-            page.on("websocket", self._attach_websocket)
             page.on("crash", lambda: setattr(self.status, "last_error", "Choice page crashed"))
 
+            print("🌐 [Choice] 打开 MZPlay 官方网页并建立浏览器认证...")
+            try:
+                page.goto(
+                    "https://mzplay0.com/",
+                    wait_until="domcontentloaded",
+                    timeout=90_000,
+                )
+            except PlaywrightTimeoutError:
+                if "mzplay0.com" not in str(page.url or ""):
+                    raise
+                print("ℹ️ [Choice] MZPlay 页面资源仍在加载，继续浏览器认证...")
+            page.wait_for_timeout(1200)
+            launch_url = self.client.get_choice_launch_url_in_browser(page)
+            print("✅ [Choice] 浏览器认证完成，已取得新的 Choice 入口（URL 已隐藏）")
+
+            # Attach before navigating to Choice so the first game WebSocket is not missed.
+            page.on("websocket", self._attach_websocket)
             print("🌐 [Choice] 正在进入 Choice（无头模式，不需要人工操作）...")
             try:
                 page.goto(
