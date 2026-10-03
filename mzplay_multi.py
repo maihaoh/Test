@@ -334,7 +334,11 @@ def review_prediction(game, prediction, draw):
 
 
 class MZPlayRateLimit(RuntimeError):
-    pass
+    def __init__(self, message, *, scope="login", retry_after=0, path=""):
+        super().__init__(message)
+        self.scope = scope
+        self.retry_after = max(0, int(retry_after or 0))
+        self.path = path or ""
 
 
 class MZPlayClient:
@@ -372,6 +376,7 @@ class MZPlayClient:
         self.next_login_at = 0.0
         self.last_login_error = ""
         self.rate_limit_hits = 0
+        self.api_cooldowns = {}
         self._load_auth_state()
 
     def _load_auth_state(self):
@@ -489,7 +494,10 @@ class MZPlayClient:
             "adId": "",
         }
         if time.time() < self.next_login_at:
-            raise MZPlayRateLimit(self._login_cooldown_message())
+            remaining = max(1, int(self.next_login_at - time.time()))
+            raise MZPlayRateLimit(
+                self._login_cooldown_message(), scope="login", retry_after=remaining, path="/Login"
+            )
         response = self._post_json("/Login", self._signed(payload), timeout=20)
         response.raise_for_status()
         body = response.json()
@@ -522,7 +530,10 @@ class MZPlayClient:
                 self._save_auth_state()
                 mins = max(1, cooldown // 60)
                 retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
-                raise MZPlayRateLimit(f"服务器限制登录频率；本程序不会继续撞接口，{mins} 分钟后再试（MYT {retry_dt}，{detail}）")
+                raise MZPlayRateLimit(
+                    f"Login 被服务器限频；{mins} 分钟后再试（MYT {retry_dt}，{detail}）",
+                    scope="login", retry_after=cooldown, path="/Login"
+                )
             self.next_login_at = time.time() + LOGIN_FAILURE_RETRY_SECONDS
             self.last_login_error = detail
             self._save_auth_state()
@@ -537,10 +548,12 @@ class MZPlayClient:
         self.token = str(token)
         self.refresh_token = str(data.get("refreshToken") or "")
         self._save_auth_state()
+        print("✅ [MZPlay/Login] 登录成功，已取得 session token（敏感值不输出）")
         return True
 
     def refresh(self):
         if not self.refresh_token:
+            print("ℹ️ [MZPlay/RefreshToken] 没有 refreshToken，改走 Login")
             return self.login()
         headers = {"Authorization": self._auth_header(refresh=True)}
         response = self._post_json("/RefreshToken", self._signed({}), headers=headers, timeout=20)
@@ -550,6 +563,10 @@ class MZPlayClient:
         if isinstance(data, dict) and isinstance(data.get("data"), dict):
             data = data["data"]
         if not isinstance(data, dict) or not data.get("token"):
+            code = body.get("code") if isinstance(body, dict) else "?"
+            msg_code = body.get("msgCode") if isinstance(body, dict) else ""
+            msg = (body.get("msg") or body.get("message") or "") if isinstance(body, dict) else ""
+            print(f"⚠️ [MZPlay/RefreshToken] 失败 code={code} msgCode={msg_code or ''} msg={msg}")
             self._drop_tokens()
             return self.login()
         self.token_header = str(data.get("tokenHeader") or self.token_header)
@@ -558,6 +575,7 @@ class MZPlayClient:
         self.next_login_at = 0.0
         self.last_login_error = ""
         self._save_auth_state()
+        print("✅ [MZPlay/RefreshToken] 刷新成功（敏感值不输出）")
         return True
 
     def ensure_login(self):
@@ -587,15 +605,44 @@ class MZPlayClient:
         url = str(data.get("url") or "").strip() if isinstance(data, dict) else ""
         if not url.startswith("https://gci.arvideo.video/forwardGame.do?"):
             raise RuntimeError("GetGameUrl 未返回有效的 Choice launch URL")
+        print("✅ [MZPlay/GetGameUrl] 已取得 Choice 授权入口（URL 已隐藏）")
         return url
+
+    def _api_rate_limit_seconds(self, response, body, default=60):
+        try:
+            value = response.headers.get("Retry-After")
+            if value:
+                return max(5, min(900, int(float(value))))
+        except Exception:
+            pass
+        # Some APIs return a numeric wait value in data/retryAfter.
+        if isinstance(body, dict):
+            for key in ("retryAfter", "retry_after", "waitSeconds", "wait"):
+                try:
+                    value = body.get(key)
+                    if value is not None:
+                        return max(5, min(900, int(float(value))))
+                except Exception:
+                    pass
+        return int(default)
 
     def post(self, path, data=None):
         with self.lock:
+            # Respect endpoint-specific cooldowns without poisoning Login cooldown.
+            until = float(self.api_cooldowns.get(path, 0) or 0)
+            if until > time.time():
+                retry_after = max(1, int(until - time.time()))
+                raise MZPlayRateLimit(
+                    f"{path} 接口冷却中，{retry_after}s 后再试",
+                    scope="api", retry_after=retry_after, path=path
+                )
+
             if not self.token:
                 self.login()
             headers = {"Authorization": self._auth_header()}
             response = self._post_json(path, self._signed(data or {}), headers=headers, timeout=20)
             if response.status_code == 401:
+                print(f"ℹ️ [MZPlay{path}] HTTP 401，先 RefreshToken 后重试")
                 self.refresh()
                 headers["Authorization"] = self._auth_header()
                 response = self._post_json(path, self._signed(data or {}), headers=headers, timeout=20)
@@ -605,14 +652,23 @@ class MZPlayClient:
                 code = body.get("code")
                 msg_code = body.get("msgCode")
                 msg = body.get("msg") or body.get("message") or ""
-                if str(code) == "13" or str(msg_code) == "13" or "frequent" in str(msg).lower() or "频繁" in str(msg):
-                    self.rate_limit_hits = max(0, self.rate_limit_hits) + 1
-                    cooldown = min(LOGIN_RATE_LIMIT_MAX_SECONDS, LOGIN_RATE_LIMIT_BASE_SECONDS * (2 ** min(self.rate_limit_hits - 1, 2)))
-                    self.next_login_at = time.time() + cooldown
-                    self.last_login_error = f"API code={code} msgCode={msg_code or ''} msg={msg}"
-                    self._save_auth_state()
-                    raise MZPlayRateLimit(self._login_cooldown_message())
-                raise RuntimeError(f"API code={code} msgCode={msg_code or ''} msg={msg}")
+                detail = f"code={code} msgCode={msg_code or ''} msg={msg}"
+                is_rate = (
+                    str(code) == "13" or str(msg_code) == "13"
+                    or "frequent" in str(msg).lower() or "频繁" in str(msg)
+                )
+                if is_rate:
+                    retry_after = self._api_rate_limit_seconds(
+                        response, body, default=60 if path == "/GetGameUrl" else 30
+                    )
+                    self.api_cooldowns[path] = time.time() + retry_after
+                    # IMPORTANT: API throttling is not Login throttling. Do not modify next_login_at.
+                    raise MZPlayRateLimit(
+                        f"{path} 被限频（{detail}），{retry_after}s 后自动重试",
+                        scope="api", retry_after=retry_after, path=path
+                    )
+                raise RuntimeError(f"{path} API error: {detail}")
+            self.api_cooldowns.pop(path, None)
             return body
 
 
@@ -741,7 +797,7 @@ class MultiGameCollector:
                         self.states[game]["status"] = status
                         self.states[game]["updated_at"] = int(time.time())
                     self.on_update(self.states)
-                    wait_for = max(5, int(self.client.next_login_at - time.time()))
+                    wait_for = max(5, int(getattr(exc, "retry_after", 0) or (self.client.next_login_at - time.time())))
                     self.stop_event.wait(wait_for)
                     continue
                 except Exception as exc:
@@ -761,6 +817,8 @@ class MultiGameCollector:
                     rate_limited = True
                     self.states[game]["status"] = f"{BUILD_VERSION} | 服务器限频：{exc}"
                     self.states[game]["updated_at"] = int(time.time())
+                    # Endpoint cooldown is handled by MZPlayClient; avoid immediately hammering another endpoint.
+                    self.stop_event.wait(max(5, int(getattr(exc, "retry_after", 0) or GENERAL_RETRY_SECONDS)))
                     break
                 except Exception as exc:
                     self.states[game]["status"] = f"{BUILD_VERSION} | 连接失败：{type(exc).__name__}: {exc}"
