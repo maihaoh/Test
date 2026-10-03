@@ -24,7 +24,7 @@ NETWORK_RETRY_SECONDS = 45
 TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v18-ui-form-login"
+BUILD_VERSION = "v20-pwa-standalone-login"
 
 GAME_DEFS = {
     "k3": {
@@ -844,13 +844,24 @@ class MZPlayClient:
             try:
                 page.goto(ORIGIN + "/login", wait_until="domcontentloaded", timeout=45_000)
                 try:
-                    page.wait_for_selector("input", state="visible", timeout=12_000)
+                    page.wait_for_selector(
+                        ".passwordInput__container-input input, input[type='password']",
+                        state="visible",
+                        timeout=20_000,
+                    )
                 except Exception:
                     pass
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(700)
+                try:
+                    current_path = str(page.evaluate("() => location.pathname") or "/")
+                except Exception:
+                    current_path = "?"
+                print(f"ℹ️ [MZPlay/UILogin] 当前官方页面路径: {current_path}")
             except Exception:
                 pass
-            password_input = self._first_visible(page.locator("input[type='password']"))
+            password_input = self._first_visible(
+                page.locator(".passwordInput__container-input input, input[type='password']")
+            )
 
         if password_input is None:
             button = self._ui_find_login_button(page)
@@ -860,10 +871,22 @@ class MZPlayClient:
                     page.wait_for_timeout(700)
                 except Exception:
                     pass
-            password_input = self._first_visible(page.locator("input[type='password']"))
+            password_input = self._first_visible(
+                page.locator(".passwordInput__container-input input, input[type='password']")
+            )
 
         if password_input is None:
-            raise RuntimeError("已进入官方 /login，但仍找不到密码输入框；网页可能要求额外跳转/验证，或页面结构已更新")
+            try:
+                current_path = str(page.evaluate("() => location.pathname") or "/")
+            except Exception:
+                current_path = "?"
+            if current_path == "/installApp":
+                raise RuntimeError(
+                    "MZPlay 把 /login 重定向到 /installApp；PWA standalone 模式未生效，未提交任何登录资料"
+                )
+            raise RuntimeError(
+                f"官方登录页仍找不到密码输入框（当前路径 {current_path}）；未提交任何登录资料"
+            )
 
         login_type = self._ui_login_type()
         if login_type == "email":
@@ -1088,6 +1111,22 @@ class MZPlayClient:
                 ),
                 locale="en-US",
                 viewport={"width": 1365, "height": 768},
+            )
+            # The current MZPlay router redirects ordinary browser sessions from
+            # /login to /installApp when the site is configured as a PWA domain.
+            # Run Chromium in the equivalent of the site's installed/standalone
+            # web-app mode so the official /login route is allowed to render.
+            # This does not bypass Login/CAPTCHA/OTP; the site's own auth UI and
+            # server-side permission checks still run normally.
+            context.add_init_script(
+                script="""
+                try {
+                  Object.defineProperty(navigator, 'standalone', {
+                    configurable: true,
+                    get: () => true
+                  });
+                } catch (e) {}
+                """
             )
             # Make the official web app see the configured browser device id.
             device_js = json.dumps(self.device_id)
