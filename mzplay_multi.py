@@ -23,7 +23,7 @@ NETWORK_RETRY_SECONDS = 45
 TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v16-network-backoff"
+BUILD_VERSION = "v17-browser-auth"
 
 GAME_DEFS = {
     "k3": {
@@ -560,22 +560,13 @@ class MZPlayClient:
             word in msg for word in ("captcha", "verification", "verify code", "vcode", "验证码", "验证")
         )
 
-    def login(self):
-        if not self.configured:
-            raise RuntimeError("未配置 MZPLAY username/password")
-        if time.time() < self.next_login_at:
-            remaining = max(1, int(self.next_login_at - time.time()))
-            raise MZPlayRateLimit(
-                self._login_cooldown_message(), scope="login", retry_after=remaining, path="/Login"
-            )
-
-        payload = {
+    def _login_payload(self):
+        return {
             "username": self.username,
             "captchaId": "",
             "track": "",
             "pwd": self.password,
-            # Official web frontend wo() returns -1 on a normal desktop browser.
-            # Keep an env/config override, but match the browser by default.
+            # Official web frontend wo() returns -1 on normal desktop web.
             "phonetype": int(os.getenv("MZPLAY_PHONE_TYPE") or self.config.get("phonetype") or -1),
             "logintype": str(os.getenv("MZPLAY_LOGIN_TYPE") or self.config.get("logintype") or "mobile"),
             "packId": str(os.getenv("MZPLAY_PACK_ID") or self.config.get("packId") or ""),
@@ -586,97 +577,214 @@ class MZPlayClient:
             "fbp": "",
             "adId": "",
         }
-        print(
-            "ℹ️ [MZPlay/Login] 开始认证 "
-            f"(loginType={payload['logintype']}, phoneType={payload['phonetype']}, deviceId=已配置)"
-        )
-        login_headers = {"Ar-Real-Ip": str(os.getenv("MZPLAY_AR_REAL_IP") or "")}
-        response = self._post_with_network_backoff("/Login", self._signed(payload), headers=login_headers, timeout=20)
-        try:
-            body = response.json()
-        except Exception:
-            body = {}
 
+    def _auth_from_body(self, body):
         data = body.get("data") if isinstance(body, dict) else None
         if isinstance(data, dict) and isinstance(data.get("data"), dict):
             data = data["data"]
         if not isinstance(data, dict):
-            data = body if isinstance(body, dict) else {}
-        token = data.get("token")
+            return None
+        token = str(data.get("token") or "")
+        if not token:
+            return None
+        return {
+            "tokenHeader": str(data.get("tokenHeader") or ""),
+            "token": token,
+            "refreshToken": str(data.get("refreshToken") or ""),
+        }
 
-        if token:
-            self.next_login_at = 0.0
-            self.rate_limit_hits = 0
-            self.last_login_error = ""
-            self.token_header = str(data.get("tokenHeader") or "")
-            self.token = str(token)
-            self.refresh_token = str(data.get("refreshToken") or "")
-            self._save_auth_state()
-            print("✅ [MZPlay/Login] 登录成功，已保存 session + refreshToken（敏感值不输出）")
-            return True
+    def _apply_auth(self, auth, source="Browser"):
+        self.token_header = str(auth.get("tokenHeader") or "")
+        self.token = str(auth.get("token") or "")
+        self.refresh_token = str(auth.get("refreshToken") or "")
+        self.next_login_at = 0.0
+        self.rate_limit_hits = 0
+        self.last_login_error = ""
+        self._save_auth_state()
+        print(f"✅ [MZPlay/{source}] 登录成功，已保存 session + refreshToken（敏感值不输出）")
+        return True
 
-        detail = self._safe_response_detail(body, response)
-        print(f"⚠️ [MZPlay/Login] 认证失败：{detail}")
+    def _browser_fetch_json(self, page, path, payload, authorization=""):
+        """Call MZPlay API from the real mzplay0.com browser origin.
+
+        Browser-managed Origin/Referer/fetch metadata are intentionally left to
+        Chromium instead of being forged by requests.  No secret values are logged.
+        """
+        url = BASE_URL + path
+        result = page.evaluate(
+            """
+            async ({url, payload, authorization}) => {
+              const headers = {
+                "Content-Type": "application/json;charset=UTF-8",
+                "Accept": "application/json, text/plain, */*",
+                "Ar-Origin": window.location.origin,
+                "AR-REAL-IP": ""
+              };
+              if (authorization) headers["Authorization"] = authorization;
+              try {
+                const response = await fetch(url, {
+                  method: "POST",
+                  headers,
+                  credentials: "include",
+                  body: JSON.stringify(payload)
+                });
+                const text = await response.text();
+                let body = {};
+                try { body = text ? JSON.parse(text) : {}; }
+                catch (_) { body = {message: text.slice(0, 300)}; }
+                return {ok: true, status: response.status, body};
+              } catch (e) {
+                return {ok: false, status: 0, error: String(e && e.message || e), body: {}};
+              }
+            }
+            """,
+            {"url": url, "payload": payload, "authorization": authorization or ""},
+        )
+        if not isinstance(result, dict) or not result.get("ok"):
+            detail = (result or {}).get("error") if isinstance(result, dict) else "browser fetch failed"
+            raise MZPlayTransientError(
+                f"浏览器请求 {path} 失败：{detail}", retry_after=NETWORK_RETRY_SECONDS, path=path
+            )
+        status = int(result.get("status") or 0)
+        body = result.get("body") if isinstance(result.get("body"), dict) else {}
+        if status in TRANSIENT_HTTP_STATUS:
+            raise MZPlayTransientError(
+                f"浏览器请求 {path} 网络临时错误：HTTP {status}",
+                retry_after=NETWORK_RETRY_SECONDS,
+                path=path,
+            )
+        return status, body
+
+    def login_in_browser(self, page):
+        if not self.configured:
+            raise RuntimeError("未配置 MZPLAY username/password")
+        payload = self._login_payload()
+        print(
+            "ℹ️ [MZPlay/BrowserLogin] 从 mzplay0.com 浏览器环境认证 "
+            f"(loginType={payload['logintype']}, phoneType={payload['phonetype']}, deviceId=已配置)"
+        )
+        status, body = self._browser_fetch_json(page, "/Login", self._signed(payload))
+        auth = self._auth_from_body(body)
+        if auth:
+            return self._apply_auth(auth, source="BrowserLogin")
+
+        detail = self._safe_response_detail(body, type("Resp", (), {"status_code": status})())
+        self.last_login_error = detail
+        self._save_auth_state()
+        print(f"⚠️ [MZPlay/BrowserLogin] 认证失败：{detail}")
 
         if self._needs_human_verification(body):
-            self.next_login_at = time.time() + LOGIN_FAILURE_RETRY_SECONDS
-            self.last_login_error = detail
-            self._save_auth_state()
-            raise RuntimeError(
-                "MZPlay 要求验证码/额外验证；程序不会绕过验证。"
-                f"服务器返回：{detail}"
-            )
+            raise RuntimeError(f"MZPlay 要求验证码/额外验证；程序不会绕过验证。服务器返回：{detail}")
 
         msg = str(body.get("msg") or body.get("message") or "") if isinstance(body, dict) else ""
         code = body.get("code") if isinstance(body, dict) else "?"
         msg_code = body.get("msgCode") if isinstance(body, dict) else ""
         is_rate = (
-            response.status_code == 429
+            status == 429
             or str(msg_code) == "13"
             or str(code) == "13"
             or "frequent" in msg.lower()
             or "频繁" in msg
         )
         if is_rate:
-            self.rate_limit_hits = max(0, self.rate_limit_hits) + 1
-            cooldown = self._retry_after_seconds(response, body, default=LOGIN_RATE_LIMIT_BASE_SECONDS)
+            cooldown = LOGIN_RATE_LIMIT_BASE_SECONDS
             self.next_login_at = time.time() + cooldown
-            self.last_login_error = detail
+            self.rate_limit_hits = max(0, self.rate_limit_hits) + 1
             self._save_auth_state()
             retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
             raise MZPlayRateLimit(
-                f"Login 被服务器限频；{cooldown}s 后再试（MYT {retry_dt}，{detail}）",
+                f"Browser Login 被服务器限频；{cooldown}s 后再试（MYT {retry_dt}，{detail}）",
                 scope="login", retry_after=cooldown, path="/Login"
             )
 
-        # msgCode=2 / 'No operation permission' is not a rate limit.  Earlier builds
-        # accidentally looked like a cooldown loop.  Use a short backoff and keep the
-        # real server reason visible so a parameter/account permission issue is obvious.
-        permission_denied = (
-            str(msg_code) == "2"
-            or "no operation permission" in msg.lower()
-            or "operation permission" in msg.lower()
-        )
-        if permission_denied:
-            cooldown = 60
-            self.next_login_at = time.time() + cooldown
-            self.last_login_error = detail
+        # Permission denial is NOT a rate limit. Do not poison next_login_at.
+        if str(msg_code) == "2" or "no operation permission" in msg.lower():
+            self.next_login_at = 0.0
             self._save_auth_state()
-            retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
             raise RuntimeError(
-                "Login 被服务器拒绝操作权限；这不是 RateLimit。"
-                f"{cooldown}s 后再试（MYT {retry_dt}，{detail}）"
+                "Browser Login 也被服务器拒绝操作权限；这不是密码判断，也不是 RateLimit。"
+                f"服务器返回：{detail}"
             )
 
-        # For credential/device/parameter errors, do not hammer Login repeatedly.
-        self.next_login_at = time.time() + LOGIN_FAILURE_RETRY_SECONDS
-        self.last_login_error = detail
+        self.next_login_at = 0.0
         self._save_auth_state()
-        response.raise_for_status()
-        retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
-        raise RuntimeError(
-            f"Login 未取得 token；{LOGIN_FAILURE_RETRY_SECONDS // 60} 分钟后再试（MYT {retry_dt}，{detail}）"
-        )
+        raise RuntimeError(f"Browser Login 未取得 token（{detail}）")
+
+    def _open_auth_browser(self):
+        try:
+            from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+        except Exception as exc:
+            raise RuntimeError("缺少 Playwright/Chromium，无法执行浏览器认证") from exc
+
+        manager = sync_playwright()
+        p = manager.start()
+        browser = None
+        try:
+            browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/154.0.0.0 Safari/537.36"
+                ),
+                locale="en-US",
+                viewport={"width": 1365, "height": 768},
+            )
+            # Make the official web app see the configured browser device id.
+            device_js = json.dumps(self.device_id)
+            context.add_init_script(
+                script=f"try {{ localStorage.setItem('arvId', {device_js}); }} catch (e) {{}}"
+            )
+            page = context.new_page()
+            try:
+                page.goto(ORIGIN + "/", wait_until="domcontentloaded", timeout=60_000)
+            except PlaywrightTimeoutError:
+                if "mzplay0.com" not in str(page.url or ""):
+                    raise
+            page.wait_for_timeout(1200)
+            return manager, p, browser, context, page
+        except Exception:
+            if browser is not None:
+                try: browser.close()
+                except Exception: pass
+            try: p.stop()
+            except Exception: pass
+            try: manager.stop()
+            except Exception: pass
+            raise
+
+    def login(self):
+        """Authenticate from an actual Chromium page on mzplay0.com.
+
+        Direct /Login from Render has repeatedly returned msgCode=2
+        "No operation permission".  The browser-origin path mirrors the official
+        web client and is now the default.  No CAPTCHA or access control is bypassed.
+        """
+        if not self.configured:
+            raise RuntimeError("未配置 MZPLAY username/password")
+        if time.time() < self.next_login_at:
+            remaining = max(1, int(self.next_login_at - time.time()))
+            raise MZPlayRateLimit(
+                self._login_cooldown_message(), scope="login", retry_after=remaining, path="/Login"
+            )
+
+        manager = p = browser = context = page = None
+        try:
+            manager, p, browser, context, page = self._open_auth_browser()
+            return self.login_in_browser(page)
+        finally:
+            if context is not None:
+                try: context.close()
+                except Exception: pass
+            if browser is not None:
+                try: browser.close()
+                except Exception: pass
+            if p is not None:
+                try: p.stop()
+                except Exception: pass
+            if manager is not None:
+                try: manager.stop()
+                except Exception: pass
 
     def refresh(self):
         if not self.refresh_token:
@@ -786,6 +894,43 @@ class MZPlayClient:
         api_left = max(0, int(float(self.api_cooldowns.get("/GetGameUrl", 0) or 0) - now))
         network_left = max(0, int(float(self.next_network_retry_at or 0) - now))
         return max(login_left, api_left, network_left)
+
+    def get_choice_launch_url_in_browser(self, page):
+        """Get AG_Video launch URL from the same Chromium origin/session."""
+        with self.lock:
+            if not self.token:
+                self.login_in_browser(page)
+            payload = {
+                "vendorCode": "AG_Video",
+                "returnUrl": ORIGIN,
+                "deviceType": int(os.getenv("MZPLAY_DEVICE_TYPE") or self.config.get("deviceType") or 3),
+            }
+            print("ℹ️ [MZPlay/BrowserGetGameUrl] 从 mzplay0.com 浏览器环境取得 Choice 入口")
+            status, body = self._browser_fetch_json(
+                page,
+                "/GetGameUrl",
+                self._signed(payload),
+                authorization=self._auth_header(),
+            )
+            if status == 401:
+                self._drop_tokens()
+                self.login_in_browser(page)
+                status, body = self._browser_fetch_json(
+                    page,
+                    "/GetGameUrl",
+                    self._signed(payload),
+                    authorization=self._auth_header(),
+                )
+            if isinstance(body, dict) and body.get("code") not in (None, 0):
+                detail = self._body_error_detail(body)
+                raise RuntimeError(f"Browser GetGameUrl API error: {detail}")
+            url = self._choice_url_from_body(body)
+            if not url:
+                raise RuntimeError(
+                    f"Browser GetGameUrl 未返回有效 Choice URL ({self._body_error_detail(body)})"
+                )
+            print("✅ [MZPlay/BrowserGetGameUrl] 已取得 Choice 授权入口（URL 已隐藏）")
+            return url
 
     def get_choice_launch_url(self):
         """Get Choice URL using one reusable authenticated MZPlay session.
