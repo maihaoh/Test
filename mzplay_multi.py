@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import time
 import uuid
 import hashlib
@@ -23,7 +24,7 @@ NETWORK_RETRY_SECONDS = 45
 TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v17-browser-auth"
+BUILD_VERSION = "v18-ui-form-login"
 
 GAME_DEFS = {
     "k3": {
@@ -385,6 +386,7 @@ class MZPlayClient:
         self.rate_limit_hits = 0
         self.api_cooldowns = {}
         self.next_network_retry_at = 0.0
+        self.next_ui_login_at = 0.0
         self._load_auth_state()
         print("ℹ️ [MZPlay] Web 参数模式：phonetype=-1 / GetGameUrl deviceType=3（可用环境变量覆盖）")
 
@@ -405,6 +407,7 @@ class MZPlayClient:
             self.next_login_at = float(state.get("nextLoginAtEpoch") or 0)
             self.rate_limit_hits = int(state.get("rateLimitHits") or 0)
             self.last_login_error = str(state.get("lastLoginError") or "")
+            self.next_ui_login_at = float(state.get("nextUiLoginAtEpoch") or 0)
             # Reuse auth from an earlier process in the same Render instance.
             self.token_header = str(state.get("tokenHeader") or "")
             self.token = str(state.get("token") or "")
@@ -415,6 +418,7 @@ class MZPlayClient:
             self.next_login_at = 0.0
             self.rate_limit_hits = 0
             self.last_login_error = ""
+            self.next_ui_login_at = 0.0
             self.token_header = ""
             self.token = ""
             self.refresh_token = ""
@@ -424,6 +428,7 @@ class MZPlayClient:
             "nextLoginAtEpoch": float(self.next_login_at or 0),
             "rateLimitHits": int(self.rate_limit_hits or 0),
             "lastLoginError": self.last_login_error or "",
+            "nextUiLoginAtEpoch": float(self.next_ui_login_at or 0),
             "tokenHeader": self.token_header or "",
             "token": self.token or "",
             "refreshToken": self.refresh_token or "",
@@ -655,25 +660,366 @@ class MZPlayClient:
             )
         return status, body
 
+    def _browser_auth_from_storage(self, page):
+        """Read the official web app's auth state without logging secret values."""
+        try:
+            state = page.evaluate(
+                """
+                () => ({
+                  token: localStorage.getItem('ar_token') || '',
+                  tokenHeader: localStorage.getItem('tokenHeader') || '',
+                  refreshToken: localStorage.getItem('refreshToken') || ''
+                })
+                """
+            )
+        except Exception:
+            return None
+        if not isinstance(state, dict) or not str(state.get("token") or ""):
+            return None
+        return {
+            "token": str(state.get("token") or ""),
+            "tokenHeader": str(state.get("tokenHeader") or ""),
+            "refreshToken": str(state.get("refreshToken") or ""),
+        }
+
+    @staticmethod
+    def _first_visible(locator, max_scan=40):
+        try:
+            count = min(int(locator.count()), max_scan)
+        except Exception:
+            return None
+        for i in range(count):
+            item = locator.nth(i)
+            try:
+                if item.is_visible():
+                    return item
+            except Exception:
+                continue
+        return None
+
+    def _ui_login_type(self):
+        configured = str(os.getenv("MZPLAY_LOGIN_TYPE") or self.config.get("logintype") or "").strip().lower()
+        if configured in {"email", "mobile"}:
+            return configured
+        return "email" if "@" in self.username else "mobile"
+
+    def _ui_desired_country_code(self):
+        explicit = str(os.getenv("MZPLAY_COUNTRY_CODE") or self.config.get("countryCode") or "").strip()
+        explicit = re.sub(r"\D", "", explicit)
+        if explicit:
+            return explicit
+        digits = re.sub(r"\D", "", self.username)
+        # Common prefixes only; this is used to split the already-configured full
+        # E.164-style login name for the official phone-number UI.  Malaysia (60)
+        # is intentionally included because this project was captured from that UI.
+        common = (
+            "880", "886", "852", "853", "971", "972", "974", "965", "966",
+            "60", "61", "62", "63", "64", "65", "66", "81", "82", "84", "86",
+            "91", "92", "94", "95", "98", "44", "49", "33", "34", "39", "1",
+        )
+        for code in common:
+            if digits.startswith(code) and len(digits) - len(code) >= 6:
+                return code
+        return ""
+
+    def _ui_surrounding_text(self, input_locator):
+        try:
+            return str(input_locator.evaluate(
+                """
+                el => {
+                  let p = el, out = [];
+                  for (let i = 0; i < 5 && p; i++, p = p.parentElement) {
+                    const t = (p.innerText || '').trim();
+                    if (t) out.push(t);
+                  }
+                  return out.join(' | ').slice(0, 1200);
+                }
+                """
+            ) or "")
+        except Exception:
+            return ""
+
+    def _ui_current_country_code(self, input_locator):
+        text = self._ui_surrounding_text(input_locator)
+        # Prefer a visible +CC marker next to the phone input.
+        m = re.search(r"(?:^|\s)\+(\d{1,4})(?:\s|$)", text)
+        return m.group(1) if m else ""
+
+    def _ui_select_country_code(self, page, phone_input, desired):
+        """Best-effort selection of the official phone country-code picker."""
+        if not desired:
+            return ""
+        current = self._ui_current_country_code(phone_input)
+        if current == desired:
+            return current
+
+        # Open the currently visible +CC picker when possible.
+        opener = None
+        if current:
+            try:
+                opener = self._first_visible(page.get_by_text(f"+{current}", exact=True))
+            except Exception:
+                opener = None
+        if opener is None:
+            try:
+                opener = self._first_visible(
+                    page.locator("button, [role='button'], span, div").filter(
+                        has_text=re.compile(r"^\s*\+\d{1,4}\s*$")
+                    )
+                )
+            except Exception:
+                opener = None
+
+        if opener is not None:
+            try:
+                opener.click(timeout=5000)
+                page.wait_for_timeout(300)
+            except Exception:
+                pass
+
+        # Some pickers provide a search field; using it is still ordinary UI input.
+        try:
+            search = self._first_visible(
+                page.locator(
+                    "input[placeholder*='Search' i], input[placeholder*='search' i], "
+                    "input[placeholder*='country' i], input[placeholder*='国家'], input[placeholder*='区号']"
+                )
+            )
+            if search is not None:
+                search.fill(desired)
+                page.wait_for_timeout(200)
+        except Exception:
+            pass
+
+        option = None
+        for label in (f"+{desired}", desired):
+            try:
+                option = self._first_visible(page.get_by_text(label, exact=True))
+            except Exception:
+                option = None
+            if option is not None:
+                break
+        if option is not None:
+            try:
+                option.click(timeout=5000)
+                page.wait_for_timeout(300)
+            except Exception:
+                pass
+
+        return self._ui_current_country_code(phone_input)
+
+    def _ui_human_verification_visible(self, page):
+        selectors = (
+            "iframe[src*='captcha' i], [class*='captcha' i], [id*='captcha' i], "
+            "input[placeholder*='verification code' i], input[placeholder*='verify code' i], "
+            "input[placeholder*='验证码'], input[placeholder*='验证']"
+        )
+        try:
+            return self._first_visible(page.locator(selectors)) is not None
+        except Exception:
+            return False
+
+    def _ui_find_login_button(self, page):
+        labels = re.compile(r"^\s*(log\s*in|login|sign\s*in|登录|登入)\s*$", re.I)
+        for selector in ("button", "[role='button']", "a", "div"):
+            try:
+                candidate = self._first_visible(page.locator(selector).filter(has_text=labels))
+            except Exception:
+                candidate = None
+            if candidate is not None:
+                return candidate
+        return None
+
+    def _ui_prepare_login_form(self, page):
+        """Locate the real official login form and fill it via Playwright UI actions."""
+        # If the app is already authenticated, avoid opening the login screen at all.
+        auth = self._browser_auth_from_storage(page)
+        if auth:
+            return auth, None, None
+
+        password_input = self._first_visible(page.locator("input[type='password']"))
+        if password_input is None:
+            # The app is hash-routed. Navigate to the official login route first;
+            # if that route changes in a future build, fall back to clicking Login.
+            try:
+                page.goto(ORIGIN + "/#/login", wait_until="domcontentloaded", timeout=45_000)
+                page.wait_for_timeout(900)
+            except Exception:
+                pass
+            password_input = self._first_visible(page.locator("input[type='password']"))
+
+        if password_input is None:
+            button = self._ui_find_login_button(page)
+            if button is not None:
+                try:
+                    button.click(timeout=5000)
+                    page.wait_for_timeout(700)
+                except Exception:
+                    pass
+            password_input = self._first_visible(page.locator("input[type='password']"))
+
+        if password_input is None:
+            raise RuntimeError("找不到 MZPlay 官方网页登录密码框，网页结构可能已更新")
+
+        login_type = self._ui_login_type()
+        if login_type == "email":
+            username_input = self._first_visible(
+                page.locator("input[type='email'], input[autocomplete='email'], input[type='text']")
+            )
+            username_value = self.username
+        else:
+            username_input = self._first_visible(
+                page.locator("input[type='tel'], input[autocomplete='tel'], input[inputmode='tel']")
+            )
+            if username_input is None:
+                # Pick the first visible text-like input that is not clearly a
+                # captcha/search/verification field.
+                inputs = page.locator("input")
+                username_input = None
+                try:
+                    for i in range(min(int(inputs.count()), 40)):
+                        item = inputs.nth(i)
+                        if not item.is_visible():
+                            continue
+                        typ = str(item.get_attribute("type") or "text").lower()
+                        if typ in {"password", "hidden", "checkbox", "radio", "search", "submit", "button"}:
+                            continue
+                        placeholder = str(item.get_attribute("placeholder") or "").lower()
+                        if any(x in placeholder for x in ("verify", "verification", "captcha", "验证码", "验证")):
+                            continue
+                        username_input = item
+                        break
+                except Exception:
+                    username_input = None
+            if username_input is None:
+                raise RuntimeError("找不到 MZPlay 官方网页登录手机号输入框，网页结构可能已更新")
+
+            desired_cc = self._ui_desired_country_code()
+            current_cc = self._ui_select_country_code(page, username_input, desired_cc) if desired_cc else ""
+            full_digits = re.sub(r"\D", "", self.username)
+            effective_cc = current_cc or desired_cc
+            if effective_cc and full_digits.startswith(effective_cc) and len(full_digits) - len(effective_cc) >= 6:
+                username_value = full_digits[len(effective_cc):]
+            else:
+                username_value = full_digits
+
+            # If a country code was confidently derived but the UI is visibly set
+            # to a different code and could not be switched, do not submit a wrong
+            # account identifier repeatedly.
+            visible_cc = self._ui_current_country_code(username_input)
+            if desired_cc and visible_cc and visible_cc != desired_cc:
+                raise RuntimeError(
+                    f"网页登录国家区号仍为 +{visible_cc}，预期 +{desired_cc}；停止提交以免使用错误账号"
+                )
+
+        username_input.fill(username_value)
+        password_input.fill(self.password)
+        page.wait_for_timeout(250)
+        return None, username_input, password_input
+
     def login_in_browser(self, page):
+        """Authenticate by filling and clicking the official MZPlay login form.
+
+        This intentionally does not synthesize /Login with fetch(). The website's
+        own Vue/Pinia login handler creates captcha/track/packId/device/browser
+        fields and sends the request. CAPTCHA/verification is never bypassed.
+        """
         if not self.configured:
             raise RuntimeError("未配置 MZPLAY username/password")
-        payload = self._login_payload()
-        print(
-            "ℹ️ [MZPlay/BrowserLogin] 从 mzplay0.com 浏览器环境认证 "
-            f"(loginType={payload['logintype']}, phoneType={payload['phonetype']}, deviceId=已配置)"
-        )
-        status, body = self._browser_fetch_json(page, "/Login", self._signed(payload))
-        auth = self._auth_from_body(body)
-        if auth:
-            return self._apply_auth(auth, source="BrowserLogin")
 
-        detail = self._safe_response_detail(body, type("Resp", (), {"status_code": status})())
+        if self.next_ui_login_at > time.time():
+            retry_after = max(1, int(self.next_ui_login_at - time.time()))
+            raise MZPlayTransientError(
+                f"网页登录暂缓中，{retry_after}s 后再试",
+                retry_after=retry_after,
+                path="/BrowserLoginUI",
+            )
+
+        stored = self._browser_auth_from_storage(page)
+        if stored:
+            print("ℹ️ [MZPlay/UILogin] 官方网页已有有效本地 session，直接复用")
+            self.next_ui_login_at = 0.0
+            return self._apply_auth(stored, source="UILogin")
+
+        print("🖱️ [MZPlay/UILogin] 使用官方网页登录表单填写账号并点击 Log in")
+        stored, _, _ = self._ui_prepare_login_form(page)
+        if stored:
+            self.next_ui_login_at = 0.0
+            return self._apply_auth(stored, source="UILogin")
+
+        if self._ui_human_verification_visible(page):
+            raise RuntimeError("MZPlay 网页显示验证码/额外验证；程序不会绕过验证")
+
+        button = self._ui_find_login_button(page)
+        if button is None:
+            raise RuntimeError("找不到 MZPlay 官方网页 Log in 按钮，网页结构可能已更新")
+        try:
+            if not button.is_enabled():
+                raise RuntimeError("MZPlay 官方网页 Log in 按钮目前不可点击；可能需要人工确认条款或额外验证")
+        except AttributeError:
+            pass
+
+        try:
+            from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        except Exception:
+            PlaywrightTimeoutError = TimeoutError
+
+        response = None
+        try:
+            with page.expect_response(
+                lambda r: "/api/webapi/Login" in str(r.url) and str(r.request.method).upper() == "POST",
+                timeout=35_000,
+            ) as info:
+                button.click(timeout=10_000)
+            response = info.value
+        except PlaywrightTimeoutError:
+            # The page may have authenticated through a service worker or changed
+            # endpoint names. Trust the official localStorage state if it appeared.
+            try:
+                page.wait_for_timeout(1200)
+            except Exception:
+                pass
+            auth = self._browser_auth_from_storage(page)
+            if auth:
+                self.next_ui_login_at = 0.0
+                return self._apply_auth(auth, source="UILogin")
+            if self._ui_human_verification_visible(page):
+                raise RuntimeError("MZPlay 网页要求验证码/额外验证；程序不会绕过验证")
+            raise RuntimeError("点击官方 Log in 后未捕获到 Login 响应，也没有取得网页 session")
+
+        status = int(getattr(response, "status", 0) or 0)
+        try:
+            body = response.json()
+        except Exception:
+            body = {}
+
+        if status in TRANSIENT_HTTP_STATUS:
+            raise MZPlayTransientError(
+                f"官方网页登录网络临时错误：HTTP {status}",
+                retry_after=NETWORK_RETRY_SECONDS,
+                path="/Login",
+            )
+
+        # Let the official app finish persisting localStorage before inspecting it.
+        try:
+            page.wait_for_timeout(700)
+        except Exception:
+            pass
+        auth = self._browser_auth_from_storage(page) or self._auth_from_body(body)
+        if auth:
+            self.next_ui_login_at = 0.0
+            self.api_cooldowns.pop("/BrowserLoginUI", None)
+            return self._apply_auth(auth, source="UILogin")
+
+        detail = self._safe_response_detail(
+            body,
+            type("Resp", (), {"status_code": status})(),
+        )
         self.last_login_error = detail
         self._save_auth_state()
-        print(f"⚠️ [MZPlay/BrowserLogin] 认证失败：{detail}")
+        print(f"⚠️ [MZPlay/UILogin] 官方网页登录失败：{detail}")
 
-        if self._needs_human_verification(body):
+        if self._needs_human_verification(body) or self._ui_human_verification_visible(page):
             raise RuntimeError(f"MZPlay 要求验证码/额外验证；程序不会绕过验证。服务器返回：{detail}")
 
         msg = str(body.get("msg") or body.get("message") or "") if isinstance(body, dict) else ""
@@ -693,22 +1039,31 @@ class MZPlayClient:
             self._save_auth_state()
             retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
             raise MZPlayRateLimit(
-                f"Browser Login 被服务器限频；{cooldown}s 后再试（MYT {retry_dt}，{detail}）",
-                scope="login", retry_after=cooldown, path="/Login"
+                f"官方网页登录被服务器限频；{cooldown}s 后再试（MYT {retry_dt}，{detail}）",
+                scope="login",
+                retry_after=cooldown,
+                path="/Login",
             )
 
-        # Permission denial is NOT a rate limit. Do not poison next_login_at.
         if str(msg_code) == "2" or "no operation permission" in msg.lower():
-            self.next_login_at = 0.0
+            # This is a permission decision, not a bad-password proof and not a
+            # rate limit. Back off to avoid submitting the same login every 12s.
+            retry_after = int(os.getenv("MZPLAY_PERMISSION_RETRY_SECONDS") or 300)
+            self.next_ui_login_at = time.time() + max(60, retry_after)
+            self.api_cooldowns["/BrowserLoginUI"] = self.next_ui_login_at
             self._save_auth_state()
             raise RuntimeError(
-                "Browser Login 也被服务器拒绝操作权限；这不是密码判断，也不是 RateLimit。"
-                f"服务器返回：{detail}"
+                "官方网页真实 Log in 也被服务器拒绝操作权限；"
+                f"{max(60, retry_after)}s 后才会再试。服务器返回：{detail}"
             )
 
-        self.next_login_at = 0.0
+        # Unknown business failure: avoid a tight retry loop, but do not label it
+        # as rate limiting or password failure without server evidence.
+        retry_after = int(os.getenv("MZPLAY_LOGIN_FAILURE_RETRY_SECONDS") or 60)
+        self.next_ui_login_at = time.time() + max(30, retry_after)
+        self.api_cooldowns["/BrowserLoginUI"] = self.next_ui_login_at
         self._save_auth_state()
-        raise RuntimeError(f"Browser Login 未取得 token（{detail}）")
+        raise RuntimeError(f"官方网页登录未取得 session（{detail}）")
 
     def _open_auth_browser(self):
         try:
@@ -891,9 +1246,15 @@ class MZPlayClient:
         """Seconds until Choice should retry without hammering auth/game-url endpoints."""
         now = time.time()
         login_left = max(0, int(float(self.next_login_at or 0) - now))
-        api_left = max(0, int(float(self.api_cooldowns.get("/GetGameUrl", 0) or 0) - now))
+        ui_left = max(0, int(float(self.next_ui_login_at or 0) - now))
+        api_left = 0
+        for until in self.api_cooldowns.values():
+            try:
+                api_left = max(api_left, max(0, int(float(until or 0) - now)))
+            except Exception:
+                pass
         network_left = max(0, int(float(self.next_network_retry_at or 0) - now))
-        return max(login_left, api_left, network_left)
+        return max(login_left, ui_left, api_left, network_left)
 
     def get_choice_launch_url_in_browser(self, page):
         """Get AG_Video launch URL from the same Chromium origin/session."""
