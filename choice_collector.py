@@ -257,13 +257,19 @@ class ChoiceHeadlessCollector:
                 self.status.last_error = f"{type(exc).__name__}: {exc}"
                 print(f"⚠️ [Choice] {self.status.last_error}")
             if not self.stop_event.is_set():
-                # MZPlayClient owns the login cooldown.  Respect it here instead of
-                # waking every 12 seconds and repeatedly producing rate-limit noise.
-                next_login_at = float(getattr(self.client, "next_login_at", 0.0) or 0.0)
-                cooldown_left = max(0, int(next_login_at - time.time()))
+                # Respect both Login cooldown and GetGameUrl endpoint cooldown.
+                # Choice should never wake every 12s while MZPlay has explicitly told
+                # us to wait, otherwise the logs look like a Login loop and can cause
+                # needless requests.
+                retry_after_fn = getattr(self.client, "choice_retry_after", None)
+                if callable(retry_after_fn):
+                    cooldown_left = max(0, int(retry_after_fn()))
+                else:
+                    next_login_at = float(getattr(self.client, "next_login_at", 0.0) or 0.0)
+                    cooldown_left = max(0, int(next_login_at - time.time()))
                 wait_for = max(self.restart_delay, cooldown_left)
                 if cooldown_left > self.restart_delay:
-                    print(f"⏳ [Choice] 登录冷却中，{wait_for}s 后再重试，不重复请求 Login...")
+                    print(f"⏳ [Choice] MZPlay 冷却中，{wait_for}s 后自动重试，不重复请求...")
                 else:
                     print(f"⏳ [Choice] {wait_for}s 后重新取得入口并重连...")
                 self.stop_event.wait(wait_for)
