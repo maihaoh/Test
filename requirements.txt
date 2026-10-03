@@ -1,3 +1,5 @@
 requests>=2.31
 websocket-client>=1.8
 playwright>=1.50
+Flask>=3.0
+waitress>=3.0
