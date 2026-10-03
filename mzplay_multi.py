@@ -24,7 +24,7 @@ NETWORK_RETRY_SECONDS = 45
 TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v20-pwa-standalone-login"
+BUILD_VERSION = "v21-direct-login-no-service-worker"
 
 GAME_DEFS = {
     "k3": {
@@ -830,6 +830,120 @@ class MZPlayClient:
                 return candidate
         return None
 
+    def _ui_password_input(self, page):
+        """Find a visible password field in the main document or a child frame.
+
+        Do not infer from input values and never log field contents.  The live
+        site can change component class names between frontend builds, so prefer
+        semantic attributes before falling back to the older component class.
+        """
+        selectors = (
+            "input[type='password']",
+            "input[autocomplete='current-password']",
+            "input[autocomplete='new-password']",
+            "input[name*='pass' i]",
+            "input[id*='pass' i]",
+            "input[placeholder*='password' i]",
+            "input[aria-label*='password' i]",
+            ".passwordInput__container-input input",
+        )
+        roots = [page] + [f for f in page.frames if f != page.main_frame]
+        for root in roots:
+            for selector in selectors:
+                try:
+                    candidate = self._first_visible(root.locator(selector))
+                except Exception:
+                    candidate = None
+                if candidate is not None:
+                    return root, candidate
+        return page, None
+
+    def _ui_log_login_dom_diagnostic(self, page):
+        """Print a small, secret-free snapshot of the current login DOM."""
+        try:
+            info = page.evaluate(
+                """() => {
+                  const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+                  let build = null;
+                  try {
+                    if (typeof window.getBuildInfo === 'function') build = window.getBuildInfo();
+                  } catch (e) {}
+                  const inputs = Array.from(document.querySelectorAll('input')).slice(0, 20).map((el) => {
+                    const r = el.getBoundingClientRect();
+                    const st = getComputedStyle(el);
+                    return {
+                      type: el.getAttribute('type') || 'text',
+                      name: el.getAttribute('name') || '',
+                      placeholder: el.getAttribute('placeholder') || '',
+                      autocomplete: el.getAttribute('autocomplete') || '',
+                      visible: !!(r.width && r.height && st.visibility !== 'hidden' && st.display !== 'none')
+                    };
+                  });
+                  const scripts = performance.getEntriesByType('resource')
+                    .filter((e) => e.initiatorType === 'script')
+                    .slice(-12)
+                    .map((e) => { try { return new URL(e.name).pathname.split('/').pop(); } catch (_) { return ''; } })
+                    .filter(Boolean);
+                  return {
+                    path: location.pathname,
+                    title: document.title || '',
+                    readyState: document.readyState,
+                    body: clean(document.body ? document.body.innerText : '').slice(0, 360),
+                    inputs,
+                    scripts,
+                    build
+                  };
+                }"""
+            )
+        except Exception as exc:
+            print(f"ℹ️ [MZPlay/UILogin/Diag] DOM 诊断读取失败: {type(exc).__name__}")
+            return
+
+        build = info.get("build") if isinstance(info, dict) else None
+        if isinstance(build, dict):
+            bt = str(build.get("buildTime") or "").strip()
+            if bt:
+                print(f"ℹ️ [MZPlay/UILogin/Diag] 网页 buildTime: {bt}")
+        print(
+            "ℹ️ [MZPlay/UILogin/Diag] "
+            f"path={info.get('path')} ready={info.get('readyState')} title={str(info.get('title') or '')[:80]!r}"
+        )
+        inputs = info.get("inputs") if isinstance(info, dict) else []
+        if isinstance(inputs, list):
+            safe = []
+            for idx, item in enumerate(inputs[:12]):
+                if not isinstance(item, dict):
+                    continue
+                safe.append(
+                    f"#{idx}:{item.get('type','text')} vis={bool(item.get('visible'))} "
+                    f"name={str(item.get('name') or '')[:30]!r} "
+                    f"ph={str(item.get('placeholder') or '')[:60]!r} "
+                    f"ac={str(item.get('autocomplete') or '')[:30]!r}"
+                )
+            print(f"ℹ️ [MZPlay/UILogin/Diag] inputs={len(inputs)} " + " | ".join(safe))
+        body = str(info.get("body") or "") if isinstance(info, dict) else ""
+        if body:
+            print(f"ℹ️ [MZPlay/UILogin/Diag] body: {body}")
+        scripts = info.get("scripts") if isinstance(info, dict) else []
+        if isinstance(scripts, list) and scripts:
+            print("ℹ️ [MZPlay/UILogin/Diag] 最近 JS: " + ", ".join(map(str, scripts[-10:])))
+        try:
+            frame_paths = []
+            for fr in page.frames:
+                try:
+                    u = str(fr.url or "")
+                    if not u:
+                        continue
+                    from urllib.parse import urlparse
+                    parsed = urlparse(u)
+                    frame_paths.append((parsed.netloc or "") + (parsed.path or "/"))
+                except Exception:
+                    pass
+            if len(frame_paths) > 1:
+                print("ℹ️ [MZPlay/UILogin/Diag] frames: " + ", ".join(frame_paths[:8]))
+        except Exception:
+            pass
+
     def _ui_prepare_login_form(self, page):
         """Locate the real official login form and fill it via Playwright UI actions."""
         # If the app is already authenticated, avoid opening the login screen at all.
@@ -837,21 +951,25 @@ class MZPlayClient:
         if auth:
             return auth, None, None
 
-        password_input = self._first_visible(page.locator("input[type='password']"))
+        password_root, password_input = self._ui_password_input(page)
         if password_input is None:
-            # The current official bundle uses Vue Router history mode with the
-            # real login path /login (not the old hash-style /#/login).
+            # Use the real history-mode route and wait for the current live bundle
+            # rather than relying on an old hashed component class name.
             try:
-                page.goto(ORIGIN + "/login", wait_until="domcontentloaded", timeout=45_000)
+                if str(page.evaluate("() => location.pathname") or "") != "/login":
+                    page.goto(ORIGIN + "/login", wait_until="domcontentloaded", timeout=45_000)
+                page.wait_for_timeout(1500)
                 try:
-                    page.wait_for_selector(
-                        ".passwordInput__container-input input, input[type='password']",
-                        state="visible",
+                    page.wait_for_function(
+                        """() => Array.from(document.querySelectorAll('input')).some((el) => {
+                          const r = el.getBoundingClientRect();
+                          const s = getComputedStyle(el);
+                          return r.width && r.height && s.display !== 'none' && s.visibility !== 'hidden';
+                        })""",
                         timeout=20_000,
                     )
                 except Exception:
                     pass
-                page.wait_for_timeout(700)
                 try:
                     current_path = str(page.evaluate("() => location.pathname") or "/")
                 except Exception:
@@ -859,49 +977,52 @@ class MZPlayClient:
                 print(f"ℹ️ [MZPlay/UILogin] 当前官方页面路径: {current_path}")
             except Exception:
                 pass
-            password_input = self._first_visible(
-                page.locator(".passwordInput__container-input input, input[type='password']")
-            )
+            password_root, password_input = self._ui_password_input(page)
 
         if password_input is None:
+            # Some builds first render a landing/login-choice button. Clicking a
+            # clearly labelled login control is safe; do not click arbitrary nodes.
             button = self._ui_find_login_button(page)
             if button is not None:
                 try:
                     button.click(timeout=5000)
-                    page.wait_for_timeout(700)
+                    page.wait_for_timeout(1200)
                 except Exception:
                     pass
-            password_input = self._first_visible(
-                page.locator(".passwordInput__container-input input, input[type='password']")
-            )
+            password_root, password_input = self._ui_password_input(page)
 
         if password_input is None:
             try:
                 current_path = str(page.evaluate("() => location.pathname") or "/")
             except Exception:
                 current_path = "?"
+            self._ui_log_login_dom_diagnostic(page)
             if current_path == "/installApp":
                 raise RuntimeError(
-                    "MZPlay 把 /login 重定向到 /installApp；PWA standalone 模式未生效，未提交任何登录资料"
+                    "MZPlay 把 /login 重定向到 /installApp；未提交任何登录资料"
                 )
+            # Back off before the collector re-enters the browser.  This avoids a
+            # 12-second tight loop while still allowing another live-page check.
+            self.next_ui_login_at = time.time() + 90
+            self.api_cooldowns["/BrowserLoginUI"] = self.next_ui_login_at
             raise RuntimeError(
-                f"官方登录页仍找不到密码输入框（当前路径 {current_path}）；未提交任何登录资料"
+                f"官方登录页仍找不到密码输入框（当前路径 {current_path}）；已输出安全 DOM 诊断，未提交任何登录资料"
             )
 
         login_type = self._ui_login_type()
         if login_type == "email":
             username_input = self._first_visible(
-                page.locator("input[type='email'], input[autocomplete='email'], input[type='text']")
+                password_root.locator("input[type='email'], input[autocomplete='email'], input[type='text']")
             )
             username_value = self.username
         else:
             username_input = self._first_visible(
-                page.locator("input[type='tel'], input[autocomplete='tel'], input[inputmode='tel']")
+                password_root.locator("input[type='tel'], input[autocomplete='tel'], input[inputmode='tel']")
             )
             if username_input is None:
                 # Pick the first visible text-like input that is not clearly a
                 # captcha/search/verification field.
-                inputs = page.locator("input")
+                inputs = password_root.locator("input")
                 username_input = None
                 try:
                     for i in range(min(int(inputs.count()), 40)):
@@ -1111,6 +1232,10 @@ class MZPlayClient:
                 ),
                 locale="en-US",
                 viewport={"width": 1365, "height": 768},
+                # The real site registers ar-sw.js. A stale/intercepted app shell
+                # can keep the URL at /login while leaving the login component
+                # unmounted. Use the current network bundle for authentication.
+                service_workers="block",
             )
             # The current MZPlay router redirects ordinary browser sessions from
             # /login to /installApp when the site is configured as a PWA domain.
@@ -1135,11 +1260,13 @@ class MZPlayClient:
             )
             page = context.new_page()
             try:
-                page.goto(ORIGIN + "/", wait_until="domcontentloaded", timeout=60_000)
+                # Go directly to the login route before a service worker/app-shell
+                # cycle can alter the first authenticated page.
+                page.goto(ORIGIN + "/login", wait_until="domcontentloaded", timeout=60_000)
             except PlaywrightTimeoutError:
                 if "mzplay0.com" not in str(page.url or ""):
                     raise
-            page.wait_for_timeout(1200)
+            page.wait_for_timeout(1500)
             return manager, p, browser, context, page
         except Exception:
             if browser is not None:
