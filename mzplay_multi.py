@@ -839,11 +839,15 @@ class MZPlayClient:
 
         password_input = self._first_visible(page.locator("input[type='password']"))
         if password_input is None:
-            # The app is hash-routed. Navigate to the official login route first;
-            # if that route changes in a future build, fall back to clicking Login.
+            # The current official bundle uses Vue Router history mode with the
+            # real login path /login (not the old hash-style /#/login).
             try:
-                page.goto(ORIGIN + "/#/login", wait_until="domcontentloaded", timeout=45_000)
-                page.wait_for_timeout(900)
+                page.goto(ORIGIN + "/login", wait_until="domcontentloaded", timeout=45_000)
+                try:
+                    page.wait_for_selector("input", state="visible", timeout=12_000)
+                except Exception:
+                    pass
+                page.wait_for_timeout(500)
             except Exception:
                 pass
             password_input = self._first_visible(page.locator("input[type='password']"))
@@ -859,7 +863,7 @@ class MZPlayClient:
             password_input = self._first_visible(page.locator("input[type='password']"))
 
         if password_input is None:
-            raise RuntimeError("找不到 MZPlay 官方网页登录密码框，网页结构可能已更新")
+            raise RuntimeError("已进入官方 /login，但仍找不到密码输入框；网页可能要求额外跳转/验证，或页面结构已更新")
 
         login_type = self._ui_login_type()
         if login_type == "email":
