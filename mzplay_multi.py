@@ -21,7 +21,7 @@ LOGIN_FAILURE_RETRY_SECONDS = 5 * 60
 GENERAL_RETRY_SECONDS = 12
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v18-github-secrets"
+BUILD_VERSION = "v19-direct-getgameurl"
 
 GAME_DEFS = {
     "k3": {
@@ -357,8 +357,6 @@ class MZPlayClient:
             "Origin": ORIGIN,
             "Referer": ORIGIN + "/",
             "Ar-Origin": ORIGIN,
-            "Ar-Real-Ip": "",
-            "Authorization": "",
             "Sec-CH-UA": '"Chromium";v="154", "Google Chrome";v="154", "Not A(Brand";v="99"',
             "Sec-CH-UA-Mobile": "?0",
             "Sec-CH-UA-Platform": '"Windows"',
@@ -498,7 +496,9 @@ class MZPlayClient:
             raise MZPlayRateLimit(
                 self._login_cooldown_message(), scope="login", retry_after=remaining, path="/Login"
             )
-        response = self._post_json("/Login", self._signed(payload), timeout=20)
+        # The official frontend sends AR-REAL-IP on Login, but Login itself has no Authorization header.
+        login_headers = {"Ar-Real-Ip": ""}
+        response = self._post_json("/Login", self._signed(payload), headers=login_headers, timeout=20)
         response.raise_for_status()
         body = response.json()
         data = body.get("data") if isinstance(body, dict) else None
@@ -658,7 +658,11 @@ class MZPlayClient:
 
             # First try exactly like the captured successful browser request: signed
             # payload + normal browser headers, but no Authorization requirement.
-            anon_headers = {"Authorization": ""}
+            # IMPORTANT: the verified successful browser HAR contains NO Authorization
+            # header on GetGameUrl.  An empty `Authorization:` header is not equivalent
+            # to an absent header on some gateways and can force an auth failure.
+            # `None` tells requests to remove any inherited session header for this call.
+            anon_headers = {"Authorization": None, "Ar-Real-Ip": None}
             response = self._post_json(path, self._signed(payload), headers=anon_headers, timeout=20)
             body = None
             try:
