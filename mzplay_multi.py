@@ -376,6 +376,7 @@ class MZPlayClient:
         self.rate_limit_hits = 0
         self.api_cooldowns = {}
         self._load_auth_state()
+        print("ℹ️ [MZPlay] Web 参数模式：phonetype=-1 / GetGameUrl deviceType=3（可用环境变量覆盖）")
 
     def _load_auth_state(self):
         """Load cooldown plus short-lived auth material from local ephemeral disk.
@@ -531,7 +532,9 @@ class MZPlayClient:
             "captchaId": "",
             "track": "",
             "pwd": self.password,
-            "phonetype": int(os.getenv("MZPLAY_PHONE_TYPE") or self.config.get("phonetype") or 0),
+            # Official web frontend wo() returns -1 on a normal desktop browser.
+            # Keep an env/config override, but match the browser by default.
+            "phonetype": int(os.getenv("MZPLAY_PHONE_TYPE") or self.config.get("phonetype") or -1),
             "logintype": str(os.getenv("MZPLAY_LOGIN_TYPE") or self.config.get("logintype") or "mobile"),
             "packId": str(os.getenv("MZPLAY_PACK_ID") or self.config.get("packId") or ""),
             "deviceId": self.device_id,
@@ -602,6 +605,25 @@ class MZPlayClient:
             raise MZPlayRateLimit(
                 f"Login 被服务器限频；{cooldown}s 后再试（MYT {retry_dt}，{detail}）",
                 scope="login", retry_after=cooldown, path="/Login"
+            )
+
+        # msgCode=2 / 'No operation permission' is not a rate limit.  Earlier builds
+        # accidentally looked like a cooldown loop.  Use a short backoff and keep the
+        # real server reason visible so a parameter/account permission issue is obvious.
+        permission_denied = (
+            str(msg_code) == "2"
+            or "no operation permission" in msg.lower()
+            or "operation permission" in msg.lower()
+        )
+        if permission_denied:
+            cooldown = 60
+            self.next_login_at = time.time() + cooldown
+            self.last_login_error = detail
+            self._save_auth_state()
+            retry_dt = datetime.fromtimestamp(self.next_login_at, MYT).strftime("%H:%M:%S")
+            raise RuntimeError(
+                "Login 被服务器拒绝操作权限；这不是 RateLimit。"
+                f"{cooldown}s 后再试（MYT {retry_dt}，{detail}）"
             )
 
         # For credential/device/parameter errors, do not hammer Login repeatedly.
@@ -733,7 +755,8 @@ class MZPlayClient:
         payload = {
             "vendorCode": "AG_Video",
             "returnUrl": ORIGIN,
-            "deviceType": 0,
+            # Official web frontend uses wo(false): 3 for normal desktop web.
+            "deviceType": int(os.getenv("MZPLAY_DEVICE_TYPE") or self.config.get("deviceType") or 3),
         }
         print("ℹ️ [MZPlay/GetGameUrl] 使用已认证 session 取得 Choice 入口")
         body = self.post(path, payload)
