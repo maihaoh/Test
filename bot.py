@@ -2461,6 +2461,15 @@ def update_multi_games(states):
 
 
 def start_multi_games(mz_client):
+    # Choice owns the first browser authentication.  K3/5D/TRX share the same
+    # authenticated MZPlayClient only after a token exists, so Render never opens
+    # a second Chromium login in parallel or hammers /Login from two threads.
+    announced = False
+    while not getattr(mz_client, "token", ""):
+        if not announced:
+            print("ℹ️ [MZPlay/Multi] 等待 Choice 浏览器认证完成，再启动 K3/5D/TRX...")
+            announced = True
+        time.sleep(5)
     collector = MultiGameCollector(update_multi_games, poll_interval=8, client=mz_client)
     collector.run()
 
