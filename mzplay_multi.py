@@ -375,6 +375,12 @@ class MZPlayClient:
         self._load_auth_state()
 
     def _load_auth_state(self):
+        """Load cooldown plus short-lived auth material from local ephemeral disk.
+
+        Tokens are never logged and this file is excluded from Git/Docker context.
+        On Render this mainly survives process restarts inside the same instance; a full
+        redeploy/spin-up may still require a fresh Login.
+        """
         try:
             if not os.path.exists(AUTH_STATE_FILE):
                 return
@@ -385,16 +391,26 @@ class MZPlayClient:
             self.next_login_at = float(state.get("nextLoginAtEpoch") or 0)
             self.rate_limit_hits = int(state.get("rateLimitHits") or 0)
             self.last_login_error = str(state.get("lastLoginError") or "")
+            # Reuse auth from an earlier process in the same Render instance.
+            self.token_header = str(state.get("tokenHeader") or "")
+            self.token = str(state.get("token") or "")
+            self.refresh_token = str(state.get("refreshToken") or "")
         except Exception:
             self.next_login_at = 0.0
             self.rate_limit_hits = 0
             self.last_login_error = ""
+            self.token_header = ""
+            self.token = ""
+            self.refresh_token = ""
 
     def _save_auth_state(self):
         state = {
             "nextLoginAtEpoch": float(self.next_login_at or 0),
             "rateLimitHits": int(self.rate_limit_hits or 0),
             "lastLoginError": self.last_login_error or "",
+            "tokenHeader": self.token_header or "",
+            "token": self.token or "",
+            "refreshToken": self.refresh_token or "",
             "updatedAtEpoch": time.time(),
         }
         tmp = AUTH_STATE_FILE + ".tmp"
@@ -403,16 +419,22 @@ class MZPlayClient:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, AUTH_STATE_FILE)
+        try:
+            os.chmod(AUTH_STATE_FILE, 0o600)
+        except Exception:
+            pass
 
-    def _clear_auth_state(self):
+    def _clear_login_cooldown(self):
         self.next_login_at = 0.0
         self.rate_limit_hits = 0
         self.last_login_error = ""
-        try:
-            if os.path.exists(AUTH_STATE_FILE):
-                os.remove(AUTH_STATE_FILE)
-        except Exception:
-            pass
+        self._save_auth_state()
+
+    def _drop_tokens(self):
+        self.token_header = ""
+        self.token = ""
+        self.refresh_token = ""
+        self._save_auth_state()
 
     @property
     def configured(self):
@@ -508,12 +530,13 @@ class MZPlayClient:
             raise RuntimeError(
                 f"Login 未返回 token ({detail})；{LOGIN_FAILURE_RETRY_SECONDS // 60} 分钟后再试（MYT {retry_dt}）"
             )
-        self._clear_auth_state()
+        self.next_login_at = 0.0
         self.rate_limit_hits = 0
-        self._load_auth_state()
+        self.last_login_error = ""
         self.token_header = str(data.get("tokenHeader") or "")
         self.token = str(token)
         self.refresh_token = str(data.get("refreshToken") or "")
+        self._save_auth_state()
         return True
 
     def refresh(self):
@@ -527,10 +550,14 @@ class MZPlayClient:
         if isinstance(data, dict) and isinstance(data.get("data"), dict):
             data = data["data"]
         if not isinstance(data, dict) or not data.get("token"):
+            self._drop_tokens()
             return self.login()
         self.token_header = str(data.get("tokenHeader") or self.token_header)
         self.token = str(data.get("token") or "")
         self.refresh_token = str(data.get("refreshToken") or self.refresh_token)
+        self.next_login_at = 0.0
+        self.last_login_error = ""
+        self._save_auth_state()
         return True
 
     def ensure_login(self):
@@ -578,8 +605,13 @@ class MZPlayClient:
                 code = body.get("code")
                 msg_code = body.get("msgCode")
                 msg = body.get("msg") or body.get("message") or ""
-                if str(code) == "13" or str(msg_code) == "13" or "frequent" in str(msg).lower():
-                    raise MZPlayRateLimit("API 访问过快，已暂停本轮请求")
+                if str(code) == "13" or str(msg_code) == "13" or "frequent" in str(msg).lower() or "频繁" in str(msg):
+                    self.rate_limit_hits = max(0, self.rate_limit_hits) + 1
+                    cooldown = min(LOGIN_RATE_LIMIT_MAX_SECONDS, LOGIN_RATE_LIMIT_BASE_SECONDS * (2 ** min(self.rate_limit_hits - 1, 2)))
+                    self.next_login_at = time.time() + cooldown
+                    self.last_login_error = f"API code={code} msgCode={msg_code or ''} msg={msg}"
+                    self._save_auth_state()
+                    raise MZPlayRateLimit(self._login_cooldown_message())
                 raise RuntimeError(f"API code={code} msgCode={msg_code or ''} msg={msg}")
             return body
 
