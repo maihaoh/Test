@@ -128,15 +128,10 @@ class ChoiceHeadlessCollector:
         try:
             from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
         except Exception as exc:
-            raise RuntimeError(
-                "缺少 Playwright。请先运行 INSTALL_CHOICE_BROWSER.cmd"
-            ) from exc
+            raise RuntimeError("缺少 Playwright。请先安装 Playwright Chromium") from exc
 
-        # Browser-first auth: Render's direct /Login returned msgCode=2
-        # (No operation permission). Open the official MZPlay origin first and let
-        # Chromium perform Login/GetGameUrl from that browser context. The launch
-        # URL is an authorization artifact and is never printed/persisted.
-        launch_url = None
+        if not str(getattr(self.client, "token", "") or ""):
+            raise RuntimeError("SESSION_NOT_AVAILABLE: 已恢复状态中没有 access token；不会回退到 GitHub UI Login")
 
         self._assemblers.clear()
         self.status.browser_started = False
@@ -145,133 +140,109 @@ class ChoiceHeadlessCollector:
         self.status.last_frame_at = 0.0
 
         with sync_playwright() as p:
-            launch_args = {
-                "headless": self.headless,
-                "args": ["--disable-dev-shm-usage", "--no-sandbox"],
-            }
-            # Prefer the Playwright-managed Chromium. This is the portable path
-            # for Linux containers/Render and avoids hard-coding a system Chrome path.
-            browser = None
-            launch_errors = []
-            try:
-                browser = p.chromium.launch(**launch_args)
-                print("🧭 [Choice] 使用 Playwright Chromium")
-            except Exception as exc:
-                launch_errors.append(f"playwright-chromium: {type(exc).__name__}: {exc}")
-
-            # Optional fallback for local machines that already have Chrome/Chromium.
-            if browser is None:
-                browser_path = str(os.getenv("CHOICE_BROWSER_PATH") or "").strip()
-                candidates = []
-                if browser_path:
-                    candidates.append(browser_path)
-                for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser"):
-                    found = shutil.which(name)
-                    if found and found not in candidates:
-                        candidates.append(found)
-                if os.name == "nt":
-                    for path in (
-                        r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-                        r"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-                        os.path.expandvars(r"%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe"),
-                    ):
-                        if path and os.path.exists(path) and path not in candidates:
-                            candidates.append(path)
-
-                for path in candidates:
-                    try:
-                        browser = p.chromium.launch(executable_path=path, **launch_args)
-                        print(f"🧭 [Choice] 使用系统浏览器: {os.path.basename(path)}")
-                        break
-                    except Exception as exc:
-                        launch_errors.append(f"{path}: {type(exc).__name__}: {exc}")
-
-            if browser is None:
-                detail = " | ".join(launch_errors[-2:])
-                raise RuntimeError(
-                    "无法启动 Chrome/Chromium。Render 建议使用包含 Playwright 系统依赖的 Docker 环境。"
-                    + (f" 启动错误: {detail}" if detail else "")
-                )
-
+            browser = p.chromium.launch(headless=self.headless, args=["--disable-dev-shm-usage", "--no-sandbox"])
+            print("🧭 [Choice] 使用 Playwright Chromium")
             self.status.browser_started = True
             context = browser.new_context(
-                user_agent=(
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/154.0.0.0 Safari/537.36"
-                ),
-                viewport={"width": 1365, "height": 768},
-                locale="en-US",
+                user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                            "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36"),
+                viewport={"width": 1365, "height": 768}, locale="en-US",
             )
-            # Match the official web app's browser device id source (localStorage.arvId).
-            try:
-                import json as _json
-                device_js = _json.dumps(str(getattr(self.client, "device_id", "") or ""))
-                context.add_init_script(
-                    script=f"try {{ localStorage.setItem('arvId', {device_js}); }} catch (e) {{}}"
-                )
-            except Exception:
-                pass
 
+            import json as _json
+            token = _json.dumps(str(getattr(self.client, "token", "") or ""))
+            token_header = _json.dumps(str(getattr(self.client, "token_header", "") or "Bearer"))
+            refresh = _json.dumps(str(getattr(self.client, "refresh_token", "") or ""))
+            device = _json.dumps(str(getattr(self.client, "device_id", "") or ""))
+            context.add_init_script(script=f"""
+                try {{
+                  localStorage.setItem('ar_token', {token});
+                  localStorage.setItem('tokenHeader', {token_header});
+                  localStorage.setItem('refreshToken', {refresh});
+                  localStorage.setItem('arvId', {device});
+                }} catch (e) {{}}
+            """)
+
+            # Attach to every page/popup before opening MZPlay.
+            def attach_page(pg):
+                pg.on("websocket", self._attach_websocket)
+                pg.on("crash", lambda: setattr(self.status, "last_error", "Choice page crashed"))
+            context.on("page", attach_page)
             page = context.new_page()
-            page.on("crash", lambda: setattr(self.status, "last_error", "Choice page crashed"))
+            attach_page(page)
 
-            print("🌐 [Choice] 打开 MZPlay 官方网页并建立浏览器认证...")
+            print("🌐 [Choice/UI] 打开 MZPlay 官方首页（仅复用已授权 session，不执行网页登录）...")
             try:
-                page.goto(
-                    "https://mzplay0.com/",
-                    wait_until="domcontentloaded",
-                    timeout=90_000,
-                )
+                page.goto("https://mzplay0.com/", wait_until="domcontentloaded", timeout=90_000)
             except PlaywrightTimeoutError:
-                if "mzplay0.com" not in str(page.url or ""):
-                    raise
-                print("ℹ️ [Choice] MZPlay 页面资源仍在加载，继续浏览器认证...")
-            page.wait_for_timeout(1200)
-            launch_url = self.client.get_choice_launch_url_in_browser(page)
-            print("✅ [Choice] 浏览器认证完成，已取得新的 Choice 入口（URL 已隐藏）")
+                pass
+            page.wait_for_timeout(2500)
 
-            # Attach before navigating to Choice so the first game WebSocket is not missed.
-            page.on("websocket", self._attach_websocket)
-            print("🌐 [Choice] 正在进入 Choice（无头模式，不需要人工操作）...")
+            title = str(page.title() or "")
+            path = str(page.evaluate("() => location.pathname") or "")
+            body = str(page.locator("body").inner_text(timeout=5000) or "")[:1200]
+            if "Attention Required" in title or "Sorry, you have been blocked" in body:
+                raise RuntimeError("CLOUDFLARE_BLOCKED: GitHub Runner 被 MZPlay/Cloudflare 拒绝；不会尝试 UI Login")
+            if path.lower().startswith("/login"):
+                raise RuntimeError("SESSION_NOT_ACCEPTED: MZPlay 没有接受恢复的 session；不会尝试 UI Login")
+
+            # Let the OFFICIAL page perform its own Choice launch flow. No synthetic GetGameUrl.
+            choice = None
+            selectors = [
+                "text=CHOICE", "text=Choice", "[alt*='CHOICE' i]", "img[src*='choice' i]",
+                "a:has-text('CHOICE')", "button:has-text('CHOICE')"
+            ]
+            for sel in selectors:
+                try:
+                    loc = page.locator(sel)
+                    for i in range(min(loc.count(), 10)):
+                        cand = loc.nth(i)
+                        if cand.is_visible():
+                            choice = cand
+                            break
+                except Exception:
+                    pass
+                if choice is not None:
+                    break
+            if choice is None:
+                raise RuntimeError("CHOICE_TILE_NOT_FOUND: 官方首页已打开，但找不到 CHOICE 入口")
+
+            print("✅ [Choice/UI] 已找到 CHOICE，交给官方网页执行启动流程")
+            pages_before = set(context.pages)
             try:
-                page.goto(
-                    launch_url,
-                    wait_until="domcontentloaded",
-                    timeout=90_000,
-                    referer="https://mzplay0.com/",
-                )
-            except PlaywrightTimeoutError:
-                # The SPA can keep loading background resources for a long time.
-                # If we are already on the authorized Choice origin, keep the session
-                # and let the WebSocket watchdog decide whether it is healthy.
-                if "gci.arvideo.video" not in str(page.url or ""):
-                    raise
-                print("ℹ️ [Choice] 页面仍在加载资源，继续等待 WebSocket...")
-            self.status.choice_page_loaded = True
-            print("✅ [Choice] 页面已建立，等待 D051-D058 实时 Result...")
+                choice.click(timeout=15_000)
+            except Exception as exc:
+                raise RuntimeError(f"CHOICE_CLICK_FAILED: {type(exc).__name__}: {exc}")
 
-            session_started = time.time()
+            # Wait for official navigation/popup/iframe and especially its game WebSocket.
+            deadline = time.time() + 120
+            while time.time() < deadline and not self.stop_event.is_set():
+                for pg in context.pages:
+                    try:
+                        pg.wait_for_timeout(250)
+                    except Exception:
+                        pass
+                if self.status.websocket_seen:
+                    self.status.choice_page_loaded = True
+                    print("✅ [Choice/UI] 官方 CHOICE 启动流程已完成；已建立游戏 WebSocket")
+                    break
+                time.sleep(0.25)
+            if not self.status.websocket_seen:
+                urls = []
+                for pg in context.pages:
+                    try: urls.append(urlparse(pg.url).hostname or "")
+                    except Exception: pass
+                raise RuntimeError("CHOICE_WS_NOT_SEEN: 点击 CHOICE 后 120s 仍未看到游戏 WebSocket; pages=" + ",".join(sorted(set(urls))))
+
+            print("✅ [Choice] 等待 D051-D058 实时 Result...")
             while not self.stop_event.is_set():
-                # Give Playwright's event loop time to dispatch WebSocket frame events.
-                page.wait_for_timeout(1000)
+                for pg in context.pages:
+                    try: pg.wait_for_timeout(500)
+                    except Exception: pass
                 now = time.time()
-                if page.is_closed():
-                    raise RuntimeError("Choice page closed")
-                # Once websocket traffic has started, silence for too long normally means
-                # the internal session died.  Request a fresh MZPlay launch on restart.
-                if (
-                    self.status.websocket_seen
-                    and self.status.last_frame_at
-                    and now - self.status.last_frame_at > self.no_frame_timeout
-                ):
-                    raise RuntimeError(
-                        f"Choice WebSocket {self.no_frame_timeout}s 没有数据，准备重新建立 session"
-                    )
-                # If no Choice socket appears at all, do not hang forever on a bad launch.
-                if not self.status.websocket_seen and now - session_started > 120:
-                    raise RuntimeError("Choice 入口打开后 120s 仍没有建立游戏 WebSocket")
-
+                if self.status.last_frame_at and now - self.status.last_frame_at > self.no_frame_timeout:
+                    raise RuntimeError(f"Choice WebSocket {self.no_frame_timeout}s 没有数据，准备重连")
+                time.sleep(0.25)
             context.close()
             browser.close()
 
