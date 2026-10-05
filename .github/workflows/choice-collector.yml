@@ -21,9 +21,14 @@ jobs:
       MZPLAY_USERNAME: ${{ secrets.MZPLAY_USERNAME }}
       MZPLAY_PASSWORD: ${{ secrets.MZPLAY_PASSWORD }}
       MZPLAY_DEVICE_ID: ${{ secrets.MZPLAY_DEVICE_ID }}
+      # One-time bootstrap state exported by bootstrap_mzplay_session.py.
+      MZPLAY_AUTH_STATE_B64: ${{ secrets.MZPLAY_AUTH_STATE_B64 }}
+      # Encrypts the refreshed session before it is placed in Actions cache.
+      MZPLAY_STATE_KEY: ${{ secrets.MZPLAY_STATE_KEY }}
+      # Do not retry the Cloudflare-blocked MZPlay login UI from a GitHub runner.
+      MZPLAY_ALLOW_UI_LOGIN: "0"
       INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
       PUSH_URL: https://test-4bvi.onrender.com/api/ingest
-      MZPLAY_AUTH_HEADLESS: "1"
       PYTHONUNBUFFERED: "1"
 
     steps:
@@ -37,6 +42,43 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-collector.txt
 
+      - name: Restore encrypted MZPlay session
+        id: mzplay-session-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .session-cache/mzplay_auth_state.enc
+          key: mzplay-auth-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            mzplay-auth-${{ runner.os }}-
+
+      - name: Prepare reusable MZPlay session
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .session-cache
+          rm -f mzplay_auth_state.json
+
+          if [ -s .session-cache/mzplay_auth_state.enc ]; then
+            if [ -z "${MZPLAY_STATE_KEY:-}" ]; then
+              echo "::error::MZPLAY_STATE_KEY is required to decrypt the saved MZPlay session"
+              exit 1
+            fi
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -pass env:MZPLAY_STATE_KEY \
+              -in .session-cache/mzplay_auth_state.enc \
+              -out mzplay_auth_state.json
+            chmod 600 mzplay_auth_state.json
+            echo "Restored reusable MZPlay session from encrypted cache."
+          elif [ -n "${MZPLAY_AUTH_STATE_B64:-}" ]; then
+            printf '%s' "$MZPLAY_AUTH_STATE_B64" | base64 --decode > mzplay_auth_state.json
+            chmod 600 mzplay_auth_state.json
+            python -c 'import json; state=json.load(open("mzplay_auth_state.json", encoding="utf-8")); assert isinstance(state, dict) and (state.get("token") or state.get("refreshToken")), "MZPLAY_AUTH_STATE_B64 does not contain a usable token/refreshToken"'
+            echo "Loaded MZPlay bootstrap session from GitHub Secret."
+          else
+            echo "::error::No reusable MZPlay session is available. Run bootstrap_mzplay_session.py locally and add MZPLAY_AUTH_STATE_B64."
+            exit 1
+          fi
+
       - name: Install collector dependencies
         run: |
           python -m pip install --upgrade pip
@@ -48,7 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for key in MZPLAY_USERNAME MZPLAY_PASSWORD MZPLAY_DEVICE_ID INGEST_SECRET; do
+          for key in MZPLAY_USERNAME MZPLAY_PASSWORD MZPLAY_DEVICE_ID INGEST_SECRET MZPLAY_STATE_KEY; do
             if [ -z "${!key:-}" ]; then
               echo "::error::$key is not configured in GitHub Actions Secrets"
               missing=1
@@ -68,3 +110,32 @@ jobs:
             exit 0
           fi
           exit "$status"
+
+      - name: Encrypt refreshed MZPlay session
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -s mzplay_auth_state.json ]; then
+            echo "No refreshed MZPlay session file to checkpoint."
+            exit 0
+          fi
+          if [ -z "${MZPLAY_STATE_KEY:-}" ]; then
+            echo "::warning::MZPLAY_STATE_KEY is missing; session checkpoint skipped."
+            exit 0
+          fi
+          mkdir -p .session-cache
+          openssl enc -aes-256-cbc -salt -pbkdf2 \
+            -pass env:MZPLAY_STATE_KEY \
+            -in mzplay_auth_state.json \
+            -out .session-cache/mzplay_auth_state.enc
+          chmod 600 .session-cache/mzplay_auth_state.enc
+          rm -f mzplay_auth_state.json
+          echo "Encrypted refreshed MZPlay session for the next run."
+
+      - name: Save encrypted MZPlay session
+        if: always() && hashFiles('.session-cache/mzplay_auth_state.enc') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .session-cache/mzplay_auth_state.enc
+          key: mzplay-auth-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
