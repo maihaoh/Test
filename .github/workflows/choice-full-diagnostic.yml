@@ -1,0 +1,36 @@
+name: Choice Full Diagnostic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      MZPLAY_USERNAME: ${{ secrets.MZPLAY_USERNAME }}
+      MZPLAY_PASSWORD: ${{ secrets.MZPLAY_PASSWORD }}
+      MZPLAY_DEVICE_ID: ${{ secrets.MZPLAY_DEVICE_ID }}
+      MZPLAY_AUTH_STATE_B64: ${{ secrets.MZPLAY_AUTH_STATE_B64 }}
+      MZPLAY_STATE_KEY: ${{ secrets.MZPLAY_STATE_KEY }}
+      INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
+      PUSH_URL: https://test-4bvi.onrender.com/api/ingest
+      MZPLAY_ALLOW_UI_LOGIN: "0"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-collector.txt
+      - name: Install diagnostic dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-collector.txt
+          python -m playwright install --with-deps chromium
+      - name: Run ALL-IN-ONE Choice diagnostic
+        run: python -u full_diagnostic.py
