@@ -388,6 +388,11 @@ class MZPlayClient:
         self.next_network_retry_at = 0.0
         self.next_ui_login_at = 0.0
         self._load_auth_state()
+        # GitHub Actions fallback: the bootstrap secret is already present in the
+        # job environment.  If the transient JSON file was not visible/parseable,
+        # recover the same state directly from the base64 secret without logging values.
+        if not self.token:
+            self._load_auth_state_from_env()
         print("ℹ️ [MZPlay] Web 参数模式：phonetype=-1 / GetGameUrl deviceType=3（可用环境变量覆盖）")
 
     def _load_auth_state(self):
@@ -422,6 +427,29 @@ class MZPlayClient:
             self.token_header = ""
             self.token = ""
             self.refresh_token = ""
+
+    def _load_auth_state_from_env(self):
+        raw = str(os.getenv("MZPLAY_AUTH_STATE_B64") or "").strip()
+        if not raw:
+            print("ℹ️ [MZPlay/Auth] bootstrap env=missing")
+            return
+        try:
+            import base64
+            decoded = base64.b64decode(raw, validate=True).decode("utf-8")
+            state = json.loads(decoded)
+            if not isinstance(state, dict):
+                raise ValueError("decoded state is not an object")
+            self.token_header = str(state.get("tokenHeader") or state.get("token_header") or self.token_header or "Bearer")
+            self.token = str(state.get("token") or state.get("accessToken") or state.get("access_token") or state.get("ar_token") or "")
+            self.refresh_token = str(state.get("refreshToken") or state.get("refresh_token") or self.refresh_token or "")
+            env_device = str(state.get("deviceId") or state.get("arvId") or "").strip()
+            if env_device:
+                self.device_id = env_device
+            print(f"ℹ️ [MZPlay/Auth] bootstrap env decoded (token={'yes' if self.token else 'no'}, refresh={'yes' if self.refresh_token else 'no'}, device={'yes' if self.device_id else 'no'})")
+            if self.token or self.refresh_token:
+                self._save_auth_state()
+        except Exception as exc:
+            print(f"⚠️ [MZPlay/Auth] bootstrap env decode failed: {type(exc).__name__}")
 
     def _save_auth_state(self):
         state = {
