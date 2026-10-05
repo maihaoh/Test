@@ -5,6 +5,8 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
+    buildCommand: bash ./render_build.sh
+    startCommand: bash ./start_render.sh
     envVars:
       - key: MZPLAY_USERNAME
         sync: false

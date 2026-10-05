@@ -1,22 +1,26 @@
-# Render ALL-IN-ONE Choice Diagnostic
+# Render ALL-IN-ONE setup (V11)
 
-This build runs one full Choice diagnostic automatically every time the Render service starts, then starts the normal collector.
+This version self-heals missing Python dependencies at startup and includes a dedicated build script.
 
-## Required Render environment variables
+Recommended Render settings:
 
-Set these in Render -> Service -> Environment:
+- Build Command: `bash ./render_build.sh`
+- Start Command: `bash ./start_render.sh`
 
-- `MZPLAY_AUTH_STATE_B64` — paste the complete content of your locally generated `MZPLAY_AUTH_STATE_B64.txt`.
-- `MZPLAY_DEVICE_ID` — your configured MZPlay device ID (kept only in Render secrets).
-- `INGEST_SECRET` — the existing ingest secret used by `/api/ingest`.
+Required environment variables:
 
-Existing `MZPLAY_USERNAME` / `MZPLAY_PASSWORD` may remain configured, but the diagnostic never performs UI login and never prints them.
+- `MZPLAY_AUTH_STATE_B64`
+- `MZPLAY_DEVICE_ID`
+- `INGEST_SECRET`
 
-## Where to read the result
+Optional existing variables can remain unchanged.
 
-1. Deploy/redeploy the service.
-2. Open Render Logs.
-3. Find `RENDER DIAGNOSTIC SUMMARY`.
-4. The same safe report is also exposed at `/api/choice-diagnostic` after the diagnostic completes.
+The startup sequence is:
 
-The report never prints passwords, access tokens, refresh tokens, cookies, or secret values.
+1. Verify/install Python runtime dependencies.
+2. Verify/install Playwright Chromium.
+3. Start the realtime API.
+4. Run the complete Choice diagnostic once.
+5. Start the normal collector.
+
+The diagnostic never prints passwords, tokens, cookies, or secret values.

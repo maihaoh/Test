@@ -5,14 +5,44 @@ PORT="${PORT:-10000}"
 export DIAG_PUSH_URL="http://127.0.0.1:${PORT}/api/ingest"
 export CHOICE_DIAGNOSTIC_REPORT="/tmp/choice_full_diagnostic.json"
 
+ensure_python_dependencies() {
+  if python - <<'PY' >/dev/null 2>&1
+import flask, waitress, requests, websocket, playwright
+PY
+  then
+    echo "[Render] Python dependencies: OK"
+  else
+    echo "[Render] Python dependencies missing; installing full runtime requirements..."
+    python -m pip install -r requirements.txt
+  fi
+}
+
+ensure_playwright_browser() {
+  if python - <<'PY' >/dev/null 2>&1
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    exe = Path(p.chromium.executable_path)
+    raise SystemExit(0 if exe.exists() else 1)
+PY
+  then
+    echo "[Render] Playwright Chromium: OK"
+  else
+    echo "[Render] Playwright Chromium missing; installing browser binary..."
+    python -m playwright install chromium || echo "[Render] WARNING: Chromium install failed; diagnostic will report browser availability separately."
+  fi
+}
+
+ensure_python_dependencies
+ensure_playwright_browser
+
 echo "[Render] starting realtime API on port ${PORT}..."
 python -m waitress --listen="0.0.0.0:${PORT}" realtime_api:app &
 API_PID=$!
 
 echo "[Render] realtime API PID: ${API_PID}"
 
-# Give the local API a moment to bind. Do not fail deployment if the diagnostic itself finds failures.
-for _ in $(seq 1 20); do
+for _ in $(seq 1 30); do
   if python - <<'PY' >/dev/null 2>&1
 import os, urllib.request
 port = os.getenv('PORT', '10000')
