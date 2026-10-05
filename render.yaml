@@ -12,6 +12,10 @@ services:
         sync: false
       - key: MZPLAY_DEVICE_ID
         sync: false
+      - key: MZPLAY_AUTH_STATE_B64
+        sync: false
+      - key: INGEST_SECRET
+        sync: false
       - key: DASHBOARD_ORIGIN
         value: https://maihaoh.github.io
       - key: CHOICE_HEADLESS

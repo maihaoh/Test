@@ -109,6 +109,21 @@ def data_json():
     return jsonify(read_data())
 
 
+@app.get("/api/choice-diagnostic")
+def choice_diagnostic():
+    report_path = Path(os.getenv("CHOICE_DIAGNOSTIC_REPORT", "/tmp/choice_full_diagnostic.json"))
+    try:
+        with report_path.open("r", encoding="utf-8") as f:
+            report = json.load(f)
+        if not isinstance(report, dict):
+            raise ValueError("diagnostic report is not an object")
+        return jsonify(report)
+    except FileNotFoundError:
+        return jsonify({"ok": False, "status": "not-run-yet"}), 404
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"diagnostic read failed: {type(exc).__name__}"}), 500
+
+
 @app.post("/api/ingest")
 def ingest():
     global _last_ingest_at, _last_sender_updated_at

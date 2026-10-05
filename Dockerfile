@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt waitress flask \
     && python -m playwright install --with-deps chromium
 
 COPY . .
-RUN python -m py_compile bot.py mzplay_multi.py choice_collector.py choice_result_decoder.py realtime_api.py run_once.py
+RUN python -m py_compile bot.py mzplay_multi.py choice_collector.py choice_result_decoder.py realtime_api.py run_once.py full_diagnostic.py
 
 EXPOSE 10000
 CMD ["bash", "./start_render.sh"]
