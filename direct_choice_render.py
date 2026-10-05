@@ -21,6 +21,7 @@ from choice_result_decoder import (
     DEFAULT_VIDS,
     DecodeError,
     PacketAssembler,
+    build_subscribe_packet,
     decode_result_packet,
 )
 
@@ -31,15 +32,10 @@ NO_SNAPSHOT_SECONDS = max(60, int(os.getenv("CHOICE_NO_SNAPSHOT_SECONDS") or 180
 ROOMS = tuple(f"D{i}" for i in range(51, 59))
 
 
-def _subscribe_packet(room: str) -> bytes:
-    # Preserved from the previously captured Choice client protocol.
-    # Header + ASCII D051..D058 + fixed suffix.
-    room_num = int(room[1:])
-    room_code = f"D0{room_num}".encode("ascii")
-    packet = bytearray(bytes.fromhex("000610030000001900000000"))
-    packet.extend(room_code)
-    packet.extend(bytes.fromhex("000000000000000100"))
-    return bytes(packet)
+def _subscribe_all_packet() -> bytes:
+    # Source-derived subscription command from the verified protocol report.
+    # Command id = 77829 (0x00013005) and one payload contains D051-D058.
+    return build_subscribe_packet(DEFAULT_VIDS)
 
 
 class DirectChoiceCollector:
@@ -56,12 +52,14 @@ class DirectChoiceCollector:
         self.last_frame_at = time.time()
         print(f"🟢 [Choice/Direct] WebSocket connected: {CHOICE_WS_URL}", flush=True)
         print(f"🌐 [Choice/Direct] Origin: {CHOICE_ORIGIN}", flush=True)
-        for room in ROOMS:
-            payload = _subscribe_packet(room)
-            ws.send(payload, opcode=websocket.ABNF.OPCODE_BINARY)
-            print(f"📤 [Choice/Direct] subscribe {room}", flush=True)
-            time.sleep(0.12)
-        print("✅ [Choice/Direct] D51-D58 subscription packets sent", flush=True)
+        payload = _subscribe_all_packet()
+        cmd_id = int.from_bytes(payload[:4], "big")
+        ws.send(payload, opcode=websocket.ABNF.OPCODE_BINARY)
+        print(
+            f"📤 [Choice/Direct] subscribe D051-D058 cmd={cmd_id} bytes={len(payload)}",
+            flush=True,
+        )
+        print("✅ [Choice/Direct] verified 77829 subscription packet sent", flush=True)
 
     def on_message(self, ws, message) -> None:
         if isinstance(message, str):
@@ -141,10 +139,12 @@ class DirectChoiceCollector:
         )
         watchdog = threading.Thread(target=self._watchdog, args=(ws,), daemon=True)
         watchdog.start()
+        # The captured Choice connection did not establish that the server replies
+        # to WebSocket control-frame pings. Do not tear down an otherwise-valid
+        # application connection merely because ping/pong is unsupported.
         ws.run_forever(
             origin=CHOICE_ORIGIN,
-            ping_interval=20,
-            ping_timeout=10,
+            ping_interval=0,
             skip_utf8_validation=True,
         )
 
