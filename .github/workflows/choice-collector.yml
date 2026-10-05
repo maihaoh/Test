@@ -1,0 +1,70 @@
+name: Choice Remote Collector
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Restart a fresh GitHub-hosted runner every 4 hours.
+    - cron: "17 */4 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: choice-remote-collector
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 235
+    env:
+      MZPLAY_USERNAME: ${{ secrets.MZPLAY_USERNAME }}
+      MZPLAY_PASSWORD: ${{ secrets.MZPLAY_PASSWORD }}
+      MZPLAY_DEVICE_ID: ${{ secrets.MZPLAY_DEVICE_ID }}
+      INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
+      PUSH_URL: https://test-4bvi.onrender.com/api/ingest
+      MZPLAY_AUTH_HEADLESS: "1"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-collector.txt
+
+      - name: Install collector dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-collector.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for key in MZPLAY_USERNAME MZPLAY_PASSWORD MZPLAY_DEVICE_ID INGEST_SECRET; do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::$key is not configured in GitHub Actions Secrets"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Run collector and relay to Render
+        shell: bash
+        run: |
+          set +e
+          # Run for 225 minutes. The next scheduled workflow starts every 4 hours.
+          timeout --signal=INT --kill-after=30s 225m python -u remote_runner.py
+          status=$?
+          if [ "$status" -eq 124 ] || [ "$status" -eq 130 ]; then
+            echo "Collector window completed normally; next scheduled run will continue."
+            exit 0
+          fi
+          exit "$status"
