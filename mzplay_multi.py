@@ -891,7 +891,7 @@ class MZPlayClient:
         try:
             info = page.evaluate(
                 """() => {
-                  const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+                  const clean = (s) => String(s || '').replace(/\\s+/g, ' ').trim();
                   let build = null;
                   try {
                     if (typeof window.getBuildInfo === 'function') build = window.getBuildInfo();

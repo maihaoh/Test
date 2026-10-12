@@ -124,6 +124,21 @@ def choice_diagnostic():
         return jsonify({"ok": False, "error": f"diagnostic read failed: {type(exc).__name__}"}), 500
 
 
+@app.get("/api/choice-status")
+def choice_status():
+    """Report safe high-level Choice transport status, without session data."""
+    status_path = BASE_DIR / "choice_status.json"
+    try:
+        data = json.loads(status_path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError("status is not an object")
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"status": "not_started", "note": "No Choice diagnostic status yet"}), 200
+    except (ValueError, OSError):
+        return jsonify({"status": "invalid_status"}), 500
+
+
 @app.post("/api/ingest")
 def ingest():
     global _last_ingest_at, _last_sender_updated_at
