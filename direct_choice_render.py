@@ -138,7 +138,7 @@ class DirectChoiceCollector:
                 "result_snapshots": self.results,
                 "last_result_at": int(self.last_snapshot_at),
                 "last_error": self._error,
-                "note": "77826 authorized game login is not implemented because no valid source payload was captured",
+                "note": "Browser metadata confirms 77826 on 7101 and 135176 on 5000; authorized login payload/bootstrap is not available to this Render process",
             }
             tmp = STATUS_PATH.with_suffix(".json.tmp")
             try:
@@ -186,16 +186,13 @@ class DirectChoiceCollector:
         print(f"[Choice/Direct] WebSocket connected: {safe_host}:{safe_port}", flush=True)
         print("[Choice/Direct] TCP/WS CONNECTED != game login authenticated", flush=True)
         self._write_status("websocket_connected_not_authenticated")
-        ws.send(build_app_heartbeat(0), opcode=websocket.ABNF.OPCODE_BINARY)
-        print("[Choice/Direct] initial application heartbeat sent", flush=True)
-        threading.Thread(target=self._send_heartbeat_loop, args=(ws, self._heart_stop), daemon=True).start()
-        packet = build_subscribe_packet(DEFAULT_VIDS)
-        ws.send(packet, opcode=websocket.ABNF.OPCODE_BINARY)
-        self.subscription_sent = True
-        self._write_status("waiting_for_subscription_ack")
-        print(f"[Choice/Direct] 77829 subscription SENT ({len(packet)} bytes), not yet accepted", flush=True)
-        print(f"[Choice/Direct] waiting for 143365 ack, timeout={ACK_TIMEOUT_SECONDS}s", flush=True)
-        print("[Choice/Direct] no 77826 game login request was sent (not available in source)", flush=True)
+        # Evidence-based V15: the browser sends 77826 on port 7101, while
+        # 135176 arrives on port 5000. Neither an ID=1 heartbeat nor an
+        # unauthenticated 77829 probe is justified by the captured trace.
+        # Observe only; do not replay session-bearing login payloads.
+        self._write_status("awaiting_authorized_game_bootstrap")
+        print("[Choice/Direct] OBSERVE ONLY: no fabricated heartbeat or unauthenticated 77829", flush=True)
+        print("[Choice/Direct] browser evidence: 7101 login/subscribe; 5000 results", flush=True)
         threading.Thread(target=self._watchdog, args=(ws, self._heart_stop), daemon=True).start()
 
     def on_message(self, ws, message) -> None:
@@ -340,7 +337,7 @@ class DirectChoiceCollector:
                 unacked += 1
             if unacked >= MAX_UNACKED_ATTEMPTS:
                 print(f"[Choice/Direct] STOPPED repeated unauthenticated subscription probes after {unacked} attempts. WinGo/API remain active.", flush=True)
-                print("[Choice/Direct] missing verified authorized 77826 game login flow; source capture contains no such request", flush=True)
+                print("[Choice/Direct] metadata confirms browser 77826, but contains no reusable authorized login bootstrap", flush=True)
                 break
             print(f"[Choice/Direct] retry in {RETRY_SECONDS}s", flush=True)
             time.sleep(RETRY_SECONDS)
@@ -353,7 +350,7 @@ def main() -> None:
     print("=" * 67, flush=True)
     print("Render WinGo + reviewed V14 Choice protocol collector", flush=True)
     print("No guessed 77826 login payload / no Cloudflare bypass", flush=True)
-    print(f"Choice bounded subscription probes: {MAX_UNACKED_ATTEMPTS}; ack timeout: {ACK_TIMEOUT_SECONDS}s", flush=True)
+    print(f"Choice observe-only attempts: {MAX_UNACKED_ATTEMPTS}; timeout: {ACK_TIMEOUT_SECONDS}s", flush=True)
     print("=" * 67, flush=True)
     bot.initialize_data()
     threading.Thread(target=bot.wingo_loop, name="wingo", daemon=True).start()
