@@ -1,0 +1,18 @@
+{
+  "mode": "V14-audited-bounded-probe",
+  "status": "disconnected",
+  "updated_at": 1792386719,
+  "websocket_connected": false,
+  "game_login_request_sent": false,
+  "game_login_ack_seen": false,
+  "subscription_sent": false,
+  "subscription_ack_seen": false,
+  "subscription_ack_accepted": false,
+  "received_frames": 0,
+  "received_bytes": 0,
+  "received_packets": 0,
+  "result_snapshots": 0,
+  "last_result_at": 0,
+  "last_error": "",
+  "note": "Browser metadata confirms 77826 on 7101 and 135176 on 5000; authorized login payload/bootstrap is not available to this Render process"
+}

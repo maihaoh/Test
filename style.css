@@ -2072,3 +2072,133 @@ tbody tr:hover {
   .multi-row,.multi-review .multi-row { grid-template-columns:1fr; gap:4px; }
   .multi-row.header { display:none; }
 }
+
+
+/* ===========================================================
+   CHOICE BACCARAT / MANUAL RESULT ENTRY - UI v18
+   =========================================================== */
+.bc-manual-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    margin-left: 8px;
+    border-radius: 999px;
+    border: 1px solid #334155;
+    background: rgba(51, 65, 85, .33);
+    font-size: 12px;
+    font-weight: 700;
+    color: #cbd5e1;
+    vertical-align: middle;
+}
+.bc-manual-tables .baccarat-table-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 12px 8px;
+    font-size: 14px;
+}
+.bc-manual-tables .baccarat-table-btn small { font-size: 11px; font-weight: 650; opacity: .85; }
+.bc-manual-overall {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 5px;
+    margin-top: 15px;
+    color: #cbd5e1;
+    font-size: 13px;
+}
+.bc-manual-overall strong { font-size: 22px; color: #f8fafc; }
+.bc-manual-overall span { color: #94a3b8; }
+.bc-manual-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.bc-manual-cards .card { min-width: 0; }
+.bc-manual-note { margin: 8px 0 16px; color: #94a3b8; font-size: 13px; line-height: 1.7; }
+.bc-manual-note strong { color: #e2e8f0; }
+.bc-manual-entry { border-top: 3px solid #8b5cf6; }
+.bc-manual-outcomes {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 13px;
+    margin: 14px 0;
+}
+.bc-manual-outcome {
+    border: 1px solid;
+    border-radius: 14px;
+    min-height: 112px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font: inherit;
+    cursor: pointer;
+    transition: transform .12s ease, filter .12s ease;
+}
+.bc-manual-outcome:hover { filter: brightness(1.18); transform: translateY(-2px); }
+.bc-manual-outcome:active { transform: scale(.98); }
+.bc-manual-outcome strong { font-size: 34px; line-height: 1.15; }
+.bc-manual-outcome span { font-size: 11px; letter-spacing: .11em; font-weight: 900; }
+.bc-manual-outcome.is-banker { background: rgba(239, 68, 68, .15); color: #fda4af; border-color: rgba(248, 113, 113, .5); }
+.bc-manual-outcome.is-player { background: rgba(59, 130, 246, .15); color: #93c5fd; border-color: rgba(96, 165, 250, .5); }
+.bc-manual-outcome.is-tie { background: rgba(16, 185, 129, .14); color: #6ee7b7; border-color: rgba(52, 211, 153, .48); }
+.bc-manual-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.bc-manual-actions button {
+    padding: 10px 13px;
+    border: 1px solid #465367;
+    border-radius: 9px;
+    background: #263449;
+    font-size: 12px;
+    color: #e2e8f0;
+    cursor: pointer;
+}
+.bc-manual-actions button:hover:not(:disabled) { background: #33465f; }
+.bc-manual-actions button:disabled { opacity: .37; cursor: not-allowed; }
+.bc-manual-actions button.bc-manual-danger { color: #fecaca; border-color: #853e46; background: #3c242d; }
+.bc-manual-message { min-height: 20px; margin: 13px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.55; }
+.bc-manual-message.is-error { color: #fca5a5; }
+.bc-manual-prediction { border-top: 3px solid #38bdf8; }
+.bc-manual-prediction-content { text-align: center; padding: 16px 4px 8px; }
+.bc-manual-pick { font-size: clamp(26px, 5vw, 40px); font-weight: 950; color: #f8fafc; line-height: 1.3; }
+.bc-manual-pick.is-banker { color: #fda4af; }
+.bc-manual-pick.is-player { color: #93c5fd; }
+.bc-manual-pick-sample { margin-top: 8px; color: #cbd5e1; font-size: 13px; }
+.bc-manual-pick-reason { margin: 14px 0 0; padding: 12px 14px; background: #111b2b; border: 1px solid #2c3e54; border-radius: 9px; color: #cbd5e1; font-size: 13px; line-height: 1.65; }
+.bc-manual-disclaimer { margin: 10px 0 0; color: #fcd34d; font-size: 12px; line-height: 1.7; }
+.bc-manual-road { display: grid; grid-auto-flow: column; grid-template-rows: repeat(6, 34px); grid-auto-columns: 34px; justify-content: start; gap: 5px; min-height: 232px; overflow-x: auto; padding: 12px; background: rgba(2, 6, 23, .38); border-radius: 10px; border: 1px solid #29394e; }
+.bc-manual-history { display: flex; flex-wrap: wrap; gap: 10px; min-height: 48px; }
+.bc-manual-chip { position: relative; display: inline-flex; justify-content: center; align-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; border: 1px solid; font-weight: 900; font-size: 14px; }
+.bc-manual-chip.is-banker { border-color: #f87171; background: rgba(239, 68, 68, .16); color: #fda4af; }
+.bc-manual-chip.is-player { border-color: #60a5fa; background: rgba(59, 130, 246, .16); color: #93c5fd; }
+.bc-manual-chip.is-tie { border-color: #34d399; background: rgba(16, 185, 129, .16); color: #6ee7b7; }
+.bc-manual-chip.is-latest { outline: 2px solid #cbd5e1; outline-offset: 2px; }
+.bc-manual-empty { color: #64748b; padding: 16px; font-size: 13px; }
+@media (max-width: 740px) {
+    .bc-manual-cards { grid-template-columns: 1fr 1fr; gap: 9px; }
+    .bc-manual-cards .card:last-child { grid-column: 1 / -1; }
+    .bc-manual-outcomes { gap: 7px; }
+    .bc-manual-outcome { min-height: 93px; border-radius: 10px; }
+    .bc-manual-outcome strong { font-size: 26px; }
+    .bc-manual-outcome span { font-size: 9px; }
+    .bc-manual-actions button { flex: 1 1 calc(50% - 6px); }
+    .bc-manual-overall { font-size: 12px; }
+}
+@media (max-width: 360px) {
+    .bc-manual-outcome strong { font-size: 23px; }
+    .bc-manual-pill { padding: 4px 6px; margin-left: 3px; font-size: 10px; }
+}
+
+/* Live source freshness must be unmistakable, even on small screens. */
+.multi-game-section .data-status.is-live { border-color: #1e8c65; color: #b8f9db; background:#102a25; }
+.multi-game-section .data-status.is-stale { border-color: #c3813a; color: #fde4bd; background:#34271c; }
+.multi-game-section .data-status.is-offline { border-color: #874650; color: #fecdd3; background:#32202a; }
+.multi-game-section .multi-row { grid-template-columns:1.1fr 0.9fr 1.5fr; word-break:break-word; }
+.multi-game-section .multi-review .multi-row { grid-template-columns:1.05fr 1fr 1fr 1.6fr; }
+@media (max-width: 520px) {
+  .multi-game-section .multi-row,.multi-game-section .multi-review .multi-row { grid-template-columns:1fr; }
+}

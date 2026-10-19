@@ -22,3 +22,9 @@ services:
         value: https://maihaoh.github.io
       - key: CHOICE_HEADLESS
         value: "1"
+      - key: CHOICE_MANUAL_ONLY
+        value: "1"
+      - key: MULTI_GAMES_ENABLED
+        value: "1"
+      - key: MULTI_POLL_SECONDS
+        value: "12"

@@ -5062,10 +5062,8 @@ setInterval(
    BACCARAT REALTIME REFRESH
 ========================================================= */
 
-setInterval(
-    safeFetchBaccaratData,
-    2000
-);
+// Choice manual-entry mode: never fetch server Baccarat data every 2 seconds.
+// The separate choice_manual.js controls its own state in localStorage.
 
 
 /* =========================================================
@@ -5137,7 +5135,8 @@ async function initializeDashboard() {
 
     try {
 
-        await safeFetchBaccaratData();
+        // Choice manual data loads from this browser in choice_manual.js.
+        // Do NOT overwrite user-entered data with data.json.
 
     } catch (error) {
 
@@ -5194,7 +5193,7 @@ async function initializeDashboard() {
     );
 
     console.log(
-        "Baccarat refresh: 2 seconds"
+        "百家乐：手动录入（仅本浏览器）"
     );
 
     console.log(

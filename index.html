@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>WinGo &amp; Baccarat AI Dashboard</title>
+<title>WinGo + 百家乐 Dashboard</title>
 <script async="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=4" rel="stylesheet"/>
+<link href="style.css?v=multi-v19" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                WinGo + Baccarat 独立分析系统 · <span id="build-version">Build -- · UI v17</span>
+                WinGo + 多游戏数据面板 · <span id="build-version">Build -- · UI v19 · 百家乐手动</span>
 </div>
 </div>
 <div class="header-info">
@@ -45,7 +45,7 @@
             🎯 WinGo AI
         </button>
 <button class="main-tab" onclick="switchMainTab('baccarat', this)">
-            🃏 Baccarat
+            🃏 百家乐手动
         </button>
 <button class="main-tab" onclick="switchMainTab('k3', this)">🎲 K3 Lotre</button>
 <button class="main-tab" onclick="switchMainTab('5d', this)">🔢 5D Lotre</button>
@@ -302,7 +302,7 @@
 <div class="section-title">
                 📜 WinGo 最近 50 局 · 历史回测
             </div>
-<p class="data-status">号码、颜色为历史回测预测；结果分别比较号码、完整颜色组合及大小。上方胜率只统计大小。每期固定给出预测；数据不足时不计胜负；历史回测不代表未来表现。</p>
+<p class="data-status">号码、颜色为历史回测预测；结果分别比较号码、完整颜色组合及大小。上方胜率只统计大小。有最新有效数据时才显示统计参考；数据不足时不计胜负；历史回测不代表未来表现。</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -326,218 +326,84 @@
 </div>
 </section>
 <!-- =====================================================
-         BACCARAT
+         CHOICE BACCARAT / MANUAL INPUT
+         Results come exclusively from the user's button presses.
     ====================================================== -->
 <section class="main-section" id="baccarat-section">
-<p class="data-status" id="baccarat-data-status" role="status">正在读取数据…</p>
-<div class="section-card">
-<div class="section-title">
-                🃏 Baccarat 台选择
-            </div>
-<div class="baccarat-table-buttons">
-<button class="baccarat-table-btn active" onclick="switchBaccaratTable('D51', this)">
-                    D51
-                </button>
-<button class="baccarat-table-btn" onclick="switchBaccaratTable('D52', this)">
-                    D52
-                </button>
-<button class="baccarat-table-btn" onclick="switchBaccaratTable('D53', this)">
-                    D53
-                </button>
-<button class="baccarat-table-btn" onclick="switchBaccaratTable('D54', this)">
-                    D54
-                </button>
-<button class="baccarat-table-btn" onclick="switchBaccaratTable('D55', this)">
-                    D55
-                </button>
-<button class="baccarat-table-btn" onclick="switchBaccaratTable('D56', this)">
-                    D56
-                </button>
-<button class="baccarat-table-btn" onclick="switchBaccaratTable('D57', this)">
-                    D57
-                </button>
-<button class="baccarat-table-btn" onclick="switchBaccaratTable('D58', this)">
-                    D58
-                </button>
-</div>
-</div>
-<div class="grid-cards">
-<div class="card">
-<div class="card-title">
-                    🎰 当前台
-                </div>
-<div class="card-value" id="bc-table-name">
-                    D51
-                </div>
-<div class="card-subvalue" id="bc-round">
-                    #128
-                </div>
-</div>
-<div class="card">
-<div class="card-title">
-                    🎯 最新结果
-                </div>
-<div class="baccarat-result" id="bc-latest">
-                    --
-                </div>
-</div>
-<div class="card">
-<div class="card-title">
-                    🔥 当前走势
-                </div>
-<div class="card-value" id="bc-streak">
-                    --
-                </div>
-</div>
-</div>
-<div class="section-card">
-<div class="section-title" id="big-road-title">
-                📍 D51 大路
-            </div>
-<div class="big-road" id="big-road"></div>
-</div>
-<div class="road-grid">
-<div class="section-card">
-<div class="section-title">
+  <p class="data-status" id="baccarat-data-status" role="status">✍️ 手动记录模式：不会连接百家乐自动开奖接口，不会自动同步。记录仅保存在本浏览器，其他设备需通过备份导入。</p>
+  <div class="section-card bc-manual-tables">
+    <div class="section-title">🃏 选择牌桌 <span class="bc-manual-pill">D051–D058</span></div>
+    <div class="baccarat-table-buttons">
+      <button type="button" class="baccarat-table-btn active" data-manual-table="D51" onclick="choiceManualSelect('D51')" aria-pressed="true"><span>D51</span><small id="bc-tab-count-D51">0 局</small></button>
+<button type="button" class="baccarat-table-btn" data-manual-table="D52" onclick="choiceManualSelect('D52')" aria-pressed="false"><span>D52</span><small id="bc-tab-count-D52">0 局</small></button>
+<button type="button" class="baccarat-table-btn" data-manual-table="D53" onclick="choiceManualSelect('D53')" aria-pressed="false"><span>D53</span><small id="bc-tab-count-D53">0 局</small></button>
+<button type="button" class="baccarat-table-btn" data-manual-table="D54" onclick="choiceManualSelect('D54')" aria-pressed="false"><span>D54</span><small id="bc-tab-count-D54">0 局</small></button>
+<button type="button" class="baccarat-table-btn" data-manual-table="D55" onclick="choiceManualSelect('D55')" aria-pressed="false"><span>D55</span><small id="bc-tab-count-D55">0 局</small></button>
+<button type="button" class="baccarat-table-btn" data-manual-table="D56" onclick="choiceManualSelect('D56')" aria-pressed="false"><span>D56</span><small id="bc-tab-count-D56">0 局</small></button>
+<button type="button" class="baccarat-table-btn" data-manual-table="D57" onclick="choiceManualSelect('D57')" aria-pressed="false"><span>D57</span><small id="bc-tab-count-D57">0 局</small></button>
+<button type="button" class="baccarat-table-btn" data-manual-table="D58" onclick="choiceManualSelect('D58')" aria-pressed="false"><span>D58</span><small id="bc-tab-count-D58">0 局</small></button>
+    </div>
+    <div class="bc-manual-overall">全部 8 桌累计手动录入 <strong id="bc-all-total">0</strong> 局 <span>（仅统计你输入的，不代表赌场实际总局数）</span></div>
+  </div>
 
-                    👁️ 眼路
+  <div class="bc-manual-cards">
+    <div class="card"><div class="card-title">🎰 当前桌</div><div class="card-value" id="bc-manual-table-name">D51</div><div class="card-subvalue">每桌分开记录</div></div>
+    <div class="card"><div class="card-title">📊 本桌已录局数</div><div class="card-value" id="bc-manual-round-count">0</div><div class="card-subvalue">庄 / 闲 / 和均算一局</div></div>
+    <div class="card"><div class="card-title">🎯 最新一局</div><div class="baccarat-result" id="bc-manual-latest">--</div><div class="card-subvalue" id="bc-manual-streak">目前没有记录</div></div>
+  </div>
 
-                    <span id="eye-road-label">
-                        D51
-                    </span>
-</div>
-<div class="small-road" id="eye-road"></div>
-</div>
-<div class="section-card">
-<div class="section-title">
+  <div class="section-card bc-manual-entry">
+    <div class="section-title">✍️ 输入本局开奖结果 <span id="bc-entry-table" class="bc-manual-pill">D51</span></div>
+    <p class="bc-manual-note">每开完一局，按一次对应结果。按钮记录的是<strong>已经开出的结果</strong>，下方才会计算下一局的走势参考。</p>
+    <div class="bc-manual-outcomes">
+      <button type="button" class="bc-manual-outcome is-banker" onclick="choiceManualAdd('B')"><strong>庄</strong><span>BANKER</span></button>
+      <button type="button" class="bc-manual-outcome is-player" onclick="choiceManualAdd('P')"><strong>闲</strong><span>PLAYER</span></button>
+      <button type="button" class="bc-manual-outcome is-tie" onclick="choiceManualAdd('T')"><strong>和</strong><span>TIE</span></button>
+    </div>
+    <div class="bc-manual-actions">
+      <button type="button" id="bc-manual-undo" onclick="choiceManualUndo()">↶ 撤销上一局</button>
+      <button type="button" id="bc-manual-clear" class="bc-manual-danger" onclick="choiceManualClear()">清空当前桌</button>
+      <button type="button" onclick="choiceManualExport()">↓ 导出全部桌备份</button>
+      <button type="button" onclick="document.getElementById('bc-manual-import').click()">↑ 导入备份</button>
+      <input type="file" id="bc-manual-import" accept=".json,application/json" onchange="choiceManualImport(event)" hidden />
+    </div>
+    <p class="bc-manual-message" id="bc-manual-message" role="status" aria-live="polite">准备记录。刷新后仍会保留同一浏览器上的记录。</p>
+  </div>
 
-                    🔴 小路
+  <div class="section-card bc-manual-prediction">
+    <div class="section-title">🔎 下一局趋势参考 <span id="bc-prediction-table" class="bc-manual-pill">D51</span></div>
+    <div class="bc-manual-prediction-content">
+      <div id="bc-manual-pick" class="bc-manual-pick">等待记录</div>
+      <div id="bc-manual-pick-sample" class="bc-manual-pick-sample">至少录入 3 局庄／闲后显示</div>
+      <p id="bc-manual-pick-reason" class="bc-manual-pick-reason">这里按你输入的庄闲历史计算简单频率和前后转移，不读取实时开奖。</p>
+    </div>
+    <p class="bc-manual-disclaimer">仅为历史走势的描述性参考，不是 AI 预知或实际胜率。百家乐每局具有随机性，历史结果不能可靠预测下一局。</p>
+  </div>
 
-                    <span id="small-road-label">
-                        D51
-                    </span>
-</div>
-<div class="small-road" id="small-road"></div>
-</div>
-<div class="section-card">
-<div class="section-title">
+  <div class="section-card bc-manual-statistics">
+    <div class="section-title">📈 <span id="bc-stats-table">D51</span> 手动统计</div>
+    <div class="analysis-grid">
+      <div class="analysis-item banker-item"><div class="analysis-label">庄</div><div class="analysis-value banker-color" id="bc-manual-banker-count">0</div></div>
+      <div class="analysis-item player-item"><div class="analysis-label">闲</div><div class="analysis-value player-color" id="bc-manual-player-count">0</div></div>
+      <div class="analysis-item tie-item"><div class="analysis-label">和</div><div class="analysis-value tie-color" id="bc-manual-tie-count">0</div></div>
+      <div class="analysis-item"><div class="analysis-label">庄占比</div><div class="analysis-value banker-color" id="bc-manual-banker-percent">--</div></div>
+      <div class="analysis-item"><div class="analysis-label">闲占比</div><div class="analysis-value player-color" id="bc-manual-player-percent">--</div></div>
+      <div class="analysis-item"><div class="analysis-label">当前连续（忽略和）</div><div class="analysis-value" id="bc-manual-current-streak">--</div></div>
+      <div class="analysis-item"><div class="analysis-label">最长庄连</div><div class="analysis-value banker-color" id="bc-manual-max-banker">0</div></div>
+      <div class="analysis-item"><div class="analysis-label">最长闲连</div><div class="analysis-value player-color" id="bc-manual-max-player">0</div></div>
+      <div class="analysis-item"><div class="analysis-label">全部录入局数</div><div class="analysis-value" id="bc-manual-total">0</div></div>
+    </div>
+  </div>
 
-                    🪳 蟑螂路
-
-                    <span id="cockroach-road-label">
-                        D51
-                    </span>
-</div>
-<div class="small-road" id="cockroach-road"></div>
-</div>
-</div>
-<div class="section-card">
-<div class="section-title" id="stats-title">
-                📊 D51 走势统计
-            </div>
-<div class="analysis-grid">
-<div class="analysis-item banker-item">
-<div class="analysis-label">
-                        庄
-                    </div>
-<div class="analysis-value banker-color" id="bc-banker-count">
-                        0
-                    </div>
-</div>
-<div class="analysis-item player-item">
-<div class="analysis-label">
-                        闲
-                    </div>
-<div class="analysis-value player-color" id="bc-player-count">
-                        0
-                    </div>
-</div>
-<div class="analysis-item tie-item">
-<div class="analysis-label">
-                        和
-                    </div>
-<div class="analysis-value tie-color" id="bc-tie-count">
-                        0
-                    </div>
-</div>
-<div class="analysis-item">
-<div class="analysis-label">
-                        庄率
-                    </div>
-<div class="analysis-value banker-color" id="bc-banker-rate">
-                        0%
-                    </div>
-</div>
-<div class="analysis-item">
-<div class="analysis-label">
-                        闲率
-                    </div>
-<div class="analysis-value player-color" id="bc-player-rate">
-                        0%
-                    </div>
-</div>
-<div class="analysis-item">
-<div class="analysis-label">
-                        当前连
-                    </div>
-<div class="analysis-value" id="bc-current-streak">
-                        --
-                    </div>
-</div>
-<div class="analysis-item">
-<div class="analysis-label">
-                        最大庄连
-                    </div>
-<div class="analysis-value banker-color" id="bc-max-banker">
-                        0
-                    </div>
-</div>
-<div class="analysis-item">
-<div class="analysis-label">
-                        最大闲连
-                    </div>
-<div class="analysis-value player-color" id="bc-max-player">
-                        0
-                    </div>
-</div>
-<div class="analysis-item">
-<div class="analysis-label">
-                        总局数
-                    </div>
-<div class="analysis-value" id="bc-total-rounds">
-                        0
-                    </div>
-</div>
-</div>
-</div>
-<div class="section-card">
-<div class="section-title" id="history-title">
-                📜 D51 最近20局
-            </div>
-<div class="history-list" id="bc-history"></div>
-</div>
-<div class="section-card baccarat-prediction-card">
-<div class="section-title">
-
-                🔮 Baccarat AI 预测
-
-                <span id="prediction-table-name">
-                    D51
-                </span>
-</div>
-<div class="baccarat-prediction">
-<div class="prediction-result" id="bc-prediction">
-                    🎯 强制预测
-                </div>
-<div class="prediction-confidence" id="bc-confidence">
-                    信心：50%
-                </div>
-<div class="neutral" id="bc-action">
-                    PREDICT
-                </div>
-</div>
-<div class="prediction-reason" id="bc-reason"></div>
-</div>
+  <div class="section-card">
+    <div class="section-title">🟡 <span id="bc-road-table">D51</span> 手动结果顺序图</div>
+    <p class="bc-manual-note">按录入顺序排列（每列从上到下），最多显示最近 120 局。这是简易记录图，非赌场官方大路。</p>
+    <div id="bc-manual-road" class="bc-manual-road" aria-label="手动开奖结果顺序"></div>
+  </div>
+  <div class="section-card">
+    <div class="section-title">📜 <span id="bc-history-table">D51</span> 最近 20 局 <span class="bc-manual-pill">最新在前</span></div>
+    <div id="bc-manual-history" class="bc-manual-history"></div>
+  </div>
 </section>
 <section class="main-section multi-game-section" id="k3-section">
 <div class="section-card multi-shell">
@@ -545,7 +411,7 @@
 <div class="multi-top-grid">
 <div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="k3-latest">--</div><div class="multi-sub" id="k3-latest-meta">--</div></div>
 <div class="multi-panel multi-predict-panel"><div class="multi-label">下一期预测</div><div class="multi-prediction" id="k3-prediction">等待真实数据</div><div class="multi-confidence" id="k3-confidence">统计信心 --%</div></div>
-<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="k3-target">--</div><div class="multi-sub">每期固定给出预测</div></div>
+<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="k3-target">--</div><div class="multi-sub">有最新有效数据时才显示统计参考</div></div>
 </div>
 <div class="prediction-matrix" id="k3-prediction-grid"></div>
 <div class="multi-note">预测依据：近期加权频率 + 状态转移。仅用于历史统计分析，随机开奖无法保证预测准确。</div>
@@ -558,7 +424,7 @@
 <div class="multi-top-grid">
 <div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="5d-latest">--</div><div class="multi-sub" id="5d-latest-meta">--</div></div>
 <div class="multi-panel multi-predict-panel"><div class="multi-label">下一期 5 位预测</div><div class="multi-prediction" id="5d-prediction">等待真实数据</div><div class="multi-confidence" id="5d-confidence">统计信心 --%</div></div>
-<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="5d-target">--</div><div class="multi-sub">A/B/C/D/E 每位都预测号码 + 大小 + 单双</div></div>
+<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="5d-target">--</div><div class="multi-sub">有最新有效数据时显示 A/B/C/D/E 统计参考</div></div>
 </div>
 <div class="prediction-matrix prediction-matrix-5d" id="5d-prediction-grid"></div>
 <div class="multi-note">每一位独立使用近期加权频率与状态转移计算。</div>
@@ -571,7 +437,7 @@
 <div class="multi-top-grid">
 <div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="trx-latest">--</div><div class="multi-sub" id="trx-latest-meta">--</div></div>
 <div class="multi-panel multi-predict-panel"><div class="multi-label">下一期预测</div><div class="multi-prediction" id="trx-prediction">等待真实数据</div><div class="multi-confidence" id="trx-confidence">统计信心 --%</div></div>
-<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="trx-target">--</div><div class="multi-sub">号码 / 大小 / 颜色 全部预测</div></div>
+<div class="multi-panel"><div class="multi-label">目标期号</div><div class="multi-target" id="trx-target">--</div><div class="multi-sub">有最新有效数据时显示号码 / 大小 / 颜色参考</div></div>
 </div>
 <div class="prediction-matrix" id="trx-prediction-grid"></div>
 <div class="multi-note">号码、大小、颜色同时给出统计预测。</div>
@@ -579,7 +445,9 @@
 </div>
 </section>
 </div>
-<script src="script.js?v=5"></script>
+<script src="script.js?v=multi-v19"></script>
+<script src="choice_manual.js?v=2"></script>
+<script src="multi_games.js?v=19"></script>
 </body>
 </html>
 

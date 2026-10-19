@@ -6,10 +6,13 @@ import time
 from pathlib import Path
 
 from flask import Flask, jsonify, request
+from multi_snapshot import merge_snapshots
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "data.json"
 TEMP_FILE = BASE_DIR / "data.json.ingest.tmp"
+MULTI_RUNTIME_FILE = BASE_DIR / "multi_runtime.json"
+MULTI_GAMES = ("k3", "5d", "trx")
 WRITE_LOCK = threading.Lock()
 MAX_BODY_BYTES = int(os.getenv("INGEST_MAX_BYTES", str(4 * 1024 * 1024)))
 
@@ -21,14 +24,26 @@ _last_sender_updated_at = 0
 
 
 def read_data():
+    """Merge GitHub/WinGo data and Render multi-game states by actual success time.
+
+    An error attempt is never treated as a fresh result.  /api/ingest can keep
+    replacing data.json without erasing newer live multi results.
+    """
     try:
         with DATA_FILE.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, dict) else {}
+            raw = json.load(f)
+        data = raw if isinstance(raw, dict) else {}
     except FileNotFoundError:
-        return {}
+        data = {}
     except Exception as exc:
         return {"error": f"data read failed: {type(exc).__name__}"}
+
+    try:
+        with MULTI_RUNTIME_FILE.open("r", encoding="utf-8") as f:
+            local = json.load(f)
+    except (OSError, ValueError):
+        return data
+    return merge_snapshots(data, local)
 
 
 def _extract_secret():

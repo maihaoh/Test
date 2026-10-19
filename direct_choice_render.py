@@ -347,14 +347,37 @@ class DirectChoiceCollector:
 
 
 def main() -> None:
+    manual_only = str(os.getenv("CHOICE_MANUAL_ONLY", "1")).strip().lower() not in {"0", "false", "off"}
     print("=" * 67, flush=True)
-    print("Render WinGo + reviewed V14 Choice protocol collector", flush=True)
-    print("No guessed 77826 login payload / no Cloudflare bypass", flush=True)
-    print(f"Choice observe-only attempts: {MAX_UNACKED_ATTEMPTS}; timeout: {ACK_TIMEOUT_SECONDS}s", flush=True)
+    if manual_only:
+        print("Render WinGo + 手动百家乐 + K3/5D/TRX", flush=True)
+        print("百家乐由浏览器手动输入；不需要 Choice WebSocket", flush=True)
+    else:
+        print("Render WinGo + legacy direct Choice protocol observer", flush=True)
+        print("No guessed 77826 login payload / no Cloudflare bypass", flush=True)
+        print(f"Choice observe-only attempts: {MAX_UNACKED_ATTEMPTS}; timeout: {ACK_TIMEOUT_SECONDS}s", flush=True)
     print("=" * 67, flush=True)
+
     bot.initialize_data()
     threading.Thread(target=bot.wingo_loop, name="wingo", daemon=True).start()
-    DirectChoiceCollector().run_forever()
+
+    # Independently fetch K3/5D/TRX via their authorized official web APIs.
+    # Uses a separate file so /api/ingest from GitHub and bot.py cannot stomp
+    # each other's results. No credentials are exposed to the frontend.
+    if str(os.getenv("MULTI_GAMES_ENABLED", "1")).strip().lower() not in {"0", "false", "off"}:
+        from multi_runtime import run as run_multi
+        threading.Thread(target=run_multi, name="k3-5d-trx", daemon=True).start()
+
+    # WinGo remains active in both modes. Only the Choice observer is skipped.
+    if manual_only:
+        STATUS_PATH.write_text(json.dumps({
+            "status": "manual_only",
+            "note": "Choice is entered manually in the browser; WinGo collector stays active"
+        }, ensure_ascii=False), encoding="utf-8")
+        print("[Choice] Manual input enabled; skipping unauthorized Choice WebSocket. WinGo continues.", flush=True)
+        threading.Event().wait()
+    else:
+        DirectChoiceCollector().run_forever()
 
 
 if __name__ == "__main__":

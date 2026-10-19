@@ -1,0 +1,13 @@
+# Never commit session credentials, local browser captures or runtime writes.
+mzplay_config.json
+mzplay_auth_state.json
+mzplay_auth_state.json.tmp
+.session-cache/
+multi_runtime.json
+multi_runtime.json.tmp
+__pycache__/
+*.pyc
+*.ingest.tmp
+*.tmp
+.env
+.env.*

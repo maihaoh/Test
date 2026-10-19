@@ -2446,31 +2446,40 @@ def start_choice_baccarat(mz_client):
 # ============================================================
 
 def update_multi_games(states):
-    """Merge MZPLAY multi-game state into the same data.json used by the dashboard."""
+    """Merge independent MZPlay states without discarding earlier valid draws.
+
+    A failed authorization, empty response or partial poll must not erase the
+    last successful K3/5D/TRX records or replace their success timestamps.
+    """
     if not isinstance(states, dict):
         return
 
     with data_lock:
         for game in ("k3", "5d", "trx"):
             state = states.get(game)
-            if isinstance(state, dict):
-                # Deep copy so collector mutations cannot race with JSON serialization.
-                global_data[game] = json.loads(json.dumps(state, ensure_ascii=False))
+            if not isinstance(state, dict):
+                continue
+            incoming = json.loads(json.dumps(state, ensure_ascii=False))
+            if incoming.get("draws"):
+                global_data[game] = incoming
+            else:
+                previous = global_data.get(game, {})
+                if not isinstance(previous, dict):
+                    previous = {}
+                global_data[game] = {
+                    **previous,
+                    "status": str(incoming.get("status") or "等待实时数据"),
+                    "last_attempt_at": int(incoming.get("last_attempt_at") or 0),
+                }
 
     save_data_json()
 
 
 def start_multi_games(mz_client):
-    # Choice owns the first browser authentication.  K3/5D/TRX share the same
-    # authenticated MZPlayClient only after a token exists, so Render never opens
-    # a second Chromium login in parallel or hammers /Login from two threads.
-    announced = False
-    while not getattr(mz_client, "token", ""):
-        if not announced:
-            print("ℹ️ [MZPlay/Multi] 等待 Choice 浏览器认证完成，再启动 K3/5D/TRX...")
-            announced = True
-        time.sleep(5)
-    collector = MultiGameCollector(update_multi_games, poll_interval=8, client=mz_client)
+    # K3/5D/TRX do not depend on the separate baccarat browser session.
+    # One shared MZPlayClient performs its own authorized Login or refresh.
+    print("[Multi] K3 / 5D / TRX polling starts independently of baccarat")
+    collector = MultiGameCollector(update_multi_games, poll_interval=12, client=mz_client)
     collector.run()
 
 
@@ -2483,7 +2492,7 @@ def main():
     print("=" * 70)
 
     print(
-        "🚀 WinGo + Choice Baccarat + K3 + 5D + TRX"
+        "🚀 WinGo + 手动百家乐 + K3 + 5D + TRX"
     )
 
     print(
@@ -2538,13 +2547,16 @@ def main():
     # -> official Choice WebSocket -> BAC_FULL_RESULT_LIST D051-D058
     # --------------------------------------------------------
 
-    baccarat_thread = threading.Thread(
-        target=start_choice_baccarat,
-        args=(mz_client,),
-        daemon=True
-    )
-
-    baccarat_thread.start()
+    # Manual baccarat does not require the official Choice launch/WS.
+    if str(os.getenv("CHOICE_MANUAL_ONLY", "1")).strip().lower() in {"0", "false", "off"}:
+        baccarat_thread = threading.Thread(
+            target=start_choice_baccarat,
+            args=(mz_client,),
+            daemon=True
+        )
+        baccarat_thread.start()
+    else:
+        print("[Baccarat] 手动模式：跳过 Choice 浏览器和 WebSocket")
 
     # --------------------------------------------------------
     # K3 / 5D / TRX (same MZPLAY authenticated session)

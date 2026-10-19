@@ -1669,25 +1669,35 @@ class MultiGameCollector:
                     state.setdefault("reviews", []).insert(0, review)
                     state["reviews"] = state["reviews"][:60]
 
-        prediction = self._predict(game, draws)
-        prediction["issueNumber"] = current_issue.get("issueNumber") or (draws[0]["issueNumber"] if draws else "")
-        prediction["generatedAt"] = int(time.time())
+        state["last_attempt_at"] = int(time.time())
+        if not draws:
+            # Empty API results are not new draw data.  Keep the last genuine
+            # snapshot and its timestamp so the UI cannot display false "live".
+            state["status"] = "API 已响应，但没有新的有效开奖记录"
+            return state
 
+        prediction = self._predict(game, draws)
+        prediction["issueNumber"] = current_issue.get("issueNumber") or ""
+        prediction["generatedAt"] = int(time.time())
+        successful_at = int(time.time())
         state.update({
             "typeId": definition["type_id"],
             "draws": draws,
             "current_issue": current_issue,
             "prediction": prediction,
-            "status": f"{BUILD_VERSION} | " + ("实时 API 已连接" if draws else "API 已连接，等待开奖记录"),
+            "status": f"{BUILD_VERSION} | 已取得开奖历史",
             "build_version": BUILD_VERSION,
-            "updated_at": int(time.time()),
+            "updated_at": successful_at,
+            "last_success_at": successful_at,
+            "last_attempt_at": successful_at,
         })
         return state
 
     def run(self):
-        if not self.client.configured:
+        if not (self.client.configured or self.client.token or self.client.refresh_token):
             for game in self.states:
-                self.states[game]["status"] = "未配置 MZPLAY 登录资料：GitHub 请检查 Actions Secrets，本机请检查 mzplay_config.json"
+                self.states[game]["status"] = "没有可用的 MZPlay 授权：请设置部署平台的环境变量"
+                self.states[game]["last_attempt_at"] = int(time.time())
             self.on_update(self.states)
             return
 
@@ -1697,27 +1707,29 @@ class MultiGameCollector:
                 try:
                     self.client.ensure_login()
                 except MZPlayTransientError as exc:
-                    status = f"{BUILD_VERSION} | 网络临时错误：{exc}"
+                    status = f"网络暂时不可用 ({type(exc).__name__})"
                     for game in self.states:
                         self.states[game]["status"] = status
-                        self.states[game]["updated_at"] = int(time.time())
+                        self.states[game]["last_attempt_at"] = int(time.time())
                     self.on_update(self.states)
                     self.stop_event.wait(max(5, int(getattr(exc, "retry_after", NETWORK_RETRY_SECONDS))))
                     continue
                 except MZPlayRateLimit as exc:
-                    status = f"{BUILD_VERSION} | 服务器限频：{exc}"
+                    status = "API 限频，自动等待冷却后重试"
                     for game in self.states:
                         self.states[game]["status"] = status
-                        self.states[game]["updated_at"] = int(time.time())
+                        self.states[game]["last_attempt_at"] = int(time.time())
                     self.on_update(self.states)
                     wait_for = max(5, int(getattr(exc, "retry_after", 0) or (self.client.next_login_at - time.time())))
                     self.stop_event.wait(wait_for)
                     continue
                 except Exception as exc:
-                    status = f"{BUILD_VERSION} | 连接失败：{type(exc).__name__}: {exc}"
+                    # Don't surface credentials or full authentication responses
+                    # through the public /api/data endpoint.
+                    status = f"授权或连接失败 ({type(exc).__name__})"
                     for game in self.states:
                         self.states[game]["status"] = status
-                        self.states[game]["updated_at"] = int(time.time())
+                        self.states[game]["last_attempt_at"] = int(time.time())
                     self.on_update(self.states)
                     self.stop_event.wait(LOGIN_FAILURE_RETRY_SECONDS)
                     continue
@@ -1728,19 +1740,19 @@ class MultiGameCollector:
                     self.poll_game(game)
                 except MZPlayTransientError as exc:
                     rate_limited = True
-                    self.states[game]["status"] = f"{BUILD_VERSION} | 网络临时错误：{exc}"
-                    self.states[game]["updated_at"] = int(time.time())
+                    self.states[game]["status"] = f"网络暂时不可用 ({type(exc).__name__})"
+                    self.states[game]["last_attempt_at"] = int(time.time())
                     self.stop_event.wait(max(5, int(getattr(exc, "retry_after", NETWORK_RETRY_SECONDS))))
                     break
                 except MZPlayRateLimit as exc:
                     rate_limited = True
-                    self.states[game]["status"] = f"{BUILD_VERSION} | 服务器限频：{exc}"
-                    self.states[game]["updated_at"] = int(time.time())
+                    self.states[game]["status"] = "API 限频，自动等待冷却后重试"
+                    self.states[game]["last_attempt_at"] = int(time.time())
                     # Endpoint cooldown is handled by MZPlayClient; avoid immediately hammering another endpoint.
                     self.stop_event.wait(max(5, int(getattr(exc, "retry_after", 0) or GENERAL_RETRY_SECONDS)))
                     break
                 except Exception as exc:
-                    self.states[game]["status"] = f"{BUILD_VERSION} | 连接失败：{type(exc).__name__}: {exc}"
-                    self.states[game]["updated_at"] = int(time.time())
+                    self.states[game]["status"] = f"授权或连接失败 ({type(exc).__name__})"
+                    self.states[game]["last_attempt_at"] = int(time.time())
             self.on_update(self.states)
             self.stop_event.wait(GENERAL_RETRY_SECONDS if rate_limited else self.poll_interval)
