@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>WinGo + 百家乐 Dashboard</title>
+<title>Lottery + 百家乐 Dashboard</title>
 <script async="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=multi-v19" rel="stylesheet"/>
+<link href="style.css?v=layout-v20" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                WinGo + 多游戏数据面板 · <span id="build-version">Build -- · UI v19 · 百家乐手动</span>
+                Lottery 与 百家乐分区 · <span id="build-version">Build -- · UI v20 · 走势样本分析</span>
 </div>
 </div>
 <div class="header-info">
@@ -40,16 +40,26 @@
 <!-- =====================================================
          MAIN TAB
     ====================================================== -->
-<div class="main-tabs">
-<button class="main-tab active" onclick="switchMainTab('wingo', this)">
-            🎯 WinGo AI
-        </button>
-<button class="main-tab" onclick="switchMainTab('baccarat', this)">
-            🃏 百家乐手动
-        </button>
-<button class="main-tab" onclick="switchMainTab('k3', this)">🎲 K3 Lotre</button>
-<button class="main-tab" onclick="switchMainTab('5d', this)">🔢 5D Lotre</button>
-<button class="main-tab" onclick="switchMainTab('trx', this)">🪙 Trx Win</button>
+<div class="game-hubs" aria-label="游戏分类">
+  <div class="game-hub lottery-hub active" id="lottery-hub">
+    <button type="button" class="game-hub-toggle" onclick="switchGameGroup('lottery')" aria-pressed="true">
+      <span class="game-hub-title">🎯 Lottery <small>彩票游戏 · 自动数据</small></span>
+      <span class="game-hub-badge">4 种游戏</span>
+    </button>
+    <div class="lottery-game-tabs" aria-label="选择彩票游戏">
+      <button type="button" data-lottery-tab="wingo" class="main-tab active" onclick="switchMainTab('wingo', this)">WinGo</button>
+      <button type="button" data-lottery-tab="k3" class="main-tab" onclick="switchMainTab('k3', this)">🎲 K3</button>
+      <button type="button" data-lottery-tab="5d" class="main-tab" onclick="switchMainTab('5d', this)">🔢 5D</button>
+      <button type="button" data-lottery-tab="trx" class="main-tab" onclick="switchMainTab('trx', this)">🪙 TRX</button>
+    </div>
+  </div>
+  <div class="game-hub baccarat-hub" id="baccarat-hub">
+    <button type="button" data-baccarat-tab="true" class="game-hub-toggle baccarat-toggle" onclick="switchMainTab('baccarat', this)" aria-pressed="false">
+      <span class="game-hub-title">🃏 百家乐手动 <small>庄 · 闲 · 和</small></span>
+      <span class="game-hub-badge">D51–D58</span>
+    </button>
+    <div class="game-hub-description">每张桌独立记录 · 20/50/100 局样本观察 · 不自动下注</div>
+  </div>
 </div>
 <!-- =====================================================
          WINGO
@@ -370,12 +380,43 @@
     <p class="bc-manual-message" id="bc-manual-message" role="status" aria-live="polite">准备记录。刷新后仍会保留同一浏览器上的记录。</p>
   </div>
 
+  <div class="section-card bc-sample-dashboard" aria-label="百家乐样本成熟度">
+    <div class="section-title">📐 样本观察进度 <span id="bc-sample-table" class="bc-manual-pill">D51</span></div>
+    <div class="bc-sample-head">
+      <div><div class="bc-sample-title" id="bc-sample-stage">尚未记录</div><p class="bc-sample-caption" id="bc-sample-next">先收集庄／闲结果，不含和局</p></div>
+      <div class="bc-sample-count"><strong id="bc-sample-decisive">0</strong><span>局庄／闲</span></div>
+    </div>
+    <div class="bc-sample-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="相对100局参考样本的进度" id="bc-sample-progress"><div id="bc-sample-progress-fill"></div></div>
+    <div class="bc-milestones"><span id="bc-milestone-20">20 局 · 初步观察</span><span id="bc-milestone-50">50 局 · 分段对照</span><span id="bc-milestone-100">100 局 · 历史样本较多</span></div>
+    <p class="bc-manual-disclaimer">⚠️ 20／50／100 是用于查看历史统计的样本档位，<strong>不是</strong>预测下一局的准确率等级。没有任何固定局数能保证下一局庄或闲更稳。</p>
+  </div>
+
+  <div class="section-card bc-window-analysis" aria-label="百家乐多窗口统计">
+    <div class="section-title">📊 多窗口历史对照 <span id="bc-window-table" class="bc-manual-pill">D51</span></div>
+    <p class="bc-manual-note">只看本桌最后录入的局数；切换窗口不会修改记录。和局列出但不进入庄／闲比例分母。</p>
+    <div class="bc-window-tabs" role="group" aria-label="统计观察窗口">
+      <button type="button" data-bc-window="20" onclick="choiceManualSetWindow(20)">近 20 局</button>
+      <button type="button" data-bc-window="50" onclick="choiceManualSetWindow(50)" class="active">近 50 局</button>
+      <button type="button" data-bc-window="100" onclick="choiceManualSetWindow(100)">近 100 局</button>
+      <button type="button" data-bc-window="all" onclick="choiceManualSetWindow('all')">全部</button>
+    </div>
+    <div class="bc-window-summary" id="bc-window-summary">尚未记录</div>
+    <div class="bc-window-metrics">
+      <div><span>庄（排除和后占比）</span><strong class="banker-color" id="bc-window-banker">--</strong></div>
+      <div><span>闲（排除和后占比）</span><strong class="player-color" id="bc-window-player">--</strong></div>
+      <div><span>和（占窗口总局数）</span><strong class="tie-color" id="bc-window-tie">--</strong></div>
+    </div>
+    <div class="bc-window-interval"><strong>庄占比的近似 95% 区间：</strong><span id="bc-window-ci">样本不足</span></div>
+    <div class="bc-window-transition"><strong>前后结果次数（忽略和）：</strong><p id="bc-window-transition">还没有足够庄／闲记录</p></div>
+    <p class="bc-sample-caption">区间用于描述历史比例估计的不确定性（按独立抽样近似），不表示下一局的庄胜率，也不消除庄闲玩法的庄家优势。参考：约 100 局时，接近一半的占比通常仍有约 ±10 个百分点的 95% 抽样误差；400 局约 ±5 个百分点。</p>
+  </div>
+
   <div class="section-card bc-manual-prediction">
-    <div class="section-title">🔎 下一局趋势参考 <span id="bc-prediction-table" class="bc-manual-pill">D51</span></div>
+    <div class="section-title">🔎 历史走势参考 <span id="bc-prediction-table" class="bc-manual-pill">D51</span></div>
     <div class="bc-manual-prediction-content">
       <div id="bc-manual-pick" class="bc-manual-pick">等待记录</div>
-      <div id="bc-manual-pick-sample" class="bc-manual-pick-sample">至少录入 3 局庄／闲后显示</div>
-      <p id="bc-manual-pick-reason" class="bc-manual-pick-reason">这里按你输入的庄闲历史计算简单频率和前后转移，不读取实时开奖。</p>
+      <div id="bc-manual-pick-sample" class="bc-manual-pick-sample">至少录入 20 局庄／闲后显示</div>
+      <p id="bc-manual-pick-reason" class="bc-manual-pick-reason">记录满 20 局庄／闲后，仅描述历史偏多的一方及转移次数；不读取实时开奖。</p>
     </div>
     <p class="bc-manual-disclaimer">仅为历史走势的描述性参考，不是 AI 预知或实际胜率。百家乐每局具有随机性，历史结果不能可靠预测下一局。</p>
   </div>
@@ -386,8 +427,8 @@
       <div class="analysis-item banker-item"><div class="analysis-label">庄</div><div class="analysis-value banker-color" id="bc-manual-banker-count">0</div></div>
       <div class="analysis-item player-item"><div class="analysis-label">闲</div><div class="analysis-value player-color" id="bc-manual-player-count">0</div></div>
       <div class="analysis-item tie-item"><div class="analysis-label">和</div><div class="analysis-value tie-color" id="bc-manual-tie-count">0</div></div>
-      <div class="analysis-item"><div class="analysis-label">庄占比</div><div class="analysis-value banker-color" id="bc-manual-banker-percent">--</div></div>
-      <div class="analysis-item"><div class="analysis-label">闲占比</div><div class="analysis-value player-color" id="bc-manual-player-percent">--</div></div>
+      <div class="analysis-item"><div class="analysis-label">庄占比（含和）</div><div class="analysis-value banker-color" id="bc-manual-banker-percent">--</div></div>
+      <div class="analysis-item"><div class="analysis-label">闲占比（含和）</div><div class="analysis-value player-color" id="bc-manual-player-percent">--</div></div>
       <div class="analysis-item"><div class="analysis-label">当前连续（忽略和）</div><div class="analysis-value" id="bc-manual-current-streak">--</div></div>
       <div class="analysis-item"><div class="analysis-label">最长庄连</div><div class="analysis-value banker-color" id="bc-manual-max-banker">0</div></div>
       <div class="analysis-item"><div class="analysis-label">最长闲连</div><div class="analysis-value player-color" id="bc-manual-max-player">0</div></div>
@@ -445,9 +486,9 @@
 </div>
 </section>
 </div>
-<script src="script.js?v=multi-v19"></script>
-<script src="choice_manual.js?v=2"></script>
-<script src="multi_games.js?v=19"></script>
+<script src="script.js?v=layout-v20"></script>
+<script src="choice_manual.js?v=20"></script>
+<script src="multi_games.js?v=20"></script>
 </body>
 </html>
 

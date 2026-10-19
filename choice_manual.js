@@ -15,6 +15,8 @@
 
     let histories = emptyHistories();
     let selectedTable = TABLES[0];
+    let windowView = 50; // Number of recent recorded rounds, including ties.
+    const WINDOWS = Object.freeze([20, 50, 100, "all"]);
 
     function emptyHistories() {
         return Object.fromEntries(TABLES.map(table => [table, []]));
@@ -110,41 +112,62 @@
         return best;
     }
 
+    // Wilson score interval for historical banker fraction among non-ties.
+    // Assumes independent observations for its approximate coverage; never a
+    // prediction of the next outcome or a claimed betting advantage.
+    function wilsonInterval(successes, total) {
+        if (total === 0) return null;
+        const z = 1.96;
+        const p = successes / total;
+        const denom = 1 + z * z / total;
+        const center = (p + z * z / (2 * total)) / denom;
+        const delta = z * Math.sqrt(p * (1 - p) / total + z * z / (4 * total * total)) / denom;
+        return {low: Math.max(0, center - delta), high: Math.min(1, center + delta)};
+    }
+
+    function transitionCounts(history) {
+        const decisive = decisiveOnly(history);
+        const counts = {BB: 0, BP: 0, PB: 0, PP: 0};
+        for (let i = 1; i < decisive.length; i++) {
+            counts[decisive[i - 1] + decisive[i]]++;
+        }
+        return counts;
+    }
+
+    function sampleStage(nonTieCount) {
+        if (nonTieCount < 20) return {label: "收集中 · 暂不显示走势方向", next: `还差 ${20 - nonTieCount} 局庄／闲到 20 局初步观察`, threshold: 20};
+        if (nonTieCount < 50) return {label: "初步观察 · 已满 20 局", next: `再录 ${50 - nonTieCount} 局庄／闲，可比较 50 局窗口`, threshold: 50};
+        if (nonTieCount < 100) return {label: "分段对照 · 已满 50 局", next: `再录 ${100 - nonTieCount} 局庄／闲，可比较 100 局窗口`, threshold: 100};
+        return {label: "较多历史样本 · 已满 100 局", next: "历史比例描述更有样本基础，但不能稳定预测下一局", threshold: 100};
+    }
+
     function trendReference(history) {
         const decisive = decisiveOnly(history);
         const n = decisive.length;
-        if (n < 3) {
-            return {
-                pick: null,
-                sample: `已有 ${n} 局庄／闲结果（和局不参与趋势计算）`,
-                reason: `至少再录入 ${3 - n} 局庄或闲，才会显示简单趋势参考。`
-            };
-        }
+        if (n < 20) return {
+            pick: null,
+            sample: `本桌 ${n} 局庄／闲 · 至少 20 局才展示历史偏多方`,
+            reason: `还差 ${20 - n} 局庄／闲才开始显示走势描述；和局不计算在这 20 局内。这些门槛不是命中率门槛。`
+        };
 
-        // Descriptive one-step transitions, not estimated physical win probability.
+        // Past frequencies may be interesting descriptively; they do not
+        // establish a forecasting relationship for an independent next hand.
+        const recent = decisive.slice(-50);
+        const counts = currentCounts(recent);
         const last = decisive[n - 1];
-        const nextCounts = {B: 0, P: 0};
-        for (let i = 1; i < n; i++) {
-            if (decisive[i - 1] === last) nextCounts[decisive[i]]++;
-        }
-        const transitionSample = nextCounts.B + nextCounts.P;
-        let pick;
-        let reason;
-        let sample;
-
-        if (transitionSample >= 3 && nextCounts.B !== nextCounts.P) {
-            pick = nextCounts.B > nextCounts.P ? "B" : "P";
-            sample = `历史同类转移样本 ${transitionSample} 次 · 非命中率`;
-            reason = `本桌记录中，之前出现「${CODE_NAMES[last]}」后，下一局为庄 ${nextCounts.B} 次、闲 ${nextCounts.P} 次。这里只展示次数较多的一方。`;
-        } else {
-            const recent = decisive.slice(-12);
-            const count = currentCounts(recent);
-            pick = count.B === count.P ? last : count.B > count.P ? "B" : "P";
-            sample = `最近 ${recent.length} 局庄闲频率 · 非命中率`;
-            reason = `最近 ${recent.length} 局：庄 ${count.B} 次，闲 ${count.P} 次。${count.B === count.P ? "频率相同，暂用上一局庄闲作显示参考。" : "展示近期次数较多的一方。"} 当前同结果后转移样本仅 ${transitionSample} 次。`;
-        }
-
-        return {pick, sample, reason};
+        const sameAsLast = transitionCounts(decisive.slice(-100));
+        const transitions = last === "B"
+            ? {B: sameAsLast.BB, P: sameAsLast.BP}
+            : {B: sameAsLast.PB, P: sameAsLast.PP};
+        const transitionSample = transitions.B + transitions.P;
+        const isTie = counts.B === counts.P;
+        const pick = isTie ? null : counts.B > counts.P ? "B" : "P";
+        const reason = `最近 ${recent.length} 局有效庄闲：庄 ${counts.B} 次、闲 ${counts.P} 次。过去最多 100 局中，出现「${CODE_NAMES[last]}」后接庄 ${transitions.B} 次、接闲 ${transitions.P} 次（共 ${transitionSample} 次）。这些是历史记录频率，不支持推断下局必然偏向哪边。`;
+        return {
+            pick,
+            sample: `最近 ${recent.length} 局庄／闲历史频率 · 非下局胜率`,
+            reason: isTie ? `两边历史次数相同，暂无偏多方。${reason}` : reason
+        };
     }
 
     function makeChip(code, round, latest = false) {
@@ -183,6 +206,13 @@
         const streak = trailingStreak(history);
         const last = length ? history[length - 1] : null;
         const allCount = TABLES.reduce((sum, table) => sum + histories[table].length, 0);
+        const decisiveCount = counts.B + counts.P;
+        const stage = sampleStage(decisiveCount);
+        const windowHistory = windowView === "all" ? history : history.slice(-windowView);
+        const wc = currentCounts(windowHistory);
+        const windowNonTies = wc.B + wc.P;
+        const confidenceInterval = wilsonInterval(wc.B, windowNonTies);
+        const transitions = transitionCounts(windowHistory);
 
         document.querySelectorAll("[data-manual-table]").forEach(button => {
             const name = button.getAttribute("data-manual-table");
@@ -193,7 +223,7 @@
         });
 
         setText("bc-all-total", allCount);
-        for (const id of ["bc-manual-table-name", "bc-entry-table", "bc-prediction-table", "bc-stats-table", "bc-road-table", "bc-history-table"]) {
+        for (const id of ["bc-manual-table-name", "bc-entry-table", "bc-prediction-table", "bc-stats-table", "bc-road-table", "bc-history-table", "bc-sample-table", "bc-window-table"]) {
             setText(id, selectedTable);
         }
         setText("bc-manual-round-count", length);
@@ -211,15 +241,51 @@
         element("bc-manual-undo").disabled = length === 0;
         element("bc-manual-clear").disabled = length === 0;
 
+        // Local progress milestones describe sample sizes, not accuracy levels.
+        setText("bc-sample-stage", stage.label);
+        setText("bc-sample-next", stage.next);
+        setText("bc-sample-decisive", decisiveCount);
+        const sampleProgress = element("bc-sample-progress");
+        if (sampleProgress) sampleProgress.setAttribute("aria-valuenow", String(Math.min(100, decisiveCount)));
+        const bar = element("bc-sample-progress-fill");
+        if (bar) bar.style.width = `${Math.min(100, decisiveCount)}%`;
+        for (const threshold of [20, 50, 100]) {
+            const milestone = element(`bc-milestone-${threshold}`);
+            if (milestone) milestone.classList.toggle("achieved", decisiveCount >= threshold);
+        }
+        document.querySelectorAll("[data-bc-window]").forEach(button => {
+            const selected = String(windowView) === button.getAttribute("data-bc-window");
+            button.classList.toggle("active", selected);
+            button.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+        const windowLabel = windowView === "all" ? "全部历史" : `最近 ${windowView} 局`;
+        setText("bc-window-summary", `${windowLabel} · 实际录入 ${windowHistory.length} 局（其中庄／闲 ${windowNonTies} 局，和 ${wc.T} 局）`);
+        setText("bc-window-banker", windowNonTies ? `${(wc.B / windowNonTies * 100).toFixed(1)}% · ${wc.B} 局` : "--");
+        setText("bc-window-player", windowNonTies ? `${(wc.P / windowNonTies * 100).toFixed(1)}% · ${wc.P} 局` : "--");
+        setText("bc-window-tie", windowHistory.length ? `${(wc.T / windowHistory.length * 100).toFixed(1)}% · ${wc.T} 局` : "--");
+        setText("bc-window-ci", confidenceInterval
+            ? `${(confidenceInterval.low * 100).toFixed(1)}% – ${(confidenceInterval.high * 100).toFixed(1)}%（庄 ${wc.B} / 有效 ${windowNonTies} 局）`
+            : "没有庄／闲有效样本");
+        setText("bc-window-transition", windowNonTies > 1
+            ? `庄→庄 ${transitions.BB} · 庄→闲 ${transitions.BP} · 闲→庄 ${transitions.PB} · 闲→闲 ${transitions.PP}`
+            : "至少需要 2 局庄／闲结果（忽略和局）");
+
         const trend = trendReference(history);
         const pick = element("bc-manual-pick");
-        pick.textContent = trend.pick ? `参考：${CODE_NAMES[trend.pick]}` : "等待记录";
+        pick.textContent = trend.pick ? `历史偏多：${CODE_NAMES[trend.pick]}` : (decisiveCount ? "观察中／无明显偏多" : "等待记录");
         pick.className = `bc-manual-pick${trend.pick ? " " + CODE_CLASSES[trend.pick] : ""}`;
         setText("bc-manual-pick-sample", trend.sample);
         setText("bc-manual-pick-reason", trend.reason);
         renderChips("bc-manual-road", history, 120, false);
         renderChips("bc-manual-history", history, 20, true);
     }
+
+    window.choiceManualSetWindow = function(nextWindow) {
+        const parsed = nextWindow === "all" ? "all" : Number(nextWindow);
+        if (!WINDOWS.includes(parsed)) return;
+        windowView = parsed;
+        render();
+    };
 
     window.choiceManualSelect = function(table) {
         if (!TABLES.includes(table)) return;

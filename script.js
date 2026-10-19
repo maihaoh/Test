@@ -298,54 +298,41 @@ function updateMYTClock() {
    MAIN TAB
 ========================================================= */
 
-function switchMainTab(
-    tab,
-    button
-) {
+// Lottery and Baccarat are separate top-level areas. Preserve the most recent
+// Lottery game when switching to Baccarat and back.
+let lastLotteryTab = "wingo";
 
-    document
-        .querySelectorAll(
-            ".main-section"
-        )
-        .forEach(
-            section => {
-
-                section.classList.remove(
-                    "active"
-                );
-            }
-        );
-
-    document
-        .querySelectorAll(
-            ".main-tab"
-        )
-        .forEach(
-            btn => {
-
-                btn.classList.remove(
-                    "active"
-                );
-            }
-        );
-
-    const target =
-        document.getElementById(
-            tab + "-section"
-        );
-
-    if (target) {
-
-        target.classList.add(
-            "active"
-        );
+function switchGameGroup(group) {
+    if (group === "lottery") {
+        const remembered = document.querySelector(`[data-lottery-tab="${lastLotteryTab}"]`);
+        switchMainTab(lastLotteryTab, remembered);
+    } else if (group === "baccarat") {
+        switchMainTab("baccarat", document.querySelector("[data-baccarat-tab]"));
     }
+}
 
-    if (button) {
+function switchMainTab(tab, button) {
+    const target = document.getElementById(tab + "-section");
+    if (!target) return;
+    const isLottery = ["wingo", "k3", "5d", "trx"].includes(tab);
+    if (isLottery) lastLotteryTab = tab;
 
-        button.classList.add(
-            "active"
-        );
+    document.querySelectorAll(".main-section").forEach(section => {
+        section.classList.toggle("active", section === target);
+    });
+    document.querySelectorAll(".main-tab").forEach(btn => {
+        const active = isLottery && btn.dataset.lotteryTab === tab;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    for (const group of ["lottery", "baccarat"]) {
+        const hub = document.getElementById(group + "-hub");
+        const active = (group === "lottery") === isLottery;
+        if (hub) {
+            hub.classList.toggle("active", active);
+            const toggle = hub.querySelector(".game-hub-toggle");
+            if (toggle) toggle.setAttribute("aria-pressed", active ? "true" : "false");
+        }
     }
 }
 
