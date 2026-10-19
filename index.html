@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">Build -- · UI v20 · 走势样本分析</span>
+                Lottery 与 百家乐分区 · <span id="build-version">Build -- · UI v21 · 可验证的 AI 模式分析</span>
 </div>
 </div>
 <div class="header-info">
@@ -411,6 +411,39 @@
     <p class="bc-sample-caption">区间用于描述历史比例估计的不确定性（按独立抽样近似），不表示下一局的庄胜率，也不消除庄闲玩法的庄家优势。参考：约 100 局时，接近一半的占比通常仍有约 ±10 个百分点的 95% 抽样误差；400 局约 ±5 个百分点。</p>
   </div>
 
+  <div class="section-card bc-ai-analysis" aria-label="百家乐下一局 AI 模式检验">
+    <div class="section-title">🧠 下一局分析 · 数学基准 + AI 模式 <span id="bc-ai-table" class="bc-manual-pill">D51</span></div>
+    <p class="bc-manual-note">输入已经开出的庄／闲／和后自动更新。使用公开的八副牌概率、贝叶斯平滑和一／二阶 Markov 统计；不使用收费软件的私有代码。</p>
+    <div class="bc-ai-grid">
+      <div class="bc-ai-primary">
+        <span class="bc-ai-label">下一局理论上最常见结果（八副牌基准）</span>
+        <strong class="bc-ai-baseline-call" id="bc-ai-baseline-call">庄 · 45.86%</strong>
+        <p class="bc-sample-caption">这是全局理论占比，不代表这一局一定开庄，也不是获利概率。</p>
+      </div>
+      <div class="bc-ai-primary bc-ai-experiment">
+        <span class="bc-ai-label">实验性 AI 模式方向（非真实开奖概率）</span>
+        <strong class="bc-ai-pattern-call" id="bc-ai-pattern-call">等待记录</strong>
+        <p class="bc-sample-caption" id="bc-ai-pattern-note">仅参考已录庄闲，缺少牌张无法确定下一局。</p>
+      </div>
+    </div>
+    <div class="bc-ai-probabilities" aria-label="标准八副牌理论胜出比例">
+      <div><span>庄 Banker</span><strong class="banker-color" id="bc-ai-base-banker">45.86%</strong></div>
+      <div><span>闲 Player</span><strong class="player-color" id="bc-ai-base-player">44.62%</strong></div>
+      <div><span>和 Tie</span><strong class="tie-color" id="bc-ai-base-tie">9.52%</strong></div>
+    </div>
+    <div class="bc-ai-score-box">
+      <div class="bc-ai-score-title">🔬 模式分数（实验性，不是下一局真实赔率）</div>
+      <div id="bc-ai-score" class="bc-ai-score">收集更多庄闲数据后显示。</div>
+      <p class="bc-sample-caption" id="bc-ai-method">混合：理论先验 + 最近 80 局频率 + 一阶／二阶 Markov，全部以贝叶斯先验平滑。</p>
+    </div>
+    <div class="bc-ai-backtest">
+      <div class="bc-ai-score-title">✅ 逐局回测（只用当时已有的历史预测下一局）</div>
+      <strong id="bc-ai-validation">尚无足够可回测局数</strong>
+      <div id="bc-ai-evaluation" class="bc-ai-evaluation">在拥有至少 40 局庄／闲作为训练数据后，才开始计入回测。</div>
+    </div>
+    <p class="bc-manual-disclaimer">⚠️ 没有录入每张牌及当前牌靴剩余组成，就无法计算当前牌靴的实际条件概率。历史样本数、模型分数或回测成绩均不证明下一局可预测。标准八副牌参考来源：Wizard of Odds。</p>
+  </div>
+
   <div class="section-card bc-manual-prediction">
     <div class="section-title">🔎 历史走势参考 <span id="bc-prediction-table" class="bc-manual-pill">D51</span></div>
     <div class="bc-manual-prediction-content">
@@ -487,7 +520,8 @@
 </section>
 </div>
 <script src="script.js?v=layout-v20"></script>
-<script src="choice_manual.js?v=20"></script>
+<script src="baccarat_analysis.js?v=21"></script>
+<script src="choice_manual.js?v=21"></script>
 <script src="multi_games.js?v=20"></script>
 </body>
 </html>

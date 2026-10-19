@@ -2297,3 +2297,27 @@ tbody tr:hover {
   .game-hub-badge { display: none; }
   .bc-window-metrics { grid-template-columns: 1fr; }
 }
+
+/* V21: Baseline vs exploratory baccarat AI score and walk-forward backtest */
+.bc-ai-analysis { border-top: 3px solid #a78bfa; }
+.bc-ai-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+.bc-ai-primary { min-width: 0; padding: 15px; border-radius: 13px; border: 1px solid #42506a; background: rgba(14,25,46,.72); }
+.bc-ai-experiment { border-color: #495171; }
+.bc-ai-label { color: #a9b9d0; font-weight: 700; font-size: 12px; }
+.bc-ai-primary strong { display: block; font-size: clamp(18px,3vw,28px); margin-top: 9px; line-height: 1.4; }
+.bc-ai-baseline-call { color: #fda4af; }
+.bc-ai-pattern-call { color: #ddd6fe; }
+.bc-ai-probabilities { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.bc-ai-probabilities > div { padding: 12px; border: 1px solid #35445a; border-radius: 12px; background: rgba(15,23,42,.75); min-width: 0; }
+.bc-ai-probabilities span { display: block; color: #94a3b8; font-size: 11px; }
+.bc-ai-probabilities strong { display: block; margin-top: 7px; font-size: clamp(16px,2.2vw,24px); }
+.bc-ai-score-box,.bc-ai-backtest { border: 1px solid #3b4960; background: rgba(15,23,42,.62); border-radius: 12px; padding: 14px; margin-top: 12px; overflow-wrap: anywhere; }
+.bc-ai-score-title { color: #e2e8f0; font-size: 13px; font-weight: 800; margin-bottom: 9px; }
+.bc-ai-score,.bc-ai-evaluation { color: #cbd5e1; line-height: 1.7; font-size: 13px; }
+.bc-ai-backtest strong { color: #e9d5ff; display: block; margin: 7px 0; }
+@media (max-width: 680px) {
+  .bc-ai-grid { grid-template-columns: 1fr; gap: 8px; }
+  .bc-ai-probabilities { gap: 5px; }
+  .bc-ai-probabilities > div { padding: 9px 7px; }
+  .bc-ai-probabilities strong { font-size: clamp(14px,4.5vw,18px); }
+}

@@ -270,6 +270,35 @@
             ? `庄→庄 ${transitions.BB} · 庄→闲 ${transitions.BP} · 闲→庄 ${transitions.PB} · 闲→闲 ${transitions.PP}`
             : "至少需要 2 局庄／闲结果（忽略和局）");
 
+        // Separate the defensible theoretical odds from exploratory pattern
+        // correlations. Never label pattern scores as a validated win chance.
+        if (window.BaccaratAnalysis) {
+            const analysis = window.BaccaratAnalysis.analyze(history);
+            const base = analysis.baseline;
+            const pct = n => `${(100 * n).toFixed(2)}%`;
+            setText("bc-ai-table", selectedTable);
+            setText("bc-ai-base-banker", pct(base.B));
+            setText("bc-ai-base-player", pct(base.P));
+            setText("bc-ai-base-tie", pct(base.T));
+            setText("bc-ai-baseline-call", `庄 · ${pct(base.B)}`);
+            const direction = analysis.patternDirection === "B" ? "庄" : "闲";
+            setText("bc-ai-pattern-call", analysis.decisive < 20
+                ? "资料不足 · 先记录 20 局庄／闲" :
+                (analysis.hasDistinctPattern ? `模式参考：${direction}` : "庄闲模式接近五五开"));
+            setText("bc-ai-pattern-note", `${analysis.decisive} 局有效庄／闲，${analysis.ties} 局和。${analysis.caveat}`);
+            setText("bc-ai-score", analysis.decisive < 20
+                ? "至少 20 局庄／闲后显示平滑的实验性模式分数"
+                : `庄 ${pct(analysis.patternScore.B)} · 闲 ${pct(analysis.patternScore.P)} · 和 ${pct(analysis.patternScore.T)}（仅模型分数）`);
+            const bt = analysis.backtest;
+            const label = bt.status === "observed_improvement"
+                ? "过去回测略优于基准 · 未证明未来优势"
+                : (bt.status === "not_better" ? "没有发现优于数学基准的稳定证据" : "回测样本不足 · 不给出可靠信号");
+            setText("bc-ai-validation", label);
+            setText("bc-ai-evaluation", bt.observations
+                ? `只看该桌最近 ${bt.observations} 个历史可检验决胜局：模型方向吻合 ${pct(bt.candidateHitRate)}，固定选庄基准 ${pct(bt.baselineHitRate)}；模型 Brier ${bt.candidateBrier.toFixed(4)}，理论基准 ${bt.baselineBrier.toFixed(4)}（越低越好）。这仅是历史逐局回测，非未来命中率。`
+                : "在拥有至少 40 局庄／闲作为训练数据后，才开始计入回测；达到 120 个回测样本也不代表可预测。");
+        }
+
         const trend = trendReference(history);
         const pick = element("bc-manual-pick");
         pick.textContent = trend.pick ? `历史偏多：${CODE_NAMES[trend.pick]}` : (decisiveCount ? "观察中／无明显偏多" : "等待记录");
