@@ -2680,3 +2680,19 @@ tbody tr:hover {
 .choice-road-grid .bc-road-mark small {position:absolute;top:-8px;right:-7px;background:#16a34a;color:white;border-radius:8px;padding:0px 3px;font-size:9px;}
 @media(max-width:950px) { .game-hubs {grid-template-columns:repeat(2,minmax(0,1fr));} .choice-hub {grid-column:1/-1;} }
 @media(max-width:620px) { .choice-live-section .section-card{padding:12px;} .choice-road-panels{grid-template-columns:1fr;} .choice-room-stats{gap:6px;} .choice-room-stats>div{padding:9px;} .choice-room-forecast{flex-direction:column;align-items:stretch;gap:9px;} .choice-room-forecast>div{min-width:0;} }
+
+/* V31 - D51 local read-only browser bridge */
+.choice-bridge-panel{background:linear-gradient(125deg,#0a2235,#17263f);border:1px solid #336988;border-radius:10px;padding:14px 15px;margin:12px 0 10px;color:#d9e9f7;max-width:100%}
+.choice-bridge-title{font-size:14px;font-weight:800;color:#7dd3fc;letter-spacing:.01em}
+.choice-bridge-panel p{font-size:12px;line-height:1.65;margin:7px 0;color:#b7cde2;overflow-wrap:anywhere}
+.choice-bridge-panel strong{color:#f1f5f9}
+.choice-bridge-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}
+.choice-bridge-actions button{border:1px solid #45839b;border-radius:8px;background:#143b52;color:#e4f5ff;font-weight:700;padding:9px 13px;cursor:pointer;font-size:13px;min-height:40px}
+.choice-bridge-actions button:first-child{background:#075985;border-color:#0284c7}
+.choice-bridge-actions button:hover{filter:brightness(1.12)}
+.choice-bridge-actions button:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+.choice-bridge-info{color:#67e8f9!important;font-variant-numeric:tabular-nums}
+.choice-bridge-hint{color:#9eb5cc!important}
+.choice-room-source-line{font-size:12px;color:#a6bad4;margin:7px 0 12px}
+.choice-room-source-line strong{color:#7dd3fc}
+@media(max-width:590px){.choice-bridge-actions{display:grid;grid-template-columns:1fr}.choice-bridge-actions button{width:100%}.choice-bridge-panel{padding:11px}}

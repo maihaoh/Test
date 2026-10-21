@@ -1,3 +1,40 @@
+# V31 | Choice D51 单房间本机实时桥接（完整版）
+
+## 本版核心功能
+
+- 只保留一个 **Choice → D51** 房间，与「百家乐手动」分开；保留 WinGo、K3、5D、TRX 的所有原有功能。
+- 已授权的官方 D51 页面有 WebSocket 时，用户可从自己的电脑 **只读** 捕获已验证 `BAC_FULL_RESULT_LIST (135176)` 的 D051 快照，并只把 B/P/T 结果通过浏览器内的 `postMessage` 发给自己的 GitHub Pages 仪表板。
+- **不会传输 Token、Cookie、密码、个人下注、原始 WebSocket 包，也不会发送游戏 WebSocket 消息或下注指令。**
+- 仪表板按新结果更新历史、大路和珠盘路；未观察到新一局时只显示历史，不会假装实时连接。
+- 游戏官方页面的入口 `https://gci.arvideo.video/pc/pcv1/index.jsp?` 并非已证实的 D51 直达地址，可能需要从 MZPlay 正常登录及选 D51。
+- Render 的 `/api/data` 仍可作为后备，但不能把 Render 可访问等同于 D51 已连通。
+
+## 一次安装（GitHub + Render）
+
+1. 解压 `V31-Choice-D51-Live-Bridge.zip`，把里面文件上传覆盖到原 GitHub 仓库根目录（包括 `.github/workflows/pages.yml`）。
+2. 点击 Commit，等 Pages Actions 部署成功，刷新网站确认 `UI V31`。你原本 WinGo/K3/5D/TRX 的 Render 变量不要改，**不必重置 Token**。
+3. 进入网站 **Choice → D51**，点击 **① 复制连接代码**。
+4. 在自己的 Chrome、已经登录的 **官方 Choice D51** 页面按 F12 → Console → Ctrl+V → Enter。
+5. 如果浏览器提示阻止弹窗，允许该游戏页打开自己的网站。保持 D51 和网站两个标签页打开，等下一局出结果。
+6. 网站会显示「本机 D51 WebSocket」「已解析快照」和历史结果；在确实观察到新的结果之后才显示实时更新。
+
+## 限制与核验
+
+- **只是本地浏览器实时桥接，不是 Render 全自动 24 小时后台采集。** 关闭自己的电脑／游戏页、网页被暂停或失去授权都会停止。需要重新执行代码时，在站内重新复制即可。
+- `queryObjects(WebSocket)` 是 Chrome DevTools Console 特有接口，普通网页 JS Console 外不可直接依赖；既有连接 5000、7101、5030 只能说明 OPEN，**不能保证必定收到解码器认识的 D051 明文快照**。
+- 任何压缩、加密、分包差异导致不能解析时，仪表板显示等待／未连接，不会生成模拟开奖结果。Console 可执行 `window.__CHOICE_D51_BRIDGE_V31__.status()` 查看安全统计（仅数字，无凭据）。可执行 `.stop()` 停止监听。
+- 数据只在同一电脑的浏览器标签之间转发，结果缓存到此网站的 Local Storage（只有 B/P/T，无凭据）；其他设备不会自动同步这份本机数据。
+- 路单和统计预测仅为历史数据展示/实验性推测，不保证下一局结果，不自动下注。
+- 更新 GitHub Pages **不需要**改 Render 配置；原先服务器的 401、Cloudflare 拦截并没有因此消失。
+
+## 本地验证
+
+- 运行 `node --check choice_live.js` 以及 `node --check choice_console_bridge.js` 检查 JS 语法。
+- V31 JS binary decoder 通过合成明文 `BAC_FULL_RESULT_LIST` 数据包的解析及错误拒绝测试；不等于真实官方数据协议已经连接。
+- V31 桌面/手机模拟 UI 检查脚本使用合成庄、闲、和，不证明线上可以持续获取结果。
+
+---
+
 # V30 | Choice 单房间按钮（在 V29 上增量更新）
 
 - 主页面新增独立 **Choice** 按钮，进入固定一个百家乐房间 **D51**。

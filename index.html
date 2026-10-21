@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">UI V30</span>
+                Lottery 与 百家乐分区 · <span id="build-version">UI V31</span>
 </div>
 </div>
 <div class="header-info">
@@ -63,9 +63,9 @@
   <div class="game-hub choice-hub" id="choice-hub">
     <button type="button" data-choice-tab="true" class="game-hub-toggle" onclick="switchMainTab('choice', this)" aria-pressed="false">
       <span class="game-hub-title">🎴 Choice <small>百家乐 · 单一房间 D51</small></span>
-      <span class="game-hub-badge">自动数据检查</span>
+      <span class="game-hub-badge">D51 实时桥接</span>
     </button>
-    <div class="game-hub-description">只读开奖 · 单房间 · 连接状态透明</div>
+    <div class="game-hub-description">只读开奖 · 本机浏览器桥接 · 无自动下注</div>
   </div>
 </div>
 <!-- =====================================================
@@ -396,26 +396,38 @@
     <p class="bc-limit">只展示录入前已保存的预测；旧记录没有预测时留空，不事后补算。</p>
   </section>
 </section>
-<!-- Choice 单房间：与手动百家乐完全分开；只从服务端已获取的结果读取 -->
+<!-- Choice 单房间：优先本机官方 D51 的已解析 B/P/T 数据，服务端结果后备 -->
 <section class="main-section choice-live-section" id="choice-section" aria-labelledby="choice-room-heading">
   <section class="section-card choice-room-card">
     <div class="choice-room-head">
       <div><div class="choice-room-eyebrow">CHOICE BACCARAT · READ-ONLY</div>
       <h2 id="choice-room-heading">房间 1 <small>D51</small></h2>
-      <p class="choice-room-description">仅显示这一间的真实开奖结果；不会混合其他房间，也不自动下注。</p></div>
+      <p class="choice-room-description">只显示 D51 房间的已验证开奖结果。优先接收你在自己电脑打开的官方 Choice 网页；不自动下注。</p></div>
       <button type="button" id="choice-room-refresh" onclick="refreshChoiceRoom()">↻ 检查开奖</button>
     </div>
+    <div class="choice-bridge-panel" aria-label="Choice D51 本地实时连接">
+      <div class="choice-bridge-title">🔌 本机 D51 实时连接（V31）</div>
+      <p>先在已登录的 MZPlay 打开 Choice D51，点击下方复制连接代码，再到 <strong>D51 页面 → F12 → Console → Ctrl+V → Enter</strong>。只同步庄、闲、和；不传 Token、密码或下注资料。</p>
+      <div class="choice-bridge-actions">
+        <button type="button" onclick="copyChoiceBridgeCode()" id="choice-room-copy">① 复制连接代码</button>
+        <button type="button" onclick="openChoiceOfficial()" id="choice-room-open">② 打开 Choice 官方页 ↗</button>
+      </div>
+      <p id="choice-room-copy-status" class="choice-bridge-hint" aria-live="polite">官网已打开 D51 的话，直接使用现有游戏标签页，不必重新登录。</p>
+      <p id="choice-room-bridge-detail" class="choice-bridge-info">等待本机 WebSocket…</p>
+      <p class="choice-bridge-hint">提示：官方入口不保证自动选择 D51，需在游戏里确认房间。关闭游戏或网站标签页后，本机桥接会停止；Render 未证实支持无人值守 Choice 采集。</p>
+    </div>
     <p class="data-status is-offline" id="choice-room-status" role="status" aria-live="polite">等待 Choice 房间数据…</p>
+    <div class="choice-room-source-line">当前数据来源：<strong id="choice-room-source">等待数据源</strong></div>
     <div class="choice-room-stats">
       <div><small>最新开奖结果</small><strong id="choice-room-latest">—</strong></div>
-      <div><small>最新局号</small><strong id="choice-room-issue">—</strong></div>
+      <div><small>局号／记录位置</small><strong id="choice-room-issue">—</strong></div>
       <div><small>已取得记录</small><strong id="choice-room-count">0</strong></div>
     </div>
     <div class="choice-room-forecast">
       <div><span>下一局统计参考</span><strong id="choice-room-forecast">观察</strong></div>
       <p id="choice-room-reason">需要先取得真实开奖，并观察到新局更新。</p>
     </div>
-    <p class="choice-room-note">⚠️ 历史记录存在不代表直播已连接；仅在本页面实际观察到新结果变化后标记实时更新。统计参考不保证命中。</p>
+    <p class="choice-room-note">⚠️ 初次读到历史不代表真正实时。只有观察到本次连接中的新结果后才标记更新；单凭路单无法预测下一局。</p>
   </section>
   <section class="section-card choice-room-card">
     <div class="choice-room-subhead"><h2>历史开奖结果</h2><span>最新在右 · 红庄 / 蓝闲 / 绿和</span></div>
@@ -472,7 +484,7 @@
 <script src="baccarat_roads.js?v=29"></script>
 <script src="baccarat_predictor.js?v=29"></script>
 <script src="choice_manual.js?v=29"></script>
-<script src="choice_live.js?v=30"></script>
+<script src="choice_live.js?v=31"></script>
 <script src="multi_games.js?v=29"></script>
 </body>
 </html>
