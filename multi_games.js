@@ -34,14 +34,20 @@
     function issueDateIsRecent(draw) {
         const issue = String(draw?.issueNumber || '');
         const matched = /^(20\d{2})(\d{2})(\d{2})/.exec(issue);
-        if (!matched) return true; // unknown formats are checked by success timestamp
-        const ms = Date.UTC(Number(matched[1]), Number(matched[2]) - 1, Number(matched[3]));
-        if (!Number.isFinite(ms)) return false;
-        return Math.abs(Date.now() - ms) < 48 * 3600 * 1000;
+        if (!matched) return true; // unknown issue formats rely on observed-new-draw timestamp
+        const year = Number(matched[1]), month = Number(matched[2]), day = Number(matched[3]);
+        const ms = Date.UTC(year, month - 1, day);
+        const date = new Date(ms);
+        if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return false;
+        const diff = Date.now() - ms;
+        return diff >= -24 * 3600 * 1000 && diff < 36 * 3600 * 1000;
     }
     function secondsOld(updated) {
         const ts = stamp(updated);
-        return ts ? Math.max(0, Math.floor(Date.now() / 1000 - ts)) : Infinity;
+        if (!ts) return Infinity;
+        const delta = Date.now() / 1000 - ts;
+        // Never label data as live on an implausibly future-dated server clock.
+        return delta < -60 ? Infinity : Math.max(0, Math.floor(delta));
     }
     function append(parent, tag, cls, content) {
         const node = document.createElement(tag);
@@ -115,13 +121,15 @@
         const draws = Array.isArray(state.draws) ? state.draws : [];
         const latest = draws[0] || null;
         const successAt = stamp(state.last_success_at || state.updated_at);
-        const age = secondsOld(successAt);
+        // Polling an unchanged history is not an observed new lottery result.
+        const drawAt = stamp(state.last_new_draw_at !== undefined ? state.last_new_draw_at : successAt);
+        const age = secondsOld(drawAt);
         const hasFailure = /失败|限频|不可用|没有新的|错误|没有可用/.test(String(state.status || ''));
         const fresh = source === 'render' && !!latest && age <= LIVE_MAX_AGE && issueDateIsRecent(latest) && !hasFailure;
         const status = el(game + '-data-status');
         let health;
-        if (fresh) health = `● 数据更新正常 | Render API | ${dateMYT(successAt)} (MYT) | ${age} 秒前`;
-        else if (draws.length) health = `⚠ 历史数据 / 未验证实时连接 | ${dateMYT(successAt)} (MYT) | ${source === 'file' ? '本地备份' : 'Render API'}`;
+        if (fresh) health = `● 数据更新正常 | 新开奖 ${dateMYT(drawAt)} (MYT) | ${age} 秒前`;
+        else if (draws.length) health = `⚠ 历史数据 / 未验证实时连接 | 最近读取 ${dateMYT(successAt)} (MYT) | ${source === 'file' ? '本地备份' : 'Render API'}`;
         else health = '● 尚未取得有效开奖记录 | 未连接';
         const diagnosis = String(state.status || '').slice(0, 160);
         const diagnosisLabel = fresh ? '后台' : draws.length ? '历史备注（不代表已连接）' : '后台';

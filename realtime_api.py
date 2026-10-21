@@ -72,10 +72,35 @@ def _snapshot_updated_at(data):
 
 
 def _valid_snapshot(data):
+    """Reject future-clock, partial, and empty snapshots before persistence.
+
+    The GitHub relay sends at minimum the complete WinGo and Baccarat sections.
+    Optional lottery streams can be temporarily unavailable, but the ingested
+    document must still contain real history; an empty bootstrap must never
+    erase a previously healthy dashboard snapshot.
+    """
     if not isinstance(data, dict):
         return False
-    expected_sections = {"wingo", "baccarat", "k3", "5d", "trx"}
-    return bool(expected_sections.intersection(data.keys()))
+    updated = _snapshot_updated_at(data)
+    if not updated or updated > int(time.time()) + 60:
+        return False
+    wingo, baccarat = data.get('wingo'), data.get('baccarat')
+    if not isinstance(wingo, dict) or not isinstance(baccarat, dict):
+        return False
+    wingo_draws, rooms = wingo.get('draws'), baccarat.get('rooms')
+    if not isinstance(wingo_draws, list) or not isinstance(rooms, dict):
+        return False
+    if any(not isinstance(records, list) for records in rooms.values()):
+        return False
+    has_history = bool(wingo_draws) or any(bool(records) for records in rooms.values())
+    for name in MULTI_GAMES:
+        state = data.get(name)
+        if state is None:
+            continue
+        if not isinstance(state, dict) or not isinstance(state.get('draws'), list):
+            return False
+        has_history = has_history or bool(state['draws'])
+    return bool(has_history)
 
 
 def _atomic_write(data):
@@ -100,6 +125,8 @@ def add_headers(resp):
 @app.get("/health")
 def health():
     data = read_data()
+    if isinstance(data, dict) and "error" in data:
+        return jsonify({"ok": False, "error": "data_unavailable"}), 503
     now = int(time.time())
     updated = _snapshot_updated_at(data)
     return jsonify(
@@ -116,12 +143,18 @@ def health():
 
 @app.get("/api/data")
 def api_data():
-    return jsonify(read_data())
+    data = read_data()
+    if "error" in data:
+        return jsonify(data), 503
+    return jsonify(data)
 
 
 @app.get("/data.json")
 def data_json():
-    return jsonify(read_data())
+    data = read_data()
+    if "error" in data:
+        return jsonify(data), 503
+    return jsonify(data)
 
 
 @app.get("/api/choice-diagnostic")

@@ -2321,3 +2321,22 @@ tbody tr:hover {
   .bc-ai-probabilities > div { padding: 9px 7px; }
   .bc-ai-probabilities strong { font-size: clamp(14px,4.5vw,18px); }
 }
+
+/* V22 historic roadmaps. Horizontally scroll within their own panel on phones. */
+.bc-roadmaps { border-top: 3px solid #38bdf8; }
+.bc-roadmaps-list { display: grid; gap: 12px; }
+.bc-roadmaps-list > div { min-width: 0; }
+.bc-roadmaps-list strong { display: block; margin: 6px 0; color: #cbd5e1; font-size: 12px; }
+.bc-road-scroll { max-width: 100%; overflow-x: auto; padding: 8px; background: rgba(2,6,23,.40); border: 1px solid #334155; border-radius: 10px; }
+.bc-road-grid { display: grid; width: max-content; min-width: 24px; grid-template-rows: repeat(6,24px); gap: 3px; align-items: center; justify-items: center; }
+.bc-road-mark { display: inline-flex; position: relative; align-items: center; justify-content: center; height: 23px; width: 23px; font-size: 9px; font-weight: 850; border-radius: 50%; border: 1px solid currentColor; }
+.bc-road-B { color: #fca5a5; background: #3c1c2a; }
+.bc-road-P { color: #93c5fd; background: #142b4c; }
+.bc-road-T { color: #6ee7b7; background: #113d32; }
+.bc-road-R { color: #fb7185; background: #331d2d; }
+.bc-road-U { color: #60a5fa; background: #152c48; }
+.bc-road-ties { position: absolute; top: -7px; right: -7px; font-size: 8px; color: #6ee7b7; background: #102d26; border: 1px solid #065f46; border-radius: 4px; padding: 0 2px; white-space: nowrap; }
+
+/* WinGo must not display a permanent "loading" message on failed reads. */
+#wingo-data-status.is-live { border-color: #1e8c65; color: #b8f9db; background: #102a25; }
+#wingo-data-status.is-stale { border-color: #c3813a; color: #fde4bd; background: #34271c; }

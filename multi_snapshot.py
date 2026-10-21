@@ -16,6 +16,7 @@ def timestamp(record, key):
 
 def merge_snapshots(base, runtime):
     data = dict(base) if isinstance(base, dict) else {}
+    now = time.time()
     if not isinstance(runtime, dict):
         return data
     for game in GAMES:
@@ -25,7 +26,8 @@ def merge_snapshots(base, runtime):
         old = data.get(game) if isinstance(data.get(game), dict) else {}
         candidate_time = timestamp(candidate, 'last_success_at') or timestamp(candidate, 'updated_at')
         old_time = timestamp(old, 'last_success_at') or timestamp(old, 'updated_at')
-        if candidate_time and candidate_time >= old_time and candidate.get('draws'):
+        # Reject gross future clock-skew and snapshots without actual draws.
+        if candidate_time and candidate_time <= now + 60 and candidate_time >= old_time and candidate.get('draws'):
             data[game] = candidate
         elif timestamp(candidate, 'last_attempt_at') > old_time and (
                 not old_time or time.time() - old_time > 180):

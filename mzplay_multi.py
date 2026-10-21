@@ -1676,6 +1676,15 @@ class MultiGameCollector:
             state["status"] = "API 已响应，但没有新的有效开奖记录"
             return state
 
+        # API availability and appearance of a NEW draw are distinct events.
+        # Do not turn an unchanged result into an apparently fresh round every
+        # 12 seconds just because the history endpoint answered successfully.
+        previous_draws = state.get("draws") or []
+        previous_latest_id = str(previous_draws[0].get("issueNumber") or "") if previous_draws else ""
+        latest_id = str(draws[0].get("issueNumber") or "")
+        # The very first successful fetch establishes a baseline; only a
+        # subsequent changed issue proves that a NEW result was observed.
+        new_result = bool(latest_id) and bool(previous_latest_id) and latest_id != previous_latest_id
         prediction = self._predict(game, draws)
         prediction["issueNumber"] = current_issue.get("issueNumber") or ""
         prediction["generatedAt"] = int(time.time())
@@ -1685,10 +1694,12 @@ class MultiGameCollector:
             "draws": draws,
             "current_issue": current_issue,
             "prediction": prediction,
-            "status": f"{BUILD_VERSION} | 已取得开奖历史",
+            "status": (f"{BUILD_VERSION} | 已取得新的有效开奖记录" if new_result
+                       else f"{BUILD_VERSION} | 已连接，正在等待下一期新开奖"),
             "build_version": BUILD_VERSION,
             "updated_at": successful_at,
             "last_success_at": successful_at,
+            "last_new_draw_at": successful_at if new_result else state.get("last_new_draw_at", 0),
             "last_attempt_at": successful_at,
         })
         return state

@@ -5,8 +5,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Lottery + 百家乐 Dashboard</title>
-<script async="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=layout-v20" rel="stylesheet"/>
+<script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<link href="style.css?v=layout-v22" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">Build -- · UI v21 · 可验证的 AI 模式分析</span>
+                Lottery 与 百家乐分区 · <span id="build-version">Build -- · UI v22 · 可验证的 AI 模式分析</span>
 </div>
 </div>
 <div class="header-info">
@@ -431,6 +431,11 @@
       <div><span>闲 Player</span><strong class="player-color" id="bc-ai-base-player">44.62%</strong></div>
       <div><span>和 Tie</span><strong class="tie-color" id="bc-ai-base-tie">9.52%</strong></div>
     </div>
+    <div class="bc-ai-score-box" aria-label="标准八副牌庄家优势">
+      <div class="bc-ai-score-title">🧮 数学期望（8副牌、庄抽5%、和赔率8:1）</div>
+      <div id="bc-ai-ev" class="bc-ai-evaluation">正在计算理论期望…</div>
+      <p class="bc-sample-caption">下方数字为每押注 1 单位的长期平均净收益，不是某一局的实际输赢；负值表示玩家长期期望亏损。庄闲和局退还本金。</p>
+    </div>
     <div class="bc-ai-score-box">
       <div class="bc-ai-score-title">🔬 模式分数（实验性，不是下一局真实赔率）</div>
       <div id="bc-ai-score" class="bc-ai-score">收集更多庄闲数据后显示。</div>
@@ -473,6 +478,17 @@
     <div class="section-title">🟡 <span id="bc-road-table">D51</span> 手动结果顺序图</div>
     <p class="bc-manual-note">按录入顺序排列（每列从上到下），最多显示最近 120 局。这是简易记录图，非赌场官方大路。</p>
     <div id="bc-manual-road" class="bc-manual-road" aria-label="手动开奖结果顺序"></div>
+  </div>
+  <div class="section-card bc-roadmaps" aria-label="百家乐历史路单">
+    <div class="section-title">🧭 标准历史路单 <span class="bc-manual-pill" id="bc-roads-table">D51</span></div>
+    <p class="bc-manual-note">本桌最近 120 局：珠盘路包含和局，大路将和局叠加在前一庄/闲格；大眼仔、小路、蟑螂路的红/蓝表示形态规则/不规则，<strong>不表示未来开庄或开闲</strong>。路单仅供历史核对，各平台的排版细节可能不同。</p>
+    <div class="bc-roadmaps-list">
+      <div><strong>珠盘路 Bead Plate</strong><div class="bc-road-scroll"><div id="bc-road-bead" class="bc-road-grid"></div></div></div>
+      <div><strong>大路 Big Road</strong><div class="bc-road-scroll"><div id="bc-road-big" class="bc-road-grid"></div></div></div>
+      <div><strong>大眼仔 Big Eye Boy</strong><div class="bc-road-scroll"><div id="bc-road-eye" class="bc-road-grid"></div></div></div>
+      <div><strong>小路 Small Road</strong><div class="bc-road-scroll"><div id="bc-road-small" class="bc-road-grid"></div></div></div>
+      <div><strong>蟑螂路 Cockroach Road</strong><div class="bc-road-scroll"><div id="bc-road-cockroach" class="bc-road-grid"></div></div></div>
+    </div>
   </div>
   <div class="section-card">
     <div class="section-title">📜 <span id="bc-history-table">D51</span> 最近 20 局 <span class="bc-manual-pill">最新在前</span></div>
@@ -519,10 +535,12 @@
 </div>
 </section>
 </div>
-<script src="script.js?v=layout-v20"></script>
-<script src="baccarat_analysis.js?v=21"></script>
-<script src="choice_manual.js?v=21"></script>
-<script src="multi_games.js?v=20"></script>
+<script src="script.js?v=layout-v22"></script>
+<script src="baccarat_analysis.js?v=22"></script>
+<script src="baccarat_engine.js?v=22"></script>
+<script src="baccarat_roads.js?v=22"></script>
+<script src="choice_manual.js?v=22"></script>
+<script src="multi_games.js?v=22"></script>
 </body>
 </html>
 

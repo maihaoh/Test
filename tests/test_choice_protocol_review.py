@@ -69,16 +69,18 @@ class ProtocolReviewTests(unittest.TestCase):
         with self.assertRaises(DecodeError):
             d.parse_subscribe_ack(bad)
 
-    def test_observed_startup_has_no_invented_login_packet(self):
+    def test_observer_startup_sends_no_unverified_packets(self):
         ws = FakeWs()
         c = d.DirectChoiceCollector()
         with mock.patch.object(d.threading.Thread, 'start'):
-            with mock.patch.object(c, '_write_status'):
+            with mock.patch.object(c, '_write_status') as write_status:
                 c.on_open(ws)
-        ids = [struct.unpack_from('>I', frame)[0] for frame in ws.sent]
-        self.assertEqual(ids, [1, 77829])
-        self.assertNotIn(77826, ids)
-        self.assertEqual(len(ws.sent[1]), 48)
+        write_status.assert_any_call('awaiting_authorized_game_bootstrap')
+        # V15 explicitly removed the fabricated heartbeat, the premature
+        # unauthenticated 77829 subscription and the absent 77826 login.
+        self.assertEqual(ws.sent, [])
+        self.assertFalse(c.subscription_sent)
+        self.assertFalse(c.login_ack_seen)
         c.on_close(ws, None, None)
 
     def test_receives_ack_as_rejection_not_success(self):
@@ -135,6 +137,34 @@ class ProtocolReviewTests(unittest.TestCase):
         assembler = PacketAssembler()
         self.assertEqual(assembler.feed(payload[:5]), [])
         self.assertEqual(assembler.feed(payload[5:]), [payload])
+
+
+    def test_realtime_api_rejects_empty_partial_and_future_snapshots(self):
+        now = int(__import__('time').time())
+        normal = {'updated_at': now, 'wingo': {'draws': [{'issueNumber': '20261021111'}]},
+                  'baccarat': {'rooms': {'D51': [], 'D52': []}}}
+        self.assertTrue(realtime_api._valid_snapshot(normal))
+        self.assertFalse(realtime_api._valid_snapshot({'updated_at': now, 'wingo': {}}))
+        self.assertFalse(realtime_api._valid_snapshot({'updated_at': now, 'wingo': {'draws': []},
+            'baccarat': {'rooms': {'D51': []}}}))
+        self.assertFalse(realtime_api._valid_snapshot({**normal, 'updated_at': now + 3600}))
+        self.assertFalse(realtime_api._valid_snapshot({**normal, '5d': {'draws': 'not a list'}}))
+
+    def test_corrupt_server_json_has_503_health_not_false_success(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / 'data.json'
+            path.write_text('{unparseable', encoding='utf-8')
+            with mock.patch.object(realtime_api, 'DATA_FILE', path), \
+                 mock.patch.object(realtime_api, 'MULTI_RUNTIME_FILE', Path(td) / 'absent.json'):
+                self.assertIn('error', realtime_api.read_data())
+                if REAL_FLASK:
+                    health = realtime_api.app.test_client().get('/health')
+                    self.assertEqual(health.status_code, 503)
+                    self.assertFalse(health.get_json()['ok'])
+                else:
+                    body, code = realtime_api.health()
+                    self.assertEqual(code, 503)
+                    self.assertFalse(body['ok'])
 
 
 if __name__=='__main__':

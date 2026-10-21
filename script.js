@@ -8,6 +8,39 @@ const WORKER_URL =
 let myChart = null;
 let countdownVal = 5;
 let currentBaccaratTable = "D51";
+let wingoLastObservedIssue = "";
+let wingoLastNewDrawAt = 0;
+
+function isCurrentMYTIssue(issue) {
+    const match = /^(20\d{2})(\d{2})(\d{2})/.exec(String(issue || ""));
+    if (!match) return false; // Unknown issue format cannot prove recency.
+    const parts = new Intl.DateTimeFormat('en-US', {timeZone:'Asia/Kuala_Lumpur',
+        year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(new Date());
+    const date = Object.fromEntries(parts.map(({type,value}) => [type,value]));
+    return `${date.year}${date.month}${date.day}` === match.slice(1).join("");
+}
+
+function updateWingoConnection(status, live) {
+    const node = document.getElementById('wingo-data-status');
+    if (!node) return;
+    node.textContent = status;
+    node.dataset.live = String(live);
+    node.classList.toggle('is-live',live);
+    node.classList.toggle('is-stale',!live);
+}
+
+function resetWingoLiveAnalysis() {
+    // Do not leave a previously live prediction/market reading displayed after
+    // the provider becomes stale or unreachable.
+    for (const id of ['analysis-streak','analysis-markov','analysis-mean',
+        'analysis-number','analysis-big10','analysis-small10',
+        'analysis-big50','analysis-small50','score-text']) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '--';
+    }
+    const fill = document.getElementById('score-fill');
+    if (fill) fill.style.width = '0%';
+}
 
 const AI_LEARNING_KEY = "wingo_ai_learning_v2";
 
@@ -15,6 +48,14 @@ const AI_LEARNING_KEY = "wingo_ai_learning_v2";
 /* =========================================================
    AI SELF LEARNING
 ========================================================= */
+
+// Remote issue numbers, statuses and model strings must never be interpreted
+// as markup when building the existing static card/table HTML.
+function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
+}
 
 const DEFAULT_AI_LEARNING = {
     version: 2,
@@ -696,7 +737,8 @@ function rememberPattern(
     pattern,
     prediction,
     actual,
-    outcome
+    outcome,
+    learning = aiLearning
 ) {
 
     if (!pattern) {
@@ -717,12 +759,12 @@ function rememberPattern(
             Date.now()
     };
 
-    aiLearning.patterns.recent.unshift(
+    learning.patterns.recent.unshift(
         item
     );
 
-    aiLearning.patterns.recent =
-        aiLearning.patterns.recent.slice(
+    learning.patterns.recent =
+        learning.patterns.recent.slice(
             0,
             100
         );
@@ -732,12 +774,12 @@ function rememberPattern(
         outcome === "WIN"
     ) {
 
-        aiLearning.patterns.successfulPatterns.unshift(
+        learning.patterns.successfulPatterns.unshift(
             item
         );
 
-        aiLearning.patterns.successfulPatterns =
-            aiLearning.patterns.successfulPatterns.slice(
+        learning.patterns.successfulPatterns =
+            learning.patterns.successfulPatterns.slice(
                 0,
                 50
             );
@@ -748,12 +790,12 @@ function rememberPattern(
         outcome === "LOSS"
     ) {
 
-        aiLearning.patterns.wrongPatterns.unshift(
+        learning.patterns.wrongPatterns.unshift(
             item
         );
 
-        aiLearning.patterns.wrongPatterns =
-            aiLearning.patterns.wrongPatterns.slice(
+        learning.patterns.wrongPatterns =
+            learning.patterns.wrongPatterns.slice(
                 0,
                 50
             );
@@ -767,7 +809,8 @@ function rememberPattern(
 
 function getPatternExperience(
     draws,
-    prediction
+    prediction,
+    learning = aiLearning
 ) {
 
     const pattern =
@@ -787,7 +830,7 @@ function getPatternExperience(
 
 
     const records =
-        aiLearning.patterns.recent.filter(
+        learning.patterns.recent.filter(
             x =>
                 x.pattern === pattern
         );
@@ -1106,7 +1149,8 @@ function getLearnedPrediction(
     const patternMemory =
         getPatternExperience(
             draws,
-            temporaryPrediction
+            temporaryPrediction,
+            learning
         );
 
 
@@ -1579,12 +1623,14 @@ function getCounterfactualResult(
 
 
 function getForcedCounterfactual(
-    draws
+    draws,
+    learning = aiLearning
 ) {
 
     const prediction =
         getLearnedPrediction(
-            draws
+            draws,
+            learning
         );
 
     if (
@@ -1603,7 +1649,7 @@ function getForcedCounterfactual(
         const fakeLearning =
             JSON.parse(
                 JSON.stringify(
-                    aiLearning
+                    learning
                 )
             );
 
@@ -1630,7 +1676,9 @@ function getForcedCounterfactual(
 ========================================================= */
 
 function learnFromReview(
-    review
+    review,
+    learning = aiLearning,
+    persistChanges = true
 ) {
 
     if (!review) {
@@ -1666,21 +1714,21 @@ function learnFromReview(
             review.outcome === "WIN";
 
 
-        aiLearning.stats.total++;
+        learning.stats.total++;
 
 
         if (correct) {
 
-            aiLearning.stats.win++;
+            learning.stats.win++;
 
         } else {
 
-            aiLearning.stats.loss++;
+            learning.stats.loss++;
         }
 
 
         Object.keys(
-            aiLearning.factors
+            learning.factors
         ).forEach(
             key => {
 
@@ -1702,7 +1750,7 @@ function learnFromReview(
 
 
                 const factor =
-                    aiLearning.factors[key];
+                    learning.factors[key];
 
 
                 const factorDirection =
@@ -1757,19 +1805,19 @@ function learnFromReview(
 
         if (correct) {
 
-            aiLearning.confidenceBias +=
+            learning.confidenceBias +=
                 0.35;
 
         } else {
 
-            aiLearning.confidenceBias -=
+            learning.confidenceBias -=
                 0.55;
         }
 
 
-        aiLearning.confidenceBias =
+        learning.confidenceBias =
             clamp(
-                aiLearning.confidenceBias,
+                learning.confidenceBias,
                 -8,
                 8
             );
@@ -1779,11 +1827,12 @@ function learnFromReview(
             review.pattern,
             review.predictionSize,
             review.actualSize,
-            review.outcome
+            review.outcome,
+            learning
         );
 
 
-        aiLearning.lastLearningMessage =
+        learning.lastLearningMessage =
             correct
                 ? `实际大小 ${review.actualSize} 与 AI 大小判断一致，AI 强化有效因素。`
                 : `实际大小 ${review.actualSize} 与 AI 大小判断相反，AI 降低近期失效因素权重。`;
@@ -1794,43 +1843,43 @@ function learnFromReview(
         review.outcome === "PASS"
     ) {
 
-        aiLearning.stats.pass++;
+        learning.stats.pass++;
 
 
         if (
             review.counterfactual === "WIN"
         ) {
 
-            aiLearning.stats.passMissed++;
+            learning.stats.passMissed++;
 
-            aiLearning.passThreshold -=
+            learning.passThreshold -=
                 0.025;
 
-            aiLearning.lastLearningMessage =
+            learning.lastLearningMessage =
                 "本次 PASS 如果强制判断大小会 WIN，AI 稍微降低 PASS 门槛。";
 
         } else if (
             review.counterfactual === "LOSS"
         ) {
 
-            aiLearning.stats.passCorrect++;
+            learning.stats.passCorrect++;
 
-            aiLearning.passThreshold +=
+            learning.passThreshold +=
                 0.025;
 
-            aiLearning.lastLearningMessage =
+            learning.lastLearningMessage =
                 "本次 PASS 避开了错误大小判断，AI 保持更谨慎。";
 
         } else {
 
-            aiLearning.lastLearningMessage =
+            learning.lastLearningMessage =
                 "本次 PASS 没有足够大小方向，AI 保持观察。";
         }
 
 
-        aiLearning.passThreshold =
+        learning.passThreshold =
             clamp(
-                aiLearning.passThreshold,
+                learning.passThreshold,
                 0.45,
                 1.25
             );
@@ -1840,27 +1889,28 @@ function learnFromReview(
             review.pattern,
             review.predictionSize,
             review.actualSize,
-            "PASS"
+            "PASS",
+            learning
         );
     }
 
 
-    aiLearning.recentReviews.unshift(
+    learning.recentReviews.unshift(
         review
     );
 
-    aiLearning.recentReviews =
-        aiLearning.recentReviews.slice(
+    learning.recentReviews =
+        learning.recentReviews.slice(
             0,
             100
         );
 
 
-    aiLearning.lastReviewedIssue =
+    learning.lastReviewedIssue =
         review.issue;
 
 
-    saveAILearning();
+    if (persistChanges && learning === aiLearning) saveAILearning();
 }
 
 
@@ -3016,10 +3066,17 @@ async function fetchDraws() {
                             item?.winningNumber;
 
 
-                        const number =
-                            safeNumber(
-                                rawNumber
-                            );
+                        // Never convert a missing/invalid draw to number 0.
+                        // safeNumber() returns 0 for NaN and would otherwise
+                        // invent a losing/winning result and contaminate AI.
+                        if (rawNumber === null || rawNumber === undefined ||
+                            typeof rawNumber === "boolean" || String(rawNumber).trim() === "") {
+                            return null;
+                        }
+                        const number = Number(rawNumber);
+                        if (!Number.isInteger(number) || number < 0 || number > 9) {
+                            return null;
+                        }
 
 
                         const issue =
@@ -3043,22 +3100,9 @@ async function fetchDraws() {
                             "";
 
 
-                        let size =
-                            item?.size ??
-                            item?.sizeName ??
-                            "";
-
-
-                        if (
-                            size !== "大" &&
-                            size !== "小"
-                        ) {
-
-                            size =
-                                number >= 5
-                                    ? "大"
-                                    : "小";
-                        }
+                        // Size is a function of the validated number. A
+                        // mismatched upstream label cannot change the result.
+                        const size = number >= 5 ? "大" : "小";
 
 
                         return {
@@ -3157,8 +3201,8 @@ function updateLatestCard(
             ${getNumberIconHtml(
                 latest.number
             )}
-            ${latest.number}
-            ${latest.size}
+            ${escapeHtml(latest.number)}
+            ${escapeHtml(latest.size)}
         `;
     }
 }
@@ -3214,7 +3258,7 @@ function updatePredictionCard(
             </strong>
 
             <span>
-                ${prediction.confidence}%
+                ${escapeHtml(prediction.confidence)}%
             </span>
         `;
 
@@ -3236,11 +3280,11 @@ function updatePredictionCard(
 
     el.innerHTML = `
         <strong>
-            ${prediction.num ?? "-"} / ${prediction.size}
+            ${escapeHtml(prediction.num ?? "-")} / ${escapeHtml(prediction.size)}
         </strong>
 
         <span>
-            ${prediction.confidence}%
+            ${escapeHtml(prediction.confidence)}%
         </span>
     `;
 }
@@ -3431,128 +3475,56 @@ function updateMarketAnalysis(
    ONLY SIZE DECIDES WIN / LOSS
 ========================================================= */
 
-function runBacktest(
-    draws
-) {
-
-    if (
-        !draws ||
-        draws.length < 12
-    ) {
-
-        return {
-
-            win: 0,
-
-            loss: 0,
-
-            pass: 0,
-
-            valid: 0,
-
-            rate: 0
-        };
-    }
-
-
-    let win = 0;
-    let loss = 0;
-    let pass = 0;
-
-
-    const maxRows =
-        Math.min(
-            50,
-            draws.length - 10
-        );
-
-
-    const simulatedLearning =
-        JSON.parse(
-            JSON.stringify(
-                aiLearning
-            )
-        );
-
-
-    for (
-        let i = 0;
-        i < maxRows;
-        i++
-    ) {
-
-        const currentDraw =
-            draws[i];
-
-
-        const history =
-            draws.slice(
-                i + 1
-            );
-
-
-        const prediction =
-            getLearnedPrediction(
-                history,
-                simulatedLearning
-            );
-
-
-        if (
-            prediction.size ===
-            "PASS"
-        ) {
-
-            pass++;
-
-        } else if (
-            prediction.size ===
-            currentDraw.size
-        ) {
-
-            /*
-             * 只比较大小
-             */
-
-            win++;
-
-        } else {
-
-            /*
-             * 只比较大小
-             */
-
-            loss++;
-        }
-    }
-
-
-    const valid =
-        win + loss;
-
-
-    const rate =
-        valid > 0
-            ? (
-                win /
-                valid *
-                100
-            )
-            : 0;
-
-
-    return {
-
-        win,
-
-        loss,
-
-        pass,
-
-        valid,
-
-        rate
+function runBacktest(draws) {
+    // Honest chronological walk-forward. The simulated model begins with the
+    // published default parameters and learns only AFTER each historical round.
+    // Do not reuse the live browser's aiLearning: its weights/patterns have
+    // already seen the backtest period, causing look-ahead contamination.
+    const initial = {
+        win: 0, loss: 0, pass: 0, valid: 0, rate: 0,
+        evaluated: 0, baselineWins: 0, baselineRate: 0
     };
+    if (!Array.isArray(draws) || draws.length < 12) return initial;
+
+    // The API supplies newest first; replay from the oldest available draw.
+    const timeline = draws.slice().reverse();
+    const firstEvaluated = Math.max(10, timeline.length - 50);
+    const simulated = JSON.parse(JSON.stringify(DEFAULT_AI_LEARNING));
+    const result = {...initial};
+    for (let i = 10; i < timeline.length; i++) {
+        const known = timeline.slice(0, i).reverse();
+        const actual = timeline[i];
+        const prediction = getLearnedPrediction(known, simulated);
+        const actualSize = actual.size === '大' ? '大' : '小';
+        const outcome = prediction.size === 'PASS' ? 'PASS'
+            : prediction.size === actualSize ? 'WIN' : 'LOSS';
+        let counterfactual = 'NONE';
+        if (outcome === 'PASS') {
+            const forced = getForcedCounterfactual(known, simulated);
+            if (forced && forced.size !== 'PASS')
+                counterfactual = forced.size === actualSize ? 'WIN' : 'LOSS';
+        }
+        if (i >= firstEvaluated) {
+            result.evaluated++;
+            result.baselineWins += Number(actualSize === '大');
+            if (outcome === 'WIN') result.win++;
+            else if (outcome === 'LOSS') result.loss++;
+            else result.pass++;
+        }
+        // IMPORTANT: only now is this observed result allowed to train the
+        // simulated model. Simulated learning is never saved to localStorage.
+        learnFromReview({
+            issue: actual.issue,
+            predictionSize: prediction.size,
+            actualSize, outcome, counterfactual,
+            featureSnapshot: prediction.features,
+            pattern: getCurrentPattern(known)
+        }, simulated, false);
+    }
+    result.valid = result.win + result.loss;
+    result.rate = result.valid ? result.win / result.valid * 100 : 0;
+    result.baselineRate = result.evaluated ? result.baselineWins / result.evaluated * 100 : 0;
+    return result;
 }
 
 
@@ -3560,39 +3532,23 @@ function runBacktest(
    UPDATE WIN RATE
 ========================================================= */
 
-function updateWinRate(
-    result
-) {
-
-    const el =
-        document.getElementById(
-            "win-rate"
-        );
-
-
-    if (!el) {
-        return;
-    }
-
-
+function updateWinRate(result) {
+    const el = document.getElementById('win-rate');
+    if (!el) return;
+    // A 100% rate based on just one actionable round is not a claim of 100%
+    // prediction accuracy. Show its denominator, skipped rounds and baseline.
+    const display = result.valid ? `${result.rate.toFixed(1)}%` : '--';
     el.innerHTML = `
-        <div style="
-            font-size:1.8rem;
-            font-weight:900;
-        ">
-            ${result.rate.toFixed(1)}%
+        <div style="font-size:1.8rem;font-weight:900;">${display}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:5px;">
+            WIN ${result.win} · LOSS ${result.loss} · PASS ${result.pass}
         </div>
-
-        <div style="
-            font-size:11px;
-            color:#94a3b8;
-            margin-top:5px;
-        ">
-            WIN ${result.win}
-            · LOSS ${result.loss}
-            · PASS ${result.pass}
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+            滚动回测 ${result.evaluated} 局，参与判断 ${result.valid} 局；固定猜大基准 ${result.baselineRate.toFixed(1)}%
         </div>
-    `;
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px;">
+            仅历史模拟，PASS 不计入胜率，非独立未来验证
+        </div>`;
 }
 
 
@@ -3628,22 +3584,22 @@ function renderDrawTable(
                         <tr>
 
                             <td>
-                                ${draw.issue}
+                                ${escapeHtml(draw.issue)}
                             </td>
 
                             <td>
                                 ${getNumberIconHtml(
                                     draw.number
                                 )}
-                                ${draw.number}
+                                ${escapeHtml(draw.number)}
                             </td>
 
                             <td>
-                                ${draw.size}
+                                ${escapeHtml(draw.size)}
                             </td>
 
                             <td>
-                                ${draw.colour || "-"}
+                                ${escapeHtml(draw.colour || "-")}
                             </td>
 
                             <td>
@@ -3851,6 +3807,9 @@ async function refreshDashboard() {
 
         if (!draws || !draws.length) {
             console.log("WinGo 暂无开奖数据");
+            updateWingoConnection('⚠ WinGo 接口无有效新数据：当前无法验证实时连接，暂停下一期参考', false);
+            updatePredictionCard(null);
+            resetWingoLiveAnalysis();
             return;
         }
 
@@ -3858,22 +3817,36 @@ async function refreshDashboard() {
             String(b.issue).localeCompare(String(a.issue))
         );
 
-        // AI 自动复盘 / 学习
-        reviewNewOutcome(draws);
+        const latestIssue = String(draws[0].issue || '');
+        // A successful API read is not proof that the reported round is new.
+        // On first contact, wait to observe the next changed issue number.
+        if (wingoLastObservedIssue && latestIssue !== wingoLastObservedIssue) {
+            wingoLastNewDrawAt = Date.now();
+        }
+        wingoLastObservedIssue = latestIssue;
+        const secondsSinceNew = (Date.now() - wingoLastNewDrawAt) / 1000;
+        const live = isCurrentMYTIssue(latestIssue) && wingoLastNewDrawAt > 0 &&
+            secondsSinceNew >= 0 && secondsSinceNew <= 180;
+        updateWingoConnection(live
+            ? `● WinGo 最新期号已更新：${latestIssue}（${Math.floor(secondsSinceNew)} 秒前，实时观察）`
+            : `⚠ WinGo 历史数据 / 未验证实时连接：期号 ${latestIssue}；等待观察新的开奖期号`, live);
 
-        // 下一期 AI 预测
-        const prediction = getLearnedPrediction(draws);
+        // Do not learn as if a repeated old snapshot were a newly observed hand.
+        if (live) reviewNewOutcome(draws);
+
+        // Only show forward-looking experimental output after genuine changes.
+        const prediction = live ? getLearnedPrediction(draws) : null;
 
         // 最新开奖
         const latest = draws[0];
 
         updateLatestCard(latest);
 
-        // 下一期预测
+        // Next-period model output is never presented from stale history.
         updatePredictionCard(prediction);
 
-        // 市场分析
-        updateMarketAnalysis(draws, prediction);
+        if (live) updateMarketAnalysis(draws, prediction);
+        else resetWingoLiveAnalysis();
 
         // AI 智能复盘
         renderAIReview(draws);
@@ -3893,6 +3866,9 @@ async function refreshDashboard() {
 
     } catch (error) {
         console.error("WinGo Dashboard Refresh Error:", error);
+        updateWingoConnection('⚠ WinGo 读取异常，暂停实时参考', false);
+        updatePredictionCard(null);
+        resetWingoLiveAnalysis();
     }
 }
 
@@ -4587,7 +4563,7 @@ function renderBigRoad(
                         }"
                     >
 
-                        ${item}
+                        ${escapeHtml(item)}
 
                     </span>
                 `
@@ -4627,7 +4603,7 @@ function renderSmallRoad(
                         }"
                     >
 
-                        ${item}
+                        ${escapeHtml(item)}
 
                     </span>
                 `

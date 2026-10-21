@@ -10,6 +10,7 @@
     const STORAGE_KEY = "choice_manual_history_v1";
     const SELECTED_KEY = "choice_manual_selected_v1";
     const MAX_PER_TABLE = 5000;
+    let corruptStorage = false;
     const CODE_NAMES = Object.freeze({B: "庄", P: "闲", T: "和"});
     const CODE_CLASSES = Object.freeze({B: "is-banker", P: "is-player", T: "is-tie"});
 
@@ -56,23 +57,32 @@
         let initialMessage = "准备记录。刷新后仍会保留本浏览器上的记录。";
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                histories = validateBackup(JSON.parse(raw));
-                initialMessage = "已从本浏览器恢复手动记录。";
-            }
+            // An external tab may have removed all records; do not keep a stale
+            // in-memory copy while claiming the browser is empty.
+            histories = raw ? validateBackup(JSON.parse(raw)) : emptyHistories();
+            corruptStorage = false;
+            if (raw) initialMessage = "已从本浏览器恢复手动记录。";
             const previousTable = localStorage.getItem(SELECTED_KEY);
             if (TABLES.includes(previousTable)) selectedTable = previousTable;
         } catch (error) {
-            initialMessage = `无法读取本地记录：${error.message}。当前显示空白记录，先不要覆盖原有备份。`;
+            // An invalid existing backup must never be overwritten silently by
+            // an Add/Undo action. Explicit confirmed import can recover it.
+            corruptStorage = true;
+            initialMessage = `无法读取本地记录：${error.message}。请先导出/保留原浏览器数据，再通过确认导入恢复；已禁止自动覆盖。`;
             message(initialMessage, true);
             return;
         }
         message(initialMessage);
     }
 
-    function persist() {
+    function persist(next = histories, confirmedReplacement = false) {
+        if (corruptStorage && !confirmedReplacement) {
+            message("旧本地记录损坏，为避免覆盖已停止修改；可在确认后导入有效 JSON 备份。", true);
+            return false;
+        }
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({version: 1, tables: histories}));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({version: 1, tables: next}));
+            corruptStorage = false;
             return true;
         } catch (error) {
             message("浏览器保存失败：记录仅暂存在页面内，刷新可能丢失。请检查浏览器储存权限。", true);
@@ -199,6 +209,49 @@
         node.replaceChildren(fragment);
     }
 
+    function renderRoadGrid(id, cells) {
+        const node = element(id);
+        if (!node) return;
+        const fragment = document.createDocumentFragment();
+        const maxCol = cells.reduce((max, cell) => Math.max(max, cell.col), -1);
+        node.style.gridTemplateColumns = `repeat(${Math.max(1, maxCol + 1)}, 24px)`;
+        if (!cells.length) {
+            const note = document.createElement("span");
+            note.className = "bc-manual-empty";
+            note.textContent = "历史样本不足";
+            fragment.appendChild(note);
+        }
+        for (const cell of cells) {
+            const mark = document.createElement("span");
+            mark.className = `bc-road-mark bc-road-${cell.code}`;
+            mark.style.gridColumnStart = String(cell.col + 1);
+            mark.style.gridRowStart = String(cell.row + 1);
+            mark.textContent = cell.code === "B" ? "庄" : cell.code === "P" ? "闲" :
+                cell.code === "T" ? "和" : cell.code === "R" ? "●" : "○";
+            if (cell.ties) {
+                const tie = document.createElement("span");
+                tie.className = "bc-road-ties";
+                tie.textContent = cell.ties > 1 ? `和${cell.ties}` : "和";
+                mark.appendChild(tie);
+            }
+            mark.title = cell.ties ? `${mark.textContent}（含和 ${cell.ties} 局）` : mark.textContent;
+            fragment.appendChild(mark);
+        }
+        node.replaceChildren(fragment);
+    }
+
+    function renderRoadmaps(history) {
+        if (!window.BaccaratRoads) return;
+        const recent = history.slice(-120);
+        const roads = window.BaccaratRoads.build(recent);
+        setText("bc-roads-table", selectedTable);
+        renderRoadGrid("bc-road-bead", roads.bead);
+        renderRoadGrid("bc-road-big", roads.big);
+        renderRoadGrid("bc-road-eye", roads.bigEyeBoy);
+        renderRoadGrid("bc-road-small", roads.smallRoad);
+        renderRoadGrid("bc-road-cockroach", roads.cockroachRoad);
+    }
+
     function render() {
         const history = histories[selectedTable];
         const length = history.length;
@@ -299,6 +352,12 @@
                 : "在拥有至少 40 局庄／闲作为训练数据后，才开始计入回测；达到 120 个回测样本也不代表可预测。");
         }
 
+        if (window.BaccaratEngine) {
+            const ev = window.BaccaratEngine.referenceEV();
+            const pct = number => `${(number * 100).toFixed(2)}%`;
+            setText("bc-ai-ev", `押庄 ${pct(ev.B)} · 押闲 ${pct(ev.P)} · 押和 ${pct(ev.T)}（每单位押注的长期期望净回报）`);
+        }
+        renderRoadmaps(history);
         const trend = trendReference(history);
         const pick = element("bc-manual-pick");
         pick.textContent = trend.pick ? `历史偏多：${CODE_NAMES[trend.pick]}` : (decisiveCount ? "观察中／无明显偏多" : "等待记录");
@@ -326,6 +385,10 @@
 
     window.choiceManualAdd = function(code) {
         if (!Object.hasOwn(CODE_NAMES, code)) return;
+        if (corruptStorage) {
+            message("本地备份无法读取，请先导入有效备份，避免覆盖旧记录。", true);
+            return;
+        }
         const history = histories[selectedTable];
         if (history.length >= MAX_PER_TABLE) {
             message(`每桌最多保存 ${MAX_PER_TABLE} 局，请先导出备份后清空。`, true);
@@ -338,6 +401,7 @@
     };
 
     window.choiceManualUndo = function() {
+        if (corruptStorage) { message("本地备份无法读取，请先恢复备份。", true); return; }
         const history = histories[selectedTable];
         if (!history.length) return;
         const removed = history.pop();
@@ -347,6 +411,7 @@
     };
 
     window.choiceManualClear = function() {
+        if (corruptStorage) { message("本地备份无法读取，请先恢复备份。", true); return; }
         const history = histories[selectedTable];
         if (!history.length) return;
         if (!window.confirm(`确定清空 ${selectedTable} 已手动输入的 ${history.length} 局吗？其他桌的记录不会删除。`)) return;
@@ -386,10 +451,15 @@
                 message("已取消导入，现有记录未改变。");
                 return;
             }
+            // Commit validated storage first; if quota/permissions reject the
+            // write, keep existing in-memory records and show a real failure.
+            if (!persist(incoming, true)) {
+                message("导入失败：浏览器无法保存备份，现有页面记录没有改变。", true);
+                return;
+            }
             histories = incoming;
-            const saved = persist();
             render();
-            if (saved) message(`导入成功：共 ${count} 局，8 桌记录已更新。`);
+            message(`导入成功：共 ${count} 局，8 桌记录已更新。`);
         } catch (error) {
             message(`导入失败：${error.message}。原有记录没有改变。`, true);
         } finally {
@@ -405,7 +475,7 @@
             if (event.key === STORAGE_KEY) {
                 loadFromBrowser();
                 render();
-                message("已同步同一浏览器其他标签页更新的 百家乐手动记录。");
+                if (!corruptStorage) message("已同步同一浏览器其他标签页更新的 百家乐手动记录。");
             }
         });
     }
