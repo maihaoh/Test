@@ -417,6 +417,8 @@ function switchGameGroup(group) {
         switchMainTab(lastLotteryTab, remembered);
     } else if (group === "baccarat") {
         switchMainTab("baccarat", document.querySelector("[data-baccarat-tab]"));
+    } else if (group === "choice") {
+        switchMainTab("choice", document.querySelector("[data-choice-tab]"));
     }
 }
 
@@ -434,9 +436,9 @@ function switchMainTab(tab, button) {
         btn.classList.toggle("active", active);
         btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
-    for (const group of ["lottery", "baccarat"]) {
+    for (const group of ["lottery", "baccarat", "choice"]) {
         const hub = document.getElementById(group + "-hub");
-        const active = (group === "lottery") === isLottery;
+        const active = group === (isLottery ? "lottery" : tab);
         if (hub) {
             hub.classList.toggle("active", active);
             const toggle = hub.querySelector(".game-hub-toggle");

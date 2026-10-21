@@ -2630,3 +2630,53 @@ tbody tr:hover {
 .bc-ledger-token {display:flex;align-items:center;justify-content:center;border:1px solid #42526b;border-radius:5px;width:30px;height:30px;min-width:30px;font-size:14px;font-weight:700;background:#142138}
 .bc-ledger-token.is-empty {color:#94a3b8}
 @media(max-width:620px){#baccarat-section .section-card{padding:12px}.bc-road-primary{grid-template-columns:minmax(0,1fr)}.bc-focus-body{gap:12px;padding:14px 0}.bc-call{font-size:48px;min-width:68px}.bc-call-details p{font-size:12px}.bc-tools button{padding:6px 7px;font-size:11px}.bc-focus-head h2{font-size:15px}}
+
+
+/* V30: extra Choice tab and one read-only room; original manual Baccarat remains separate. */
+.game-hubs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.choice-hub.active { border-color:#62bdd6; box-shadow:0 0 0 1px rgba(98,189,214,.26),0 10px 28px rgba(30,41,59,.35); }
+.choice-hub.active .game-hub-badge { background:rgba(56,189,248,.18);color:#bae6fd; }
+.choice-live-section .section-card { background:#101a2b; border:1px solid #334155; padding:18px; margin-bottom:12px; min-width:0; }
+.choice-room-card { border-top:3px solid #38bdf8 !important; }
+.choice-room-head,.choice-room-subhead { display:flex;justify-content:space-between;align-items:center;gap:12px; }
+.choice-room-head {align-items:flex-start;}
+.choice-room-eyebrow { color:#7dd3fc;font-size:11px;font-weight:800;letter-spacing:.07em; }
+.choice-room-head h2 { color:#f8fafc;font-size:23px;margin:6px 0; }
+.choice-room-head h2 small { font-size:15px;color:#94a3b8;margin-left:8px; }
+.choice-room-description,.choice-room-note { color:#94a3b8;font-size:12px;line-height:1.65; }
+.choice-room-head button { flex:0 0 auto;border:1px solid #3b617c;background:#1d344d;color:#e2f5ff;border-radius:9px;padding:10px 12px;cursor:pointer; }
+.choice-room-head button:disabled { opacity:.5;cursor:wait; }
+.choice-room-head button:focus-visible { outline:2px solid #7dd3fc;outline-offset:2px; }
+#choice-room-status { margin:14px 0; }
+.choice-room-stats {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:13px 0;}
+.choice-room-stats>div { border:1px solid #334155;border-radius:10px;padding:14px;background:#0d1525;min-width:0; }
+.choice-room-stats small {display:block;color:#94a3b8;font-size:11px;margin-bottom:7px;}
+.choice-room-stats strong {display:block;color:#f8fafc;font-size:clamp(14px,2vw,24px);overflow-wrap:anywhere;}
+.choice-room-forecast {display:flex;align-items:center;gap:14px;border:1px solid #334155;border-radius:10px;padding:13px;background:#111c2e;}
+.choice-room-forecast>div {display:flex;flex-direction:column;gap:6px;min-width:128px;}
+.choice-room-forecast span {font-size:11px;color:#b5c9e3;}
+.choice-room-forecast strong {font-size:27px;color:#dbeafe;}
+.choice-room-forecast p {color:#cbd5e1;font-size:12px;line-height:1.6;margin:0;}
+.choice-room-forecast strong.is-B {color:#fda4af;}
+.choice-room-forecast strong.is-P {color:#93c5fd;}
+.choice-room-subhead {margin-bottom:12px;}
+.choice-room-subhead h2 {font-size:17px;color:#f8fafc;margin:0;}
+.choice-room-subhead span {font-size:11px;color:#94a3b8;}
+.choice-room-history { display:flex;align-items:center;gap:4px;min-height:47px;overflow-x:auto;white-space:nowrap;padding:7px 0; }
+.choice-room-chip {display:inline-flex;flex:0 0 27px;width:27px;height:27px;border-radius:50%;align-items:center;justify-content:center;border:1px solid;font-size:11px;font-weight:800;}
+.choice-room-chip.is-B {color:#fda4af;border-color:#fb7185;background:rgba(244,63,94,.12);}
+.choice-room-chip.is-P {color:#93c5fd;border-color:#60a5fa;background:rgba(59,130,246,.12);}
+.choice-room-chip.is-T {color:#6ee7b7;border-color:#34d399;background:rgba(16,185,129,.12);}
+.choice-room-empty {font-size:12px;color:#94a3b8;}
+.choice-road-panels { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px; }
+.choice-road-panels>div {min-width:0;}
+.choice-road-panels h3 {font-size:12px;color:#b5c9e3;margin:4px 0 8px;}
+.choice-road-scroll {max-width:100%;overflow-x:auto;border:1px solid #334155;border-radius:8px;background:#0d1525;}
+.choice-road-grid {min-height:146px;min-width:100%;display:grid;grid-template-rows:repeat(6,24px);background-image:linear-gradient(#253248 1px,transparent 1px),linear-gradient(90deg,#253248 1px,transparent 1px);background-size:24px 24px;justify-content:start;}
+.choice-road-grid .bc-road-mark {width:22px;height:22px;border-radius:50%;border:2px solid;align-self:center;justify-self:center;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;position:relative;}
+.choice-road-grid .bc-road-B {color:#fb7185;border-color:#fb7185;}
+.choice-road-grid .bc-road-P {color:#60a5fa;border-color:#60a5fa;}
+.choice-road-grid .bc-road-T {color:#34d399;border-color:#34d399;}
+.choice-road-grid .bc-road-mark small {position:absolute;top:-8px;right:-7px;background:#16a34a;color:white;border-radius:8px;padding:0px 3px;font-size:9px;}
+@media(max-width:950px) { .game-hubs {grid-template-columns:repeat(2,minmax(0,1fr));} .choice-hub {grid-column:1/-1;} }
+@media(max-width:620px) { .choice-live-section .section-card{padding:12px;} .choice-road-panels{grid-template-columns:1fr;} .choice-room-stats{gap:6px;} .choice-room-stats>div{padding:9px;} .choice-room-forecast{flex-direction:column;align-items:stretch;gap:9px;} .choice-room-forecast>div{min-width:0;} }

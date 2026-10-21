@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Lottery + 百家乐 Dashboard</title>
 <script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=29" rel="stylesheet"/>
+<link href="style.css?v=30" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">UI V29</span>
+                Lottery 与 百家乐分区 · <span id="build-version">UI V30</span>
 </div>
 </div>
 <div class="header-info">
@@ -59,6 +59,13 @@
       <span class="game-hub-badge">简化预测</span>
     </button>
     <div class="game-hub-description">单一记录 · 下局参考 · 不自动下注</div>
+  </div>
+  <div class="game-hub choice-hub" id="choice-hub">
+    <button type="button" data-choice-tab="true" class="game-hub-toggle" onclick="switchMainTab('choice', this)" aria-pressed="false">
+      <span class="game-hub-title">🎴 Choice <small>百家乐 · 单一房间 D51</small></span>
+      <span class="game-hub-badge">自动数据检查</span>
+    </button>
+    <div class="game-hub-description">只读开奖 · 单房间 · 连接状态透明</div>
   </div>
 </div>
 <!-- =====================================================
@@ -389,6 +396,36 @@
     <p class="bc-limit">只展示录入前已保存的预测；旧记录没有预测时留空，不事后补算。</p>
   </section>
 </section>
+<!-- Choice 单房间：与手动百家乐完全分开；只从服务端已获取的结果读取 -->
+<section class="main-section choice-live-section" id="choice-section" aria-labelledby="choice-room-heading">
+  <section class="section-card choice-room-card">
+    <div class="choice-room-head">
+      <div><div class="choice-room-eyebrow">CHOICE BACCARAT · READ-ONLY</div>
+      <h2 id="choice-room-heading">房间 1 <small>D51</small></h2>
+      <p class="choice-room-description">仅显示这一间的真实开奖结果；不会混合其他房间，也不自动下注。</p></div>
+      <button type="button" id="choice-room-refresh" onclick="refreshChoiceRoom()">↻ 检查开奖</button>
+    </div>
+    <p class="data-status is-offline" id="choice-room-status" role="status" aria-live="polite">等待 Choice 房间数据…</p>
+    <div class="choice-room-stats">
+      <div><small>最新开奖结果</small><strong id="choice-room-latest">—</strong></div>
+      <div><small>最新局号</small><strong id="choice-room-issue">—</strong></div>
+      <div><small>已取得记录</small><strong id="choice-room-count">0</strong></div>
+    </div>
+    <div class="choice-room-forecast">
+      <div><span>下一局统计参考</span><strong id="choice-room-forecast">观察</strong></div>
+      <p id="choice-room-reason">需要先取得真实开奖，并观察到新局更新。</p>
+    </div>
+    <p class="choice-room-note">⚠️ 历史记录存在不代表直播已连接；仅在本页面实际观察到新结果变化后标记实时更新。统计参考不保证命中。</p>
+  </section>
+  <section class="section-card choice-room-card">
+    <div class="choice-room-subhead"><h2>历史开奖结果</h2><span>最新在右 · 红庄 / 蓝闲 / 绿和</span></div>
+    <div id="choice-room-history" class="choice-room-history" aria-label="Choice D51 开奖历史"><span class="choice-room-empty">等待数据</span></div>
+    <div class="choice-road-panels">
+      <div><h3>大路</h3><div class="choice-road-scroll"><div class="choice-road-grid" id="choice-room-big-road"></div></div></div>
+      <div><h3>珠盘路</h3><div class="choice-road-scroll"><div class="choice-road-grid" id="choice-room-bead-road"></div></div></div>
+    </div>
+  </section>
+</section>
 <section class="main-section multi-game-section" id="k3-section">
 <div class="section-card multi-shell">
 <div class="multi-head"><div><div class="section-title">🎲 K3 Lotre · AI 预测</div><p class="data-status" id="k3-data-status">正在读取 K3 数据…</p><div class="multi-source-actions"><button type="button" onclick="multiGamesRefresh()">↻ 立即检查 Render</button><a href="https://test-4bvi.onrender.com/api/connection-status" target="_blank" rel="noopener noreferrer">查看服务端连接诊断 ↗</a></div></div><div class="multi-live">1Min · typeId 9</div></div>
@@ -429,12 +466,13 @@
 </div>
 </section>
 </div>
-<script src="script.js?v=29"></script>
+<script src="script.js?v=30"></script>
 <script src="baccarat_analysis.js?v=29"></script>
 <script src="baccarat_engine.js?v=29"></script>
 <script src="baccarat_roads.js?v=29"></script>
 <script src="baccarat_predictor.js?v=29"></script>
 <script src="choice_manual.js?v=29"></script>
+<script src="choice_live.js?v=30"></script>
 <script src="multi_games.js?v=29"></script>
 </body>
 </html>
