@@ -141,6 +141,59 @@ def health():
     )
 
 
+def _source_status(state, now=None):
+    """Safe, public collector diagnostics; never expose upstream auth data.
+
+    This reports *observed timestamp freshness*, not proof that the external
+    provider is authenticated or that future outcomes are predictable.
+    """
+    now = int(time.time() if now is None else now)
+    if not isinstance(state, dict):
+        state = {}
+    draws = state.get("draws")
+    if not isinstance(draws, list):
+        draws = []
+    def safe_stamp(value):
+        try:
+            stamp = int(value)
+            return stamp if 0 < stamp <= now + 60 else 0
+        except (ValueError, TypeError, OverflowError):
+            return 0
+    success_at = safe_stamp(state.get("last_success_at") or state.get("updated_at"))
+    new_at = safe_stamp(state.get("last_new_draw_at"))
+    if new_at > now:
+        new_at = 0
+    fresh = bool(draws and new_at and 0 <= now - new_at <= 180)
+    latest = draws[0] if draws and isinstance(draws[0], dict) else {}
+    issue = str(latest.get("issueNumber") or latest.get("issue") or "")[:40]
+    return {
+        "observedRecently": fresh,
+        "records": len(draws),
+        "latestIssue": issue,
+        "lastSuccessfulReadAt": success_at or None,
+        "lastNewIssueObservedAt": new_at or None,
+        "secondsSinceNewIssue": now - new_at if new_at else None,
+        "sourceStatus": str(state.get("status") or "unknown")[:120],
+    }
+
+
+@app.get("/api/connection-status")
+def connection_status():
+    data = read_data()
+    if isinstance(data, dict) and "error" in data:
+        return jsonify({"ok": False, "service": "responding", "error": "data_unavailable"}), 503
+    now = int(time.time())
+    sources = {name: _source_status(data.get(name), now) for name in MULTI_GAMES}
+    return jsonify({
+        "ok": True,
+        "service": "responding",
+        "checkedAt": now,
+        "multiGameSources": sources,
+        "anyNewIssueObservedRecently": any(item["observedRecently"] for item in sources.values()),
+        "note": "The API responds; fresh timestamps are not proof of an authorized or continuous external game feed."
+    })
+
+
 @app.get("/api/data")
 def api_data():
     data = read_data()

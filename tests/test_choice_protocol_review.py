@@ -105,6 +105,29 @@ class ProtocolReviewTests(unittest.TestCase):
         self.assertNotIn('frame_hex', state)
         self.assertEqual(state['received_frames'], 0)
 
+    def test_v23_connection_status_distinguishes_server_from_new_results(self):
+        fresh = realtime_api._source_status({
+            'draws': [{'issueNumber':'20261021001'}],
+            'last_success_at':9900, 'last_new_draw_at':9950, 'status':'有新期号'
+        }, now=10000)
+        self.assertTrue(fresh['observedRecently'])
+        self.assertEqual(fresh['records'], 1)
+        self.assertEqual(fresh['secondsSinceNewIssue'], 50)
+        repeated = realtime_api._source_status({
+            'draws':[{'issueNumber':'20261021001'}],
+            'last_success_at':9995, 'last_new_draw_at':9000,
+            'status':'历史数据未更新'
+        },now=10000)
+        self.assertFalse(repeated['observedRecently'])
+        self.assertEqual(repeated['records'],1)
+        future = realtime_api._source_status({
+            'draws':[{'issueNumber':'20261021001'}],
+            'last_success_at':20000, 'last_new_draw_at':20000
+        },now=10000)
+        self.assertFalse(future['observedRecently'])
+        self.assertIsNone(future['lastNewIssueObservedAt'])
+        self.assertFalse(realtime_api._source_status({},now=10000)['observedRecently'])
+
     def test_realtime_api_exposes_safe_status(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/'choice_status.json';p.write_text(json.dumps({'status':'awaiting_authorized_game_login','received_frames':0}))

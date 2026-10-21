@@ -2340,3 +2340,26 @@ tbody tr:hover {
 /* WinGo must not display a permanent "loading" message on failed reads. */
 #wingo-data-status.is-live { border-color: #1e8c65; color: #b8f9db; background: #102a25; }
 #wingo-data-status.is-stale { border-color: #c3813a; color: #fde4bd; background: #34271c; }
+
+
+/* V23: visible operational diagnostics and historical analytics without claiming live data. */
+.wingo-diagnostics { margin: 12px 0 17px; padding: 15px 17px; border: 1px solid #395a78; border-radius: 15px; background: linear-gradient(110deg,rgba(28,52,82,.88),rgba(20,28,48,.96)); box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+.wingo-diagnostics-header {display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:13px; }
+.wingo-diagnostics-header strong {display:block; color:#f1f5f9; font-size:15px; font-weight:800; }
+.wingo-diagnostics-header span {display:block; color:#b7c7de; font-size:11px; line-height:1.7; margin-top:3px; }
+.wingo-refresh-button {padding:9px 13px; border:1px solid #60a5fa; border-radius:9px; background:#1d4ed8; color:white; font:inherit; font-size:12px; font-weight:750; cursor:pointer; }
+.wingo-refresh-button:hover {background:#2563eb; }
+.wingo-refresh-button:disabled {background:#334155; border-color:#475569; color:#cbd5e1; cursor:wait; }
+.wingo-refresh-button:focus-visible {outline:2px solid #bfdbfe; outline-offset:2px; }
+.wingo-diagnostics-grid {display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+.wingo-diagnostics-grid > div {min-width:0; padding:11px; border-radius:10px; background:rgba(3,11,27,.56); border:1px solid #32445d; }
+.wingo-diagnostics-grid small {display:block; font-size:10px; font-weight:700; color:#a6bedc; }
+.wingo-diagnostics-grid strong {display:block; margin-top:7px; font-size:12px; line-height:1.5; overflow-wrap:anywhere; color:#e0f2fe; }
+#wingo-diag-advice {font-size:12px; line-height:1.65; color:#d1e5f9; margin:12px 0 0; }
+@media (max-width:680px) { .wingo-diagnostics {padding:11px;} .wingo-diagnostics-grid {grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px;} .wingo-diagnostics-grid > div {padding:8px;} .wingo-diagnostics-header strong {font-size:13px;} .wingo-refresh-button {padding:8px 10px;} }
+
+/* V23: K3 / 5D / TRX Render service diagnostics access */
+.multi-source-actions {display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:10px 0 2px;}
+.multi-source-actions button,.multi-source-actions a {display:inline-flex;align-items:center;justify-content:center;border:1px solid #466082;border-radius:8px;background:#172943;color:#dbeafe;padding:7px 10px;font-size:11px;font-weight:700;text-decoration:none;cursor:pointer;}
+.multi-source-actions button:hover,.multi-source-actions a:hover {border-color:#93c5fd;background:#1e3a5f;}
+.multi-source-actions button:focus-visible,.multi-source-actions a:focus-visible {outline:2px solid #bfdbfe;outline-offset:2px;}

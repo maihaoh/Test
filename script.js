@@ -6,10 +6,78 @@ const WORKER_URL =
     "https://rapid-disk-cfwingo-api.j05stm24f008.workers.dev";
 
 let myChart = null;
-let countdownVal = 5;
+let countdownVal = 12;
 let currentBaccaratTable = "D51";
 let wingoLastObservedIssue = "";
 let wingoLastNewDrawAt = 0;
+
+// V23: distinguish an observed live change from a readable historical sample.
+// A single API response (even dated today) is not proof the stream updates.
+const WINGO_HISTORY_KEY = 'wingo_validated_history_v23';
+let wingoPreferredPageSize = 50;
+let wingoExtraHistoryTried = false;
+let wingoLastFetchError = '';
+let wingoLastCheckAt = 0;
+let wingoLastSuccessAt = 0;
+let wingoHistoryWritable = true;
+
+function wingoValidDraw(value) {
+    if (!value || typeof value !== 'object') return null;
+    const issue = String(value.issue ?? '').trim();
+    const number = Number(value.number);
+    if (!/^\d{8,28}$/.test(issue) || !Number.isInteger(number) || number < 0 || number > 9)
+        return null;
+    return {issue, number, size: number >= 5 ? '大' : '小',
+        colour: String(value.colour ?? '').slice(0, 30)};
+}
+
+function loadWingoHistory() {
+    try {
+        const raw = localStorage.getItem(WINGO_HISTORY_KEY);
+        if (!raw) return [];
+        const values = JSON.parse(raw);
+        if (!Array.isArray(values)) throw new Error('cache-not-list');
+        return values.map(wingoValidDraw).filter(Boolean).slice(0, 200);
+    } catch (error) {
+        // A corrupted saved cache is left untouched, never overwritten silently.
+        wingoHistoryWritable = false;
+        console.warn('WinGo 历史缓存无法读取，旧备份已保留。');
+        return [];
+    }
+}
+let wingoHistory = loadWingoHistory();
+
+function mergeWingoHistory(newDraws) {
+    const map = new Map();
+    for (const raw of [...newDraws, ...wingoHistory]) {
+        const draw = wingoValidDraw(raw);
+        if (draw && !map.has(draw.issue)) map.set(draw.issue, draw);
+    }
+    wingoHistory = [...map.values()]
+        .sort((a, b) => b.issue.localeCompare(a.issue)).slice(0, 200);
+    if (wingoHistoryWritable) {
+        try { localStorage.setItem(WINGO_HISTORY_KEY, JSON.stringify(wingoHistory)); }
+        catch (error) {console.warn('WinGo 浏览器存储不可写，本次历史仍可分析。');}
+    }
+    return wingoHistory;
+}
+
+function updateWingoDiagnostics({networkCount, historyCount, live, issue, detail, cacheOnly}) {
+    const assign = (id, value) => {
+        const node = document.getElementById(id);
+        if (node) node.textContent = value;
+    };
+    const checked = wingoLastCheckAt ? new Intl.DateTimeFormat('zh-CN', {
+        timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+    }).format(new Date(wingoLastCheckAt)) : '--';
+    assign('wingo-diag-worker', networkCount ? `可读取 · ${networkCount} 条` : `未取得新响应${wingoLastFetchError ? ' · ' + wingoLastFetchError : ''}`);
+    assign('wingo-diag-history', `${historyCount} 条${cacheOnly ? ' · 浏览器历史' : ''}`);
+    assign('wingo-diag-freshness', live ? '已观察到新期号' : '未观察到新开奖');
+    assign('wingo-diag-checked', checked);
+    assign('wingo-diag-advice', detail || (live
+        ? `期号 ${issue} 刚发生变化。模型仅作统计参考，不能保证下一期。`
+        : `最近已知期号 ${issue || '未知'}。历史统计可显示；下一期预测需等服务端确实更新。`));
+}
 
 function isCurrentMYTIssue(issue) {
     const match = /^(20\d{2})(\d{2})(\d{2})/.exec(String(issue || ""));
@@ -1097,35 +1165,15 @@ function getLearnedPrediction(
 
 
     let transitionScore = 0;
-
     let transitionSamples = 0;
 
-    for (
-        let i = 2;
-        i < sizes.length - 1;
-        i++
-    ) {
-
-        if (
-            sizes[i] === latest &&
-            sizes[i + 1]
-        ) {
-
-            transitionSamples++;
-
-            if (
-                sizes[i + 1] === "大"
-            ) {
-
-                transitionScore++;
-
-            } else {
-
-                transitionScore--;
-            }
-        }
+    // Newest-first timeline: after an older matching result at i, the
+    // chronological next result is i-1, not i+1. Only known history is read.
+    for (let i = 1; i < sizes.length; i++) {
+        if (sizes[i] !== latest) continue;
+        transitionSamples++;
+        transitionScore += sizes[i - 1] === '大' ? 1 : -1;
     }
-
 
     if (
         transitionSamples >= 2
@@ -2541,9 +2589,10 @@ function renderAIReview(
    FETCH WINGO
 ========================================================= */
 
-async function fetchDraws() {
+async function fetchDraws(pageNo = 1, pageSize = wingoPreferredPageSize) {
 
     try {
+        if (pageNo === 1) { wingoLastCheckAt = Date.now(); wingoLastFetchError = ""; }
 
         if (
             typeof CryptoJS ===
@@ -2606,9 +2655,9 @@ async function fetchDraws() {
 
             language: 0,
 
-            pageNo: 1,
+            pageNo,
 
-            pageSize: 10,
+            pageSize,
 
             random,
 
@@ -2704,9 +2753,7 @@ async function fetchDraws() {
 
         if (!response.ok) {
 
-            throw new Error(
-                `HTTP ${response.status}`
-            );
+            throw new Error(`HTTP ${response.status}`);
         }
 
 
@@ -2776,6 +2823,7 @@ async function fetchDraws() {
             Number(json.code) !== 0
         ) {
 
+            wingoLastFetchError = `API code ${String(json.code).slice(0, 30)}`;
             console.error(
                 "========== Worker API ERROR =========="
             );
@@ -3032,6 +3080,7 @@ async function fetchDraws() {
             }
 
 
+            wingoLastFetchError = '开奖结果格式不支持';
             return [];
         }
 
@@ -3149,10 +3198,13 @@ async function fetchDraws() {
         }
 
 
+        if (parsed.length) {wingoLastSuccessAt = Date.now(); wingoLastFetchError = '';}
+        else wingoLastFetchError = '无有效开奖记录';
         return parsed;
 
     } catch (error) {
 
+        wingoLastFetchError = error instanceof Error ? String(error.message).slice(0, 70) : '请求异常';
         console.error(
             "fetchDraws ERROR:",
             error
@@ -3236,7 +3288,7 @@ function updatePredictionCard(
             </strong>
 
             <span>
-                等待数据
+                等待数据（未确认实时更新）
             </span>
         `;
 
@@ -3322,7 +3374,7 @@ function updateMarketAnalysis(
 
 
     const features =
-        prediction.features ||
+        prediction?.features ||
         getFeatureSnapshot(
             draws
         );
@@ -3392,17 +3444,13 @@ function updateMarketAnalysis(
 
     setText(
         "analysis-markov",
-        features.markov >= 0
-            ? "大"
-            : "小"
+        features.markov > 0.05 ? "历史偏大" : features.markov < -0.05 ? "历史偏小" : "中性"
     );
 
 
     setText(
         "analysis-mean",
-        features.mean >= 0
-            ? "大"
-            : "小"
+        features.mean > 0.05 ? "历史偏大" : features.mean < -0.05 ? "历史偏小" : "中性"
     );
 
 
@@ -3436,15 +3484,12 @@ function updateMarketAnalysis(
     );
 
 
-    const score =
-        safeNumber(
-            prediction.weightedScore
-        );
+    const score = prediction ? safeNumber(prediction.weightedScore) : null;
 
 
     setText(
         "score-text",
-        score.toFixed(2)
+        score === null ? '--' : score.toFixed(2)
     );
 
 
@@ -3456,13 +3501,7 @@ function updateMarketAnalysis(
 
     if (fill) {
 
-        const percentage =
-            clamp(
-                50 +
-                score * 15,
-                5,
-                95
-            );
+        const percentage = score === null ? 0 : clamp(50 + score * 15, 5, 95);
 
         fill.style.width =
             `${percentage}%`;
@@ -3482,9 +3521,9 @@ function runBacktest(draws) {
     // already seen the backtest period, causing look-ahead contamination.
     const initial = {
         win: 0, loss: 0, pass: 0, valid: 0, rate: 0,
-        evaluated: 0, baselineWins: 0, baselineRate: 0
+        evaluated: 0, baselineWins: 0, baselineRate: 0, reviewRows: {}, lastReview: null
     };
-    if (!Array.isArray(draws) || draws.length < 12) return initial;
+    if (!Array.isArray(draws) || draws.length < 11) return initial;
 
     // The API supplies newest first; replay from the oldest available draw.
     const timeline = draws.slice().reverse();
@@ -3505,12 +3544,20 @@ function runBacktest(draws) {
                 counterfactual = forced.size === actualSize ? 'WIN' : 'LOSS';
         }
         if (i >= firstEvaluated) {
+            result.reviewRows[String(actual.issue)] = {
+                outcome, predictionSize: prediction.size, actualSize
+            };
             result.evaluated++;
             result.baselineWins += Number(actualSize === '大');
             if (outcome === 'WIN') result.win++;
             else if (outcome === 'LOSS') result.loss++;
             else result.pass++;
         }
+        result.lastReview = {
+            issue: String(actual.issue), outcome,
+            predictionSize: prediction.size, predictionNum: prediction.num,
+            confidence: prediction.confidence, actualSize, actualNum: actual.number
+        };
         // IMPORTANT: only now is this observed result allowed to train the
         // simulated model. Simulated learning is never saved to localStorage.
         learnFromReview({
@@ -3528,13 +3575,42 @@ function runBacktest(draws) {
 }
 
 
+function renderWingoHistoricalReview(result, draws) {
+    const review = result?.lastReview;
+    const write = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
+    const label = document.getElementById('review-status');
+    const summary = document.getElementById('review-summary');
+    if (!review) {
+        if (label) {label.className = 'review-status review-wait'; label.textContent = '样本不足';}
+        for (const id of ['review-prediction','review-actual','review-result']) write(id, '--');
+        write('review-message', '已读取的历史数据不足：至少 11 笔才能以过去 10 笔判断第 11 笔。');
+    } else {
+        if (label) {label.className = 'review-status ' + (review.outcome === 'WIN' ? 'review-win' : review.outcome === 'LOSS' ? 'review-loss' : 'review-pass'); label.textContent = `历史 ${review.outcome}`;}
+        write('review-prediction', review.predictionSize === 'PASS' ? 'PASS' : `${review.predictionNum ?? '-'} / ${review.predictionSize}`);
+        write('review-actual', `${review.actualNum} / ${review.actualSize}`);
+        write('review-result', review.outcome === 'PASS' ? '本局跳过' : review.outcome === 'WIN' ? '大小吻合' : '大小不吻合');
+        write('review-message', `示例期号 ${review.issue}：只用此期以前的开奖数据逐局推演，属于历史回测，不是实时预测。`);
+    }
+    if (summary) {
+        const wins = draws.slice(0,50).filter(d => d.size === '大').length;
+        const count = Math.min(draws.length,50);
+        summary.textContent = `可用历史 ${draws.length} 笔｜最近 ${count} 笔：大 ${wins} / 小 ${count-wins}｜严格逐局回测 ${result.evaluated} 局：WIN ${result.win} · LOSS ${result.loss} · PASS ${result.pass}；不能据此保证下一期。`;
+    }
+}
+
 /* =========================================================
    UPDATE WIN RATE
 ========================================================= */
 
-function updateWinRate(result) {
+function updateWinRate(result, historyCount = 0) {
     const el = document.getElementById('win-rate');
     if (!el) return;
+    if (!result.evaluated) {
+        el.innerHTML = `<div style="font-size:1.35rem;font-weight:800;">尚需历史数据</div>
+        <div style="font-size:12px;color:#cbd5e1;margin-top:7px;">已获取 ${Number(historyCount) || 0} 条 · 至少 11 条可开始逐局回测</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:6px;">暂无可评估局数，不会把 0% 显示成实际命中率</div>`;
+        return;
+    }
     // A 100% rate based on just one actionable round is not a claim of 100%
     // prediction accuracy. Show its denominator, skipped rounds and baseline.
     const display = result.valid ? `${result.rate.toFixed(1)}%` : '--';
@@ -3557,7 +3633,7 @@ function updateWinRate(result) {
 ========================================================= */
 
 function renderDrawTable(
-    draws
+    draws, reviewRows = {}
 ) {
 
     const table =
@@ -3603,7 +3679,11 @@ function renderDrawTable(
                             </td>
 
                             <td>
-                                -
+                                ${escapeHtml(reviewRows[String(draw.issue)]
+                                    ? (reviewRows[String(draw.issue)].outcome === 'PASS'
+                                        ? 'PASS（跳过）'
+                                        : `${reviewRows[String(draw.issue)].outcome} · ${reviewRows[String(draw.issue)].predictionSize}→${draw.size}`)
+                                    : '训练期 / 未回测')}
                             </td>
 
                         </tr>
@@ -3803,72 +3883,95 @@ function renderNumberChart(
 
 async function refreshDashboard() {
     try {
-        const draws = await fetchDraws();
+        // Ask for a useful historical sample (50), not the V22 10 draws that
+        // could never satisfy a 10-known+1-evaluated walk-forward backtest.
+        let networkDraws = await fetchDraws(1, wingoPreferredPageSize);
+        if (!networkDraws.length && wingoPreferredPageSize !== 10 && /^(API code |HTTP 4|无有效开奖记录)/.test(wingoLastFetchError)) {
+            // Some existing Workers only permit pageSize=10. Keep working
+            // with their documented 10-result path rather than breaking data.
+            wingoPreferredPageSize = 10;
+            networkDraws = await fetchDraws(1, 10);
+        }
+        networkDraws.sort((a, b) => String(b.issue).localeCompare(String(a.issue)));
+        const newestWorkerIssue = String(networkDraws[0]?.issue || '');
+        const primaryCount = networkDraws.length;
 
-        if (!draws || !draws.length) {
-            console.log("WinGo 暂无开奖数据");
-            updateWingoConnection('⚠ WinGo 接口无有效新数据：当前无法验证实时连接，暂停下一期参考', false);
+        // Only once per page load: try read-only older result pages if a
+        // limited Worker returns fewer than 11 items. Stop on duplicates.
+        if (primaryCount && primaryCount < 11 && !wingoExtraHistoryTried) {
+            wingoExtraHistoryTried = true;
+            const seen = new Set(networkDraws.map(d => String(d.issue)));
+            for (let pageNo = 2; pageNo <= 5 && seen.size < 50; pageNo++) {
+                const older = await fetchDraws(pageNo, 10);
+                if (!older.length) break;
+                let newCount = 0;
+                for (const d of older) {
+                    if (String(d.issue) < newestWorkerIssue && !seen.has(String(d.issue))) {
+                        networkDraws.push(d); seen.add(String(d.issue)); newCount++;
+                    }
+                }
+                if (!newCount) break;
+            }
+        }
+        const draws = mergeWingoHistory(networkDraws);
+        const latest = draws[0] || null;
+        const hasNetwork = primaryCount > 0;
+        const latestIssue = newestWorkerIssue;
+        const sourceRolledBack = hasNetwork && latest && latest.issue > newestWorkerIssue;
+        // A cached draw or a repeated page from the Worker cannot prove live.
+        if (hasNetwork && wingoLastObservedIssue && latestIssue > wingoLastObservedIssue)
+            wingoLastNewDrawAt = Date.now();
+        if (hasNetwork) wingoLastObservedIssue = latestIssue;
+        const secondsSinceNew = (Date.now() - wingoLastNewDrawAt) / 1000;
+        const live = hasNetwork && !sourceRolledBack && isCurrentMYTIssue(latestIssue) &&
+            wingoLastNewDrawAt > 0 && secondsSinceNew >= 0 && secondsSinceNew <= 180;
+
+        updateWingoConnection(live
+            ? `● WinGo 刚观察到新开奖：${latestIssue}（${Math.floor(secondsSinceNew)} 秒前）`
+            : hasNetwork
+                ? `⚠ 已取得 WinGo 历史数据（Worker 最新期号 ${latestIssue}），但未验证实时更新。历史统计已开启。`
+                : `⚠ WinGo Worker 无有效响应；${draws.length ? '展示浏览器已保存的历史数据' : '尚无历史数据'}。下一期参考暂停。`, live);
+        updateWingoDiagnostics({networkCount: primaryCount, historyCount:draws.length, live, issue:latestIssue,
+            cacheOnly: !hasNetwork,
+            detail: live ? `新期号 ${latestIssue} 已从 Worker 连续观察到变化；下一期仅作研究参考。`
+                : sourceRolledBack ? `Worker 返回的期号 ${latestIssue} 比浏览器保存的历史还旧，请检查 Worker 是否在更新。`
+                : !hasNetwork ? `Worker 未返回有效开奖${wingoLastFetchError ? '：'+wingoLastFetchError : ''}。不能声称实时，历史数据仍可独立统计。`
+                : `Worker 返回 ${primaryCount} 笔；期号 ${latestIssue} 暂未观察到变化。请等待下一期开奖，或点「立即检查数据」。历史统计不再被隐藏。`});
+        if (!draws.length) {
             updatePredictionCard(null);
             resetWingoLiveAnalysis();
+            renderWingoHistoricalReview({evaluated:0,win:0,loss:0,pass:0}, []);
+            updateWinRate({valid:0,win:0,loss:0,pass:0,rate:0,evaluated:0,baselineRate:0}, 0);
+            renderDrawTable([]);
             return;
         }
-
-        draws.sort((a, b) =>
-            String(b.issue).localeCompare(String(a.issue))
-        );
-
-        const latestIssue = String(draws[0].issue || '');
-        // A successful API read is not proof that the reported round is new.
-        // On first contact, wait to observe the next changed issue number.
-        if (wingoLastObservedIssue && latestIssue !== wingoLastObservedIssue) {
-            wingoLastNewDrawAt = Date.now();
-        }
-        wingoLastObservedIssue = latestIssue;
-        const secondsSinceNew = (Date.now() - wingoLastNewDrawAt) / 1000;
-        const live = isCurrentMYTIssue(latestIssue) && wingoLastNewDrawAt > 0 &&
-            secondsSinceNew >= 0 && secondsSinceNew <= 180;
-        updateWingoConnection(live
-            ? `● WinGo 最新期号已更新：${latestIssue}（${Math.floor(secondsSinceNew)} 秒前，实时观察）`
-            : `⚠ WinGo 历史数据 / 未验证实时连接：期号 ${latestIssue}；等待观察新的开奖期号`, live);
-
-        // Do not learn as if a repeated old snapshot were a newly observed hand.
-        if (live) reviewNewOutcome(draws);
-
-        // Only show forward-looking experimental output after genuine changes.
+        // Only new observed results may train the real-time model.
+        if (live) reviewNewOutcome(networkDraws);
         const prediction = live ? getLearnedPrediction(draws) : null;
-
-        // 最新开奖
-        const latest = draws[0];
-
         updateLatestCard(latest);
-
-        // Next-period model output is never presented from stale history.
         updatePredictionCard(prediction);
-
-        if (live) updateMarketAnalysis(draws, prediction);
-        else resetWingoLiveAnalysis();
-
-        // AI 智能复盘
-        renderAIReview(draws);
-
-        // AI 智能学习状态
-        updateAILearningDashboard();
-
-        // AI 胜率
+        // V23: descriptive historical statistics are valid without a live feed.
+        updateMarketAnalysis(draws, prediction);
         const backtest = runBacktest(draws);
-        updateWinRate(backtest);
-
-        // 最近 50 局
-        renderDrawTable(draws);
-
-        // 已删除 WinGo 数字走势 Chart
-        // renderNumberChart(draws);
-
+        renderWingoHistoricalReview(backtest, draws);
+        updateWinRate(backtest, draws.length);
+        renderDrawTable(draws, backtest.reviewRows);
+        updateAILearningDashboard();
+        if (!live) {
+            const state = document.getElementById('ai-state');
+            const status = document.getElementById('ai-learning-status');
+            const note = document.getElementById('ai-last-learning');
+            if (state) state.textContent = 'HISTORY';
+            if (status) status.textContent = '历史模式 · 实时未验证';
+            if (note) note.textContent = '未确认新开奖前不增加实时学习次数。上方独立滚动回测使用历史数据，不会修改实时 AI 学习参数。';
+        }
     } catch (error) {
-        console.error("WinGo Dashboard Refresh Error:", error);
-        updateWingoConnection('⚠ WinGo 读取异常，暂停实时参考', false);
+        console.error('WinGo Dashboard Refresh Error:', error);
+        updateWingoConnection('⚠ WinGo 页面更新失败，不能验证实时结果', false);
         updatePredictionCard(null);
         resetWingoLiveAnalysis();
+        updateWingoDiagnostics({networkCount:0,historyCount:wingoHistory.length,live:false,
+            issue:'',cacheOnly:true,detail:'页面更新出现错误，请检查控制台日志。'});
     }
 }
 
@@ -4936,6 +5039,8 @@ async function safeRefreshDashboard() {
     }
 
     dashboardRefreshRunning = true;
+    const refreshButton = document.getElementById('wingo-refresh-button');
+    if (refreshButton) { refreshButton.disabled = true; refreshButton.textContent = '检查中…'; }
 
     try {
 
@@ -4951,6 +5056,7 @@ async function safeRefreshDashboard() {
     } finally {
 
         dashboardRefreshRunning = false;
+        if (refreshButton) { refreshButton.disabled = false; refreshButton.textContent = '↻ 立即检查数据'; }
     }
 }
 
@@ -4998,7 +5104,7 @@ setInterval(
             countdownVal <= 0
         ) {
 
-            countdownVal = 5;
+            countdownVal = 12;
 
             safeRefreshDashboard();
         }
@@ -5152,7 +5258,7 @@ async function initializeDashboard() {
     );
 
     console.log(
-        "WinGo refresh: 5 seconds"
+        "WinGo refresh: 12 seconds"
     );
 
     console.log(

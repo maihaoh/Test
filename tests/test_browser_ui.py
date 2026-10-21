@@ -192,10 +192,129 @@ class BrowserUITests(unittest.TestCase):
         self.assertIn('等待数据',observed['firstPred'])
         self.assertEqual(observed['second'],'true')
         self.assertEqual(observed['stale'],'false')
-        self.assertEqual(observed['market'],'--')
+        self.assertNotEqual(observed['market'],'--')
         self.assertIn('等待数据',observed['predicted'])
         self.assertFalse(errors, f'JS exceptions: {errors}')
 
+
+    def test_v23_wingo_first_response_shows_history_not_fake_live(self):
+        page, errors = self.open_page()
+        found = page.evaluate('''async () => {
+            const nowMYT = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+                timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'
+            }).formatToParts(new Date()).map(p => [p.type,p.value]));
+            const prefix = `${nowMYT.year}${nowMYT.month}${nowMYT.day}`;
+            const draws = Array.from({length:55},(_,i) => ({issueNumber:prefix+String(60000-i),number:(i*7+1)%10}));
+            let calls = [];
+            window.CryptoJS = {MD5: () => ({toString: () => 'TESTSIGN'})};
+            window.fetch = async (url,options) => {
+                const body=JSON.parse(options.body); calls.push(body);
+                return {ok:true,text:async()=>JSON.stringify({code:0,data:{list:draws.slice(0,body.pageSize)}})};
+            };
+            await safeRefreshDashboard();
+            const first = {
+                live:document.querySelector('#wingo-data-status').dataset.live,
+                worker:document.querySelector('#wingo-diag-worker').textContent,
+                history:document.querySelector('#wingo-diag-history').textContent,
+                market:document.querySelector('#analysis-streak').textContent,
+                summary:document.querySelector('#review-summary').textContent,
+                winrate:document.querySelector('#win-rate').textContent,
+                review:document.querySelector('#review-status').textContent,
+                row:document.querySelector('#draw-table').textContent,
+                prediction:document.querySelector('#predicted-result').textContent,
+                firstPageSize:calls[0]?.pageSize,
+            };
+            draws.unshift({issueNumber:prefix+'60001',number:8});
+            await safeRefreshDashboard();
+            const second = document.querySelector('#wingo-data-status').dataset.live;
+            wingoLastNewDrawAt = Date.now() - 181000;
+            await safeRefreshDashboard();
+            const third = {live:document.querySelector('#wingo-data-status').dataset.live,
+                market:document.querySelector('#analysis-streak').textContent};
+            return {first,second,third};
+        }''')
+        self.assertEqual(found['first']['firstPageSize'],50)
+        self.assertEqual(found['first']['live'],'false')
+        self.assertIn('50 条',found['first']['worker'])
+        self.assertIn('50 条',found['first']['history'])
+        self.assertNotEqual(found['first']['market'],'--')
+        self.assertIn('可用历史 50 笔',found['first']['summary'])
+        self.assertIn('滚动回测 40 局',found['first']['winrate'])
+        self.assertIn('历史',found['first']['review'])
+        self.assertIn('WIN',found['first']['row']) if 'WIN' in found['first']['row'] else self.assertIn('PASS',found['first']['row'])
+        self.assertIn('等待数据',found['first']['prediction'])
+        self.assertEqual(found['second'],'true')
+        self.assertEqual(found['third']['live'],'false')
+        self.assertNotEqual(found['third']['market'],'--')
+        self.assertFalse(errors, f'JS exceptions: {errors}')
+
+    def test_v23_wingo_page_size_fallback_and_history_pagination(self):
+        page, errors=self.open_page()
+        state=page.evaluate('''async () => {
+            window.CryptoJS={MD5:()=>({toString:()=> 'MOCK'})};
+            const prefix='20261021';
+            const draws=Array.from({length:32},(_,i)=>({issueNumber:prefix+String(60000-i),number:i%10}));
+            const calls=[];
+            window.fetch=async(url,opts)=>{
+                const body=JSON.parse(opts.body);calls.push([body.pageNo,body.pageSize]);
+                if(body.pageSize===50) return {ok:true,text:async()=>JSON.stringify({code:400,msg:'page size unsupported'})};
+                return {ok:true,text:async()=>JSON.stringify({code:0,data:{list:draws.slice((body.pageNo-1)*10,body.pageNo*10)}})};
+            };
+            await safeRefreshDashboard();
+            return {calls,history:document.querySelector('#wingo-diag-history').textContent,
+                rate:document.querySelector('#win-rate').textContent,
+                market:document.querySelector('#analysis-number').textContent,
+                reported:document.querySelector('#wingo-diag-worker').textContent};
+        }''')
+        self.assertIn([1,50],state['calls'])
+        self.assertIn([1,10],state['calls'])
+        self.assertIn([2,10],state['calls'])
+        self.assertIn('32 条',state['history'])
+        self.assertIn('滚动回测 22 局',state['rate'])
+        self.assertEqual(state['market'],'0')
+        self.assertIn('10 条',state['reported'])
+        self.assertFalse(errors, f'JS exceptions: {errors}')
+
+    def test_v23_wingo_offline_keeps_only_historical_analysis(self):
+        page, errors=self.open_page()
+        state=page.evaluate('''async () => {
+            window.CryptoJS={MD5:()=>({toString:()=> 'MOCK'})};
+            let online=true;
+            window.fetch=async(url,opts)=>{
+                if(!online) throw new Error('network unavailable');
+                const list = Array.from({length:28},(_,i)=>({issueNumber:'202610216'+String(1000-i),number:i%10}));
+                return {ok:true,text:async()=>JSON.stringify({code:0,data:{list}})};
+            };
+            await safeRefreshDashboard();
+            online=false;await safeRefreshDashboard();
+            return {live:document.querySelector('#wingo-data-status').dataset.live,
+                worker:document.querySelector('#wingo-diag-worker').textContent,
+                history:document.querySelector('#wingo-diag-history').textContent,
+                market:document.querySelector('#analysis-streak').textContent,
+                prediction:document.querySelector('#predicted-result').textContent};
+        }''')
+        self.assertEqual(state['live'],'false')
+        self.assertIn('network unavailable',state['worker'])
+        self.assertIn('浏览器历史',state['history'])
+        self.assertNotEqual(state['market'],'--')
+        self.assertIn('等待数据',state['prediction'])
+        self.assertFalse(errors, f'JS exceptions: {errors}')
+
+    def test_v23_corrupt_wingo_cache_preserved(self):
+        original='{broken-history'
+        page, errors=self.open_page(storage={'wingo_validated_history_v23':original})
+        state=page.evaluate('''async () => {
+            window.CryptoJS={MD5:()=>({toString:()=> 'MOCK'})};
+            window.fetch=async()=>({ok:true,text:async()=>JSON.stringify({code:0,data:{list:[
+                {issueNumber:'2026102160009',number:8},{issueNumber:'2026102160008',number:3}
+            ]}})});
+            await safeRefreshDashboard();
+            return {value:localStorage.getItem('wingo_validated_history_v23'),
+                samples:document.querySelector('#wingo-diag-history').textContent};
+        }''')
+        self.assertEqual(state['value'],original)
+        self.assertIn('2 条',state['samples'])
+        self.assertFalse(errors, f'JS exceptions: {errors}')
 
     def test_wingo_invalid_numbers_are_not_fabricated_as_zero(self):
         page, errors = self.open_page()

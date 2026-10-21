@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Lottery + 百家乐 Dashboard</title>
 <script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=layout-v22" rel="stylesheet"/>
+<link href="style.css?v=layout-v23" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">Build -- · UI v22 · 可验证的 AI 模式分析</span>
+                Lottery 与 百家乐分区 · <span id="build-version">Build V23 · UI V23 · 历史分析与实时状态分离</span>
 </div>
 </div>
 <div class="header-info">
@@ -30,9 +30,9 @@
                 </strong>
 </div>
 <div class="countdown-box">
-<span>NEXT</span>
+<span>CHECK</span>
 <strong id="countdown">
-                    5s
+                    12
                 </strong>
 </div>
 </div>
@@ -66,6 +66,19 @@
     ====================================================== -->
 <section class="main-section active" id="wingo-section">
 <p class="data-status" id="wingo-data-status" role="status">正在读取数据…</p>
+<div class="wingo-diagnostics" id="wingo-diagnostics" aria-label="WinGo 数据连接诊断">
+  <div class="wingo-diagnostics-header">
+    <div><strong>🛠️ V23 数据连接诊断</strong><span>从哪里取得数据、读取了多少笔、为什么尚未显示实时参考</span></div>
+    <button type="button" class="wingo-refresh-button" id="wingo-refresh-button" onclick="safeRefreshDashboard()">↻ 立即检查数据</button>
+  </div>
+  <div class="wingo-diagnostics-grid">
+    <div><small>Worker 状态</small><strong id="wingo-diag-worker">检查中…</strong></div>
+    <div><small>已获取历史样本</small><strong id="wingo-diag-history">--</strong></div>
+    <div><small>实时变化验证</small><strong id="wingo-diag-freshness">未验证</strong></div>
+    <div><small>最近检查 MYT</small><strong id="wingo-diag-checked">--</strong></div>
+  </div>
+  <p id="wingo-diag-advice">历史记录可以用于统计和回测，但只有观察到新的有效期号后，才显示实时预测参考。</p>
+</div>
 <!-- TOP -->
 <div class="grid-cards">
 <div class="card latest-card">
@@ -81,7 +94,7 @@
 </div>
 <div class="card prediction-card">
 <div class="card-title">
-                    🔮 下一期预测
+                    🔮 下一期参考 · 仅新开奖
                 </div>
 <div class="prediction-box" id="predicted-result">
 <span class="tag-wait">
@@ -116,12 +129,12 @@
         ================================================== -->
 <div class="section-card market-analysis-card">
 <div class="section-title">
-                📊 WinGo 市场分析
+                📊 WinGo 历史市场统计
             </div>
 <div class="analysis-grid">
 <div class="analysis-item blue-item">
 <div class="analysis-label">
-                        🔥 当前长龙
+                        🔥 已记录的连开
                     </div>
 <div class="analysis-value" id="analysis-streak">
                         --
@@ -129,7 +142,7 @@
 </div>
 <div class="analysis-item purple-item">
 <div class="analysis-label">
-                        🧠 Markov
+                        🧠 历史 Markov
                     </div>
 <div class="analysis-value" id="analysis-markov">
                         --
@@ -137,7 +150,7 @@
 </div>
 <div class="analysis-item orange-item">
 <div class="analysis-label">
-                        📉 均值回归
+                        📉 历史均值倾向
                     </div>
 <div class="analysis-value" id="analysis-mean">
                         --
@@ -145,7 +158,7 @@
 </div>
 <div class="analysis-item cyan-item">
 <div class="analysis-label">
-                        🎯 目标号码
+                        🎯 最新已知号码
                     </div>
 <div class="analysis-value" id="analysis-number">
                         --
@@ -164,7 +177,7 @@
 <div class="section-card ai-review-card">
 <div class="section-title">
 
-                🤖 AI 智能复盘
+                🤖 历史逐局复盘（非实时）
 
                 <span class="review-status review-wait" id="review-status">
                     等待
@@ -212,7 +225,7 @@
 <div class="section-card ai-learning-card">
 <div class="section-title">
 
-                🤖 AI 智能学习
+                🤖 实时学习状态（仅已验证结果）
 
                 <span class="ai-status" id="ai-learning-status">
                     学习中
@@ -312,7 +325,7 @@
 <div class="section-title">
                 📜 WinGo 最近 50 局 · 历史回测
             </div>
-<p class="data-status">号码、颜色为历史回测预测；结果分别比较号码、完整颜色组合及大小。上方胜率只统计大小。有最新有效数据时才显示统计参考；数据不足时不计胜负；历史回测不代表未来表现。</p>
+<p class="data-status">本表按实际获得的开奖记录显示大小和逐局模拟判断。仅大小计入 WIN/LOSS；训练期和 PASS 不计入胜率；在有历史数据但未确认实时连接时也能使用。历史回测不代表下一局预测能力。</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -321,7 +334,7 @@
 <th>实际开奖</th>
 <th>号码</th>
 <th>颜色</th>
-<th>回测结果</th>
+<th>历史大小回测</th>
 </tr>
 </thead>
 <tbody id="draw-table">
@@ -497,7 +510,7 @@
 </section>
 <section class="main-section multi-game-section" id="k3-section">
 <div class="section-card multi-shell">
-<div class="multi-head"><div><div class="section-title">🎲 K3 Lotre · AI 预测</div><p class="data-status" id="k3-data-status">正在读取 K3 数据…</p></div><div class="multi-live">1Min · typeId 9</div></div>
+<div class="multi-head"><div><div class="section-title">🎲 K3 Lotre · AI 预测</div><p class="data-status" id="k3-data-status">正在读取 K3 数据…</p><div class="multi-source-actions"><button type="button" onclick="multiGamesRefresh()">↻ 立即检查 Render</button><a href="https://test-4bvi.onrender.com/api/connection-status" target="_blank" rel="noopener noreferrer">查看服务端连接诊断 ↗</a></div></div><div class="multi-live">1Min · typeId 9</div></div>
 <div class="multi-top-grid">
 <div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="k3-latest">--</div><div class="multi-sub" id="k3-latest-meta">--</div></div>
 <div class="multi-panel multi-predict-panel"><div class="multi-label">下一期预测</div><div class="multi-prediction" id="k3-prediction">等待真实数据</div><div class="multi-confidence" id="k3-confidence">统计信心 --%</div></div>
@@ -510,7 +523,7 @@
 </section>
 <section class="main-section multi-game-section" id="5d-section">
 <div class="section-card multi-shell">
-<div class="multi-head"><div><div class="section-title">🔢 5D Lotre · AI 预测</div><p class="data-status" id="5d-data-status">正在读取 5D 数据…</p></div><div class="multi-live">1Min · typeId 5</div></div>
+<div class="multi-head"><div><div class="section-title">🔢 5D Lotre · AI 预测</div><p class="data-status" id="5d-data-status">正在读取 5D 数据…</p><div class="multi-source-actions"><button type="button" onclick="multiGamesRefresh()">↻ 立即检查 Render</button><a href="https://test-4bvi.onrender.com/api/connection-status" target="_blank" rel="noopener noreferrer">查看服务端连接诊断 ↗</a></div></div><div class="multi-live">1Min · typeId 5</div></div>
 <div class="multi-top-grid">
 <div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="5d-latest">--</div><div class="multi-sub" id="5d-latest-meta">--</div></div>
 <div class="multi-panel multi-predict-panel"><div class="multi-label">下一期 5 位预测</div><div class="multi-prediction" id="5d-prediction">等待真实数据</div><div class="multi-confidence" id="5d-confidence">统计信心 --%</div></div>
@@ -523,7 +536,7 @@
 </section>
 <section class="main-section multi-game-section" id="trx-section">
 <div class="section-card multi-shell">
-<div class="multi-head"><div><div class="section-title">🪙 TRX Win · AI 预测</div><p class="data-status" id="trx-data-status">正在读取 TRX 数据…</p></div><div class="multi-live">1Min · typeId 13</div></div>
+<div class="multi-head"><div><div class="section-title">🪙 TRX Win · AI 预测</div><p class="data-status" id="trx-data-status">正在读取 TRX 数据…</p><div class="multi-source-actions"><button type="button" onclick="multiGamesRefresh()">↻ 立即检查 Render</button><a href="https://test-4bvi.onrender.com/api/connection-status" target="_blank" rel="noopener noreferrer">查看服务端连接诊断 ↗</a></div></div><div class="multi-live">1Min · typeId 13</div></div>
 <div class="multi-top-grid">
 <div class="multi-panel"><div class="multi-label">最新开奖</div><div class="multi-latest" id="trx-latest">--</div><div class="multi-sub" id="trx-latest-meta">--</div></div>
 <div class="multi-panel multi-predict-panel"><div class="multi-label">下一期预测</div><div class="multi-prediction" id="trx-prediction">等待真实数据</div><div class="multi-confidence" id="trx-confidence">统计信心 --%</div></div>
@@ -535,13 +548,13 @@
 </div>
 </section>
 </div>
-<script src="script.js?v=layout-v22"></script>
-<script src="baccarat_analysis.js?v=22"></script>
-<script src="baccarat_engine.js?v=22"></script>
-<script src="baccarat_roads.js?v=22"></script>
-<script src="choice_manual.js?v=22"></script>
-<script src="multi_games.js?v=22"></script>
+<script src="script.js?v=layout-v23"></script>
+<script src="baccarat_analysis.js?v=23"></script>
+<script src="baccarat_engine.js?v=23"></script>
+<script src="baccarat_roads.js?v=23"></script>
+<script src="choice_manual.js?v=23"></script>
+<script src="multi_games.js?v=23"></script>
 </body>
 </html>
 
-<!-- fresh deploy 20261003 -->
+<!-- V23 build 20261021. Online data sources require independent validation. -->
