@@ -2564,3 +2564,24 @@ tbody tr:hover {
 #draw-table td:nth-child(1) {
   white-space: nowrap;
 }
+
+/* V26 Baccarat simplified layout */
+.bc-simple-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.bc-next-pick.is-B{color:#fca5a5}
+.bc-next-pick.is-P{color:#93c5fd}
+.bc-next-pick.is-T{color:#6ee7b7}
+.bc-predict-main.is-T{color:#6ee7b7}
+.bc-simple-predict-shell{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:12px;align-items:stretch}
+.bc-simple-predict-main{background:radial-gradient(ellipse at top left,#26335b 0%,#121f36 53%,#0e1a2b 100%);border:1px solid #30445f;border-radius:14px;padding:20px}
+.bc-simple-predict-probs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bc-simple-prob-card{background:#0d1829;border:1px solid #30445f;border-radius:12px;padding:16px 14px;min-width:0}
+.bc-simple-prob-card span{display:block;color:#9fb3ca;font-size:12px;line-height:1.4}
+.bc-simple-prob-card strong{display:block;margin-top:10px;font-size:28px;font-weight:900;font-variant-numeric:tabular-nums}
+.bc-simple-prob-card.is-B strong{color:#fca5a5}
+.bc-simple-prob-card.is-P strong{color:#93c5fd}
+.bc-simple-prob-card.is-T strong{color:#6ee7b7}
+.bc-simple-disclaimer{margin:12px 0 0;color:#a8bad0;font-size:12px;line-height:1.6}
+.bc-sequence-card{margin-bottom:14px;background:#101929;border:1px solid #2a3b54}
+@media (max-width: 900px){
+  .bc-simple-overview,.bc-simple-predict-shell,.bc-simple-predict-probs{grid-template-columns:1fr}
+}

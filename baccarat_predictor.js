@@ -134,79 +134,36 @@
 
     function render(history, table) {
         validate(history);
-        // Only manual inputs from this table are used. History copy prevents later
-        // in-place changes from silently altering a stored UI snapshot.
-        displayState = {table, history:history.slice()};
+        displayState = {table, history: history.slice()};
         if (typeof document === 'undefined' || !document.getElementById('bc-predict-lab')) return;
-        const result = makeForecast(history, selectedMode);
-        const tested = evaluate(history);
-        setText('bc-predict-table', table);
-        setText('bc-predict-target', `${table} · 待记录第 ${result.targetRound} 局`);
-        setText('bc-predict-mode-note', selectedMode === 'pattern' ?
-            '实验模型：近期频率 + 一阶 / 二阶 Markov + 贝叶斯平滑。' :
-            '基准模型：八副牌标准 Punto Banco 全组合数学概率。');
-        setText('bc-predict-main', result.ready ? `${LABEL[result.pick]} ${result.pick === 'B' ? 'BANKER' : 'PLAYER'}` : '等待样本');
-        const prediction = document.getElementById('bc-predict-main');
-        if (prediction) prediction.className = 'bc-predict-main' + (result.pick ? ` is-${result.pick}` : '');
-        setText('bc-predict-state', result.mode === 'baseline' ? '理论频率最高项 · 不是稳赢' :
-            (result.ready ? '实验方向 · 未验证预测优势' : `还缺 ${result.missing} 局庄 / 闲`));
-        setText('bc-predict-sub', result.mode === 'pattern' && !result.ready ?
-            `已录 ${result.recorded} 局（含和 ${result.ties} 局）；收集满 ${MIN_PATTERN_DECISIVE} 个庄 / 闲才输出模型方向。` :
-            `依据之前 ${result.recorded} 局手动记录生成。点击庄 / 闲 / 和录入下一局真实结果后自动更新。`);
-        setText('bc-predict-score-type', result.scoreType);
+
+        const patternResult = makeForecast(history, 'pattern');
+        const result = patternResult.ready
+            ? patternResult
+            : {
+                ...patternResult,
+                ready: true,
+                pick: leading(BASE),
+                score: {...BASE}
+            };
+
+        const pickText = result.pick ? `${LABEL[result.pick]} ${result.pick === 'B' ? 'BANKER' : result.pick === 'P' ? 'PLAYER' : 'TIE'}` : '等待样本';
+        setText('bc-top-next-pick', pickText);
+        setText('bc-predict-main-hero', pickText);
+        const topPick = document.getElementById('bc-top-next-pick');
+        if (topPick) topPick.className = 'card-value bc-next-pick' + (result.pick ? ` is-${result.pick}` : '');
+        const hero = document.getElementById('bc-predict-main-hero');
+        if (hero) hero.className = 'bc-predict-main' + (result.pick ? ` is-${result.pick}` : '');
+
+        setText('bc-predict-state', patternResult.ready ? '已根据当前历史自动刷新下一局参考' : '样本不足时先用标准基准显示参考');
+        setText('bc-predict-sub', patternResult.ready
+            ? `依据当前已录的 ${patternResult.recorded} 局历史，输出简化版下一局参考方向。`
+            : `目前已录 ${patternResult.recorded} 局（含和 ${patternResult.ties} 局），样本不足时先显示标准基准参考。`);
+
         for (const code of CODES) {
             setText(`bc-predict-pct-${code}`, percent(result.score[code]));
             const bar = document.getElementById(`bc-predict-fill-${code}`);
             if (bar) bar.style.width = `${Math.min(100, Math.max(0, 100 * result.score[code]))}%`;
-        }
-        const ev = [BASE.B * 0.95 - BASE.P, BASE.P - BASE.B, BASE.T * 8 - BASE.B - BASE.P];
-        setText('bc-predict-math', `基准：庄 ${percentExact(BASE.B)} · 闲 ${percentExact(BASE.P)} · 和 ${percentExact(BASE.T)}。标准抽佣下押庄 / 闲 / 和的平均净回报约 ${ev.map(v => percentExact(v)).join(' / ')}。`);
-        document.querySelectorAll('[data-bc-predict-mode]').forEach(button => {
-            const active = button.getAttribute('data-bc-predict-mode') === selectedMode;
-            button.classList.toggle('active', active);
-            button.setAttribute('aria-pressed', active ? 'true' : 'false');
-        });
-        setText('bc-predict-tested', tested.rounds ? `${tested.rounds} 局` : '不足 40 局训练');
-        setText('bc-predict-hit', percent(tested.modelAccuracy));
-        setText('bc-predict-base-hit', percent(tested.baselineAccuracy));
-        setText('bc-predict-brier', tested.modelBrier === null ? '--' :
-            `${tested.modelBrier.toFixed(4)} / ${tested.baselineBrier.toFixed(4)}`);
-        setText('bc-predict-evidence', tested.status === 'retrospective_improvement'
-            ? '仅在本桌历史重放中出现初步改善；没有独立的未来验证证据。'
-            : tested.status === 'insufficient'
-                ? `回测资料不足：至少需要 ${MIN_BACKTEST_DECISIVE} 个庄 / 闲训练局，并积累足够的后续开奖结果。`
-                : '尚未发现稳健优于固定数学基准的证据；不构成下注建议。');
-        setText('bc-predict-range', tested.rounds ?
-            `逐局重放第 ${tested.firstRound}–${tested.lastRound} 局；庄 / 闲 / 和都纳入命中率分母，和局不会被删掉。` :
-            '仅使用当前牌桌的手动历史，无真实发牌数据，无赌场实时连接。');
-
-        const replay = document.getElementById('bc-predict-replay');
-        if (replay) {
-            const fragment = document.createDocumentFragment();
-            if (!tested.recent.length) {
-                const placeholder = document.createElement('p');
-                placeholder.className = 'bc-predict-empty';
-                placeholder.textContent = '累积足够的已知历史后，将按时间顺序重算过去每一局的预测。';
-                fragment.appendChild(placeholder);
-            }
-            for (const item of tested.recent) {
-                const row = document.createElement('div');
-                row.className = 'bc-predict-replay-row';
-                const pieces = [
-                    [`第 ${item.round} 局`, 'round'],
-                    [`模型：${LABEL[item.pick]}`, `is-${item.pick}`],
-                    [`实际：${LABEL[item.actual]}`, `is-${item.actual}`],
-                    [item.hit ? '吻合' : '未吻合', item.hit ? 'is-hit' : 'is-miss']
-                ];
-                for (const [content, klass] of pieces) {
-                    const cell = document.createElement('span');
-                    cell.className = klass;
-                    cell.textContent = content;
-                    row.appendChild(cell);
-                }
-                fragment.appendChild(row);
-            }
-            replay.replaceChildren(fragment);
         }
     }
 

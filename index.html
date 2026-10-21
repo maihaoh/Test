@@ -56,7 +56,7 @@
   <div class="game-hub baccarat-hub" id="baccarat-hub">
     <button type="button" data-baccarat-tab="true" class="game-hub-toggle baccarat-toggle" onclick="switchMainTab('baccarat', this)" aria-pressed="false">
       <span class="game-hub-title">🃏 百家乐手动 <small>庄 · 闲 · 和</small></span>
-      <span class="game-hub-badge">D51–D58</span>
+      <span class="game-hub-badge">简化预测</span>
     </button>
     <div class="game-hub-description">每张桌独立记录 · 20/50/100 局样本观察 · 不自动下注</div>
   </div>
@@ -351,31 +351,22 @@
          Results come exclusively from the user's button presses.
     ====================================================== -->
 <section class="main-section" id="baccarat-section">
-  <p class="data-status" id="baccarat-data-status" role="status">✍️ 手动记录模式：不会连接百家乐自动开奖接口，不会自动同步。记录仅保存在本浏览器，其他设备需通过备份导入。</p>
-  <div class="section-card bc-manual-tables">
-    <div class="section-title">🃏 选择牌桌 <span class="bc-manual-pill">D051–D058</span></div>
-    <div class="baccarat-table-buttons">
-      <button type="button" class="baccarat-table-btn active" data-manual-table="D51" onclick="choiceManualSelect('D51')" aria-pressed="true"><span>D51</span><small id="bc-tab-count-D51">0 局</small></button>
-<button type="button" class="baccarat-table-btn" data-manual-table="D52" onclick="choiceManualSelect('D52')" aria-pressed="false"><span>D52</span><small id="bc-tab-count-D52">0 局</small></button>
-<button type="button" class="baccarat-table-btn" data-manual-table="D53" onclick="choiceManualSelect('D53')" aria-pressed="false"><span>D53</span><small id="bc-tab-count-D53">0 局</small></button>
-<button type="button" class="baccarat-table-btn" data-manual-table="D54" onclick="choiceManualSelect('D54')" aria-pressed="false"><span>D54</span><small id="bc-tab-count-D54">0 局</small></button>
-<button type="button" class="baccarat-table-btn" data-manual-table="D55" onclick="choiceManualSelect('D55')" aria-pressed="false"><span>D55</span><small id="bc-tab-count-D55">0 局</small></button>
-<button type="button" class="baccarat-table-btn" data-manual-table="D56" onclick="choiceManualSelect('D56')" aria-pressed="false"><span>D56</span><small id="bc-tab-count-D56">0 局</small></button>
-<button type="button" class="baccarat-table-btn" data-manual-table="D57" onclick="choiceManualSelect('D57')" aria-pressed="false"><span>D57</span><small id="bc-tab-count-D57">0 局</small></button>
-<button type="button" class="baccarat-table-btn" data-manual-table="D58" onclick="choiceManualSelect('D58')" aria-pressed="false"><span>D58</span><small id="bc-tab-count-D58">0 局</small></button>
-    </div>
-    <div class="bc-manual-overall">全部 8 桌累计手动录入 <strong id="bc-all-total">0</strong> 局 <span>（仅统计你输入的，不代表赌场实际总局数）</span></div>
-  </div>
+  <p class="data-status" id="baccarat-data-status" role="status">✍️ 百家乐为手动记录模式：你每开完一局，就按一次庄 / 闲 / 和；系统只根据你录入的历史，显示下一局参考，不连接自动开奖，不自动下注。</p>
 
-  <div class="bc-manual-cards">
-    <div class="card"><div class="card-title">🎰 当前桌</div><div class="card-value" id="bc-manual-table-name">D51</div><div class="card-subvalue">每桌分开记录</div></div>
-    <div class="card"><div class="card-title">📊 本桌已录局数</div><div class="card-value" id="bc-manual-round-count">0</div><div class="card-subvalue">庄 / 闲 / 和均算一局</div></div>
-    <div class="card"><div class="card-title">🎯 最新一局</div><div class="baccarat-result" id="bc-manual-latest">--</div><div class="card-subvalue" id="bc-manual-streak">目前没有记录</div></div>
+  <div class="bc-simple-top">
+    <div class="section-card">
+      <div class="section-title">📊 当前记录概览</div>
+      <div class="bc-simple-overview">
+        <div class="card"><div class="card-title">已录局数</div><div class="card-value" id="bc-manual-round-count">0</div><div class="card-subvalue">庄 / 闲 / 和都算一局</div></div>
+        <div class="card"><div class="card-title">最新结果</div><div class="baccarat-result" id="bc-manual-latest">--</div><div class="card-subvalue" id="bc-manual-streak">目前没有记录</div></div>
+        <div class="card"><div class="card-title">下一局参考</div><div class="card-value bc-next-pick" id="bc-top-next-pick">等待样本</div><div class="card-subvalue" id="bc-predict-state">先录入已开出的结果</div></div>
+      </div>
+    </div>
   </div>
 
   <div class="section-card bc-manual-entry">
-    <div class="section-title">✍️ 输入本局开奖结果 <span id="bc-entry-table" class="bc-manual-pill">D51</span></div>
-    <p class="bc-manual-note">每开完一局，按一次对应结果。按钮记录的是<strong>已经开出的结果</strong>，下方才会计算下一局的走势参考。</p>
+    <div class="section-title">🎯 输入本局开奖结果</div>
+    <p class="bc-manual-note">只需要记录已经开出的结果。系统会自动刷新下一个参考方向。</p>
     <div class="bc-manual-outcomes">
       <button type="button" class="bc-manual-outcome is-banker" onclick="choiceManualAdd('B')"><strong>庄</strong><span>BANKER</span></button>
       <button type="button" class="bc-manual-outcome is-player" onclick="choiceManualAdd('P')"><strong>闲</strong><span>PLAYER</span></button>
@@ -383,176 +374,21 @@
     </div>
     <div class="bc-manual-actions">
       <button type="button" id="bc-manual-undo" onclick="choiceManualUndo()">↶ 撤销上一局</button>
-      <button type="button" id="bc-manual-clear" class="bc-manual-danger" onclick="choiceManualClear()">清空当前桌</button>
-      <button type="button" onclick="choiceManualExport()">↓ 导出全部桌备份</button>
+      <button type="button" id="bc-manual-clear" class="bc-manual-danger" onclick="choiceManualClear()">清空记录</button>
+      <button type="button" onclick="choiceManualExport()">↓ 导出备份</button>
       <button type="button" onclick="document.getElementById('bc-manual-import').click()">↑ 导入备份</button>
       <input type="file" id="bc-manual-import" accept=".json,application/json" onchange="choiceManualImport(event)" hidden />
     </div>
     <p class="bc-manual-message" id="bc-manual-message" role="status" aria-live="polite">准备记录。刷新后仍会保留同一浏览器上的记录。</p>
   </div>
 
-  <!-- V24: chronological, three-outcome Baccarat research workbench. -->
-  <section class="section-card bc-predict-lab" id="bc-predict-lab" aria-labelledby="bc-predict-title">
-    <div class="bc-predict-header">
-      <div>
-        <div class="section-title" id="bc-predict-title">🔮 AI 下一局预测实验室 <span id="bc-predict-table" class="bc-manual-pill">D51</span></div>
-        <p class="bc-predict-intro">手动历史驱动 · 庄 / 闲 / 和 · 不连接赌场 · 不自动下注</p>
-      </div>
-      <span class="bc-predict-version">V25 · BACCARAT</span>
-    </div>
-    <div class="bc-predict-modebar" role="group" aria-label="百家乐预测模型选择">
-      <button type="button" data-bc-predict-mode="pattern" class="active" aria-pressed="true" onclick="BaccaratPredictor.setMode('pattern')">🧠 实验统计模式</button>
-      <button type="button" data-bc-predict-mode="baseline" aria-pressed="false" onclick="BaccaratPredictor.setMode('baseline')">📐 标准数学基准</button>
-    </div>
-    <div class="bc-predict-columns">
-      <div class="bc-predict-feature">
-        <div class="bc-predict-eyebrow">NEXT ROUND · 下一局参考</div>
-        <p class="bc-predict-status" id="bc-predict-state" role="status">资料不足 · 等待记录</p>
-        <div class="bc-predict-main" id="bc-predict-main">等待样本</div>
-        <div class="bc-predict-target" id="bc-predict-target">D51 · 待记录第 1 局</div>
-        <p class="bc-predict-explain" id="bc-predict-sub">先在上方输入已开出的庄、闲、和。</p>
-      </div>
-      <div class="bc-predict-odds">
-        <div class="bc-predict-odds-title" id="bc-predict-score-type">模型分数 · 非真实赔率</div>
-        <div class="bc-predict-odd-row">
-          <div class="bc-predict-odd-label"><span>🔴 庄 Banker</span><strong id="bc-predict-pct-B">45.9%</strong></div>
-          <div class="bc-predict-track"><div class="bc-predict-fill is-B" id="bc-predict-fill-B"></div></div>
-        </div>
-        <div class="bc-predict-odd-row">
-          <div class="bc-predict-odd-label"><span>🔵 闲 Player</span><strong id="bc-predict-pct-P">44.6%</strong></div>
-          <div class="bc-predict-track"><div class="bc-predict-fill is-P" id="bc-predict-fill-P"></div></div>
-        </div>
-        <div class="bc-predict-odd-row">
-          <div class="bc-predict-odd-label"><span>🟢 和 Tie</span><strong id="bc-predict-pct-T">9.5%</strong></div>
-          <div class="bc-predict-track"><div class="bc-predict-fill is-T" id="bc-predict-fill-T"></div></div>
-        </div>
-        <p class="bc-predict-mode-note" id="bc-predict-mode-note">贝叶斯平滑 + Markov 模式研究</p>
-      </div>
-    </div>
-    <div class="bc-predict-math" id="bc-predict-math">以标准八副牌、庄赢抽 5%、和赔率 8:1 为计算基础。</div>
-    <div class="bc-predict-eval-head">
-      <div>
-        <div class="bc-predict-eval-title">🧪 逐局回放检验 <small>CHRONOLOGICAL REPLAY</small></div>
-        <p>每次只使用该局之前的记录计算；历史重放，不冒充当时已锁定的真实预测。</p>
-      </div>
-    </div>
-    <div class="bc-predict-metrics">
-      <div><span>已回放局数</span><strong id="bc-predict-tested">--</strong></div>
-      <div><span>模式方向吻合率</span><strong id="bc-predict-hit">--</strong></div>
-      <div><span>固定选庄吻合率</span><strong id="bc-predict-base-hit">--</strong></div>
-      <div><span>Brier 误差 · 模式 / 基准</span><strong id="bc-predict-brier">--</strong></div>
-    </div>
-    <p class="bc-predict-evidence" id="bc-predict-evidence" role="status">尚无足够的回测证据。</p>
-    <div class="bc-predict-replay-head">
-      <strong>📑 最近 8 笔历史回放</strong>
-      <span id="bc-predict-range">等待历史记录</span>
-    </div>
-    <div class="bc-predict-replay" id="bc-predict-replay" aria-label="百家乐历史预测和结果对照"></div>
-    <p class="bc-predict-footnote">重要：模式分数不等于真实条件胜率；回放吻合率包含<strong>和局</strong>，和局对庄 / 闲下注通常为退回本金，不等于预测命中。没有实际发牌顺序和剩余牌张，不能从庄闲走势推断下一手。请勿将任何统计信号视为保证盈利。</p>
-  </section>
-
-  <div class="section-card bc-sample-dashboard" aria-label="百家乐样本成熟度">
-    <div class="section-title">📐 样本观察进度 <span id="bc-sample-table" class="bc-manual-pill">D51</span></div>
-    <div class="bc-sample-head">
-      <div><div class="bc-sample-title" id="bc-sample-stage">尚未记录</div><p class="bc-sample-caption" id="bc-sample-next">先收集庄／闲结果，不含和局</p></div>
-      <div class="bc-sample-count"><strong id="bc-sample-decisive">0</strong><span>局庄／闲</span></div>
-    </div>
-    <div class="bc-sample-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="相对100局参考样本的进度" id="bc-sample-progress"><div id="bc-sample-progress-fill"></div></div>
-    <div class="bc-milestones"><span id="bc-milestone-20">20 局 · 初步观察</span><span id="bc-milestone-50">50 局 · 分段对照</span><span id="bc-milestone-100">100 局 · 历史样本较多</span></div>
-    <p class="bc-manual-disclaimer">⚠️ 20／50／100 是用于查看历史统计的样本档位，<strong>不是</strong>预测下一局的准确率等级。没有任何固定局数能保证下一局庄或闲更稳。</p>
-  </div>
-
-  <div class="section-card bc-window-analysis" aria-label="百家乐多窗口统计">
-    <div class="section-title">📊 多窗口历史对照 <span id="bc-window-table" class="bc-manual-pill">D51</span></div>
-    <p class="bc-manual-note">只看本桌最后录入的局数；切换窗口不会修改记录。和局列出但不进入庄／闲比例分母。</p>
-    <div class="bc-window-tabs" role="group" aria-label="统计观察窗口">
-      <button type="button" data-bc-window="20" onclick="choiceManualSetWindow(20)">近 20 局</button>
-      <button type="button" data-bc-window="50" onclick="choiceManualSetWindow(50)" class="active">近 50 局</button>
-      <button type="button" data-bc-window="100" onclick="choiceManualSetWindow(100)">近 100 局</button>
-      <button type="button" data-bc-window="all" onclick="choiceManualSetWindow('all')">全部</button>
-    </div>
-    <div class="bc-window-summary" id="bc-window-summary">尚未记录</div>
-    <div class="bc-window-metrics">
-      <div><span>庄（排除和后占比）</span><strong class="banker-color" id="bc-window-banker">--</strong></div>
-      <div><span>闲（排除和后占比）</span><strong class="player-color" id="bc-window-player">--</strong></div>
-      <div><span>和（占窗口总局数）</span><strong class="tie-color" id="bc-window-tie">--</strong></div>
-    </div>
-    <div class="bc-window-interval"><strong>庄占比的近似 95% 区间：</strong><span id="bc-window-ci">样本不足</span></div>
-    <div class="bc-window-transition"><strong>前后结果次数（忽略和）：</strong><p id="bc-window-transition">还没有足够庄／闲记录</p></div>
-    <p class="bc-sample-caption">区间用于描述历史比例估计的不确定性（按独立抽样近似），不表示下一局的庄胜率，也不消除庄闲玩法的庄家优势。参考：约 100 局时，接近一半的占比通常仍有约 ±10 个百分点的 95% 抽样误差；400 局约 ±5 个百分点。</p>
-  </div>
-
-  <div class="section-card bc-ai-analysis" aria-label="百家乐下一局 AI 模式检验">
-    <div class="section-title">🧠 下一局分析 · 数学基准 + AI 模式 <span id="bc-ai-table" class="bc-manual-pill">D51</span></div>
-    <p class="bc-manual-note">输入已经开出的庄／闲／和后自动更新。使用公开的八副牌概率、贝叶斯平滑和一／二阶 Markov 统计；不使用收费软件的私有代码。</p>
-    <div class="bc-ai-grid">
-      <div class="bc-ai-primary">
-        <span class="bc-ai-label">下一局理论上最常见结果（八副牌基准）</span>
-        <strong class="bc-ai-baseline-call" id="bc-ai-baseline-call">庄 · 45.86%</strong>
-        <p class="bc-sample-caption">这是全局理论占比，不代表这一局一定开庄，也不是获利概率。</p>
-      </div>
-      <div class="bc-ai-primary bc-ai-experiment">
-        <span class="bc-ai-label">实验性 AI 模式方向（非真实开奖概率）</span>
-        <strong class="bc-ai-pattern-call" id="bc-ai-pattern-call">等待记录</strong>
-        <p class="bc-sample-caption" id="bc-ai-pattern-note">仅参考已录庄闲，缺少牌张无法确定下一局。</p>
-      </div>
-    </div>
-    <div class="bc-ai-probabilities" aria-label="标准八副牌理论胜出比例">
-      <div><span>庄 Banker</span><strong class="banker-color" id="bc-ai-base-banker">45.86%</strong></div>
-      <div><span>闲 Player</span><strong class="player-color" id="bc-ai-base-player">44.62%</strong></div>
-      <div><span>和 Tie</span><strong class="tie-color" id="bc-ai-base-tie">9.52%</strong></div>
-    </div>
-    <div class="bc-ai-score-box" aria-label="标准八副牌庄家优势">
-      <div class="bc-ai-score-title">🧮 数学期望（8副牌、庄抽5%、和赔率8:1）</div>
-      <div id="bc-ai-ev" class="bc-ai-evaluation">正在计算理论期望…</div>
-      <p class="bc-sample-caption">下方数字为每押注 1 单位的长期平均净收益，不是某一局的实际输赢；负值表示玩家长期期望亏损。庄闲和局退还本金。</p>
-    </div>
-    <div class="bc-ai-score-box">
-      <div class="bc-ai-score-title">🔬 模式分数（实验性，不是下一局真实赔率）</div>
-      <div id="bc-ai-score" class="bc-ai-score">收集更多庄闲数据后显示。</div>
-      <p class="bc-sample-caption" id="bc-ai-method">混合：理论先验 + 最近 80 局频率 + 一阶／二阶 Markov，全部以贝叶斯先验平滑。</p>
-    </div>
-    <div class="bc-ai-backtest">
-      <div class="bc-ai-score-title">✅ 逐局回测（只用当时已有的历史预测下一局）</div>
-      <strong id="bc-ai-validation">尚无足够可回测局数</strong>
-      <div id="bc-ai-evaluation" class="bc-ai-evaluation">在拥有至少 40 局庄／闲作为训练数据后，才开始计入回测。</div>
-    </div>
-    <p class="bc-manual-disclaimer">⚠️ 没有录入每张牌及当前牌靴剩余组成，就无法计算当前牌靴的实际条件概率。历史样本数、模型分数或回测成绩均不证明下一局可预测。标准八副牌参考来源：Wizard of Odds。</p>
-  </div>
-
-  <div class="section-card bc-manual-prediction">
-    <div class="section-title">🔎 历史走势参考 <span id="bc-prediction-table" class="bc-manual-pill">D51</span></div>
-    <div class="bc-manual-prediction-content">
-      <div id="bc-manual-pick" class="bc-manual-pick">等待记录</div>
-      <div id="bc-manual-pick-sample" class="bc-manual-pick-sample">至少录入 20 局庄／闲后显示</div>
-      <p id="bc-manual-pick-reason" class="bc-manual-pick-reason">记录满 20 局庄／闲后，仅描述历史偏多的一方及转移次数；不读取实时开奖。</p>
-    </div>
-    <p class="bc-manual-disclaimer">仅为历史走势的描述性参考，不是 AI 预知或实际胜率。百家乐每局具有随机性，历史结果不能可靠预测下一局。</p>
-  </div>
-
-  <div class="section-card bc-manual-statistics">
-    <div class="section-title">📈 <span id="bc-stats-table">D51</span> 手动统计</div>
-    <div class="analysis-grid">
-      <div class="analysis-item banker-item"><div class="analysis-label">庄</div><div class="analysis-value banker-color" id="bc-manual-banker-count">0</div></div>
-      <div class="analysis-item player-item"><div class="analysis-label">闲</div><div class="analysis-value player-color" id="bc-manual-player-count">0</div></div>
-      <div class="analysis-item tie-item"><div class="analysis-label">和</div><div class="analysis-value tie-color" id="bc-manual-tie-count">0</div></div>
-      <div class="analysis-item"><div class="analysis-label">庄占比（含和）</div><div class="analysis-value banker-color" id="bc-manual-banker-percent">--</div></div>
-      <div class="analysis-item"><div class="analysis-label">闲占比（含和）</div><div class="analysis-value player-color" id="bc-manual-player-percent">--</div></div>
-      <div class="analysis-item"><div class="analysis-label">当前连续（忽略和）</div><div class="analysis-value" id="bc-manual-current-streak">--</div></div>
-      <div class="analysis-item"><div class="analysis-label">最长庄连</div><div class="analysis-value banker-color" id="bc-manual-max-banker">0</div></div>
-      <div class="analysis-item"><div class="analysis-label">最长闲连</div><div class="analysis-value player-color" id="bc-manual-max-player">0</div></div>
-      <div class="analysis-item"><div class="analysis-label">全部录入局数</div><div class="analysis-value" id="bc-manual-total">0</div></div>
-    </div>
-  </div>
-
-  <div class="section-card">
-    <div class="section-title">🟡 <span id="bc-road-table">D51</span> 手动结果顺序图</div>
-    <p class="bc-manual-note">按录入顺序排列（每列从上到下），最多显示最近 120 局。这是简易记录图，非赌场官方大路。</p>
-    <div id="bc-manual-road" class="bc-manual-road" aria-label="手动开奖结果顺序"></div>
-  </div>
   <div class="section-card bc-roadmaps" aria-label="百家乐历史路单">
-    <div class="section-title">🧭 标准历史路单 <span class="bc-manual-pill" id="bc-roads-table">D51</span></div>
-    <p class="bc-manual-note">本桌最近 120 局：珠盘路包含和局，大路将和局叠加在前一庄/闲格；大眼仔、小路、蟑螂路的红/蓝表示形态规则/不规则，<strong>不表示未来开庄或开闲</strong>。路单仅供历史核对，各平台的排版细节可能不同。</p>
+    <div class="section-title">🧭 标准历史路单</div>
+    <p class="bc-manual-note">把常见路单放到上面，方便直接看走势。仅作历史整理参考，不代表能保证下一局准确。</p>
+    <div class="section-card bc-sequence-card">
+      <div class="section-title">🟡 结果顺序</div>
+      <div id="bc-manual-road" class="bc-manual-road" aria-label="手动开奖结果顺序"></div>
+    </div>
     <div class="bc-roadmaps-list">
       <div><strong>珠盘路 Bead Plate</strong><div class="bc-road-scroll"><div id="bc-road-bead" class="bc-road-grid"></div></div></div>
       <div><strong>大路 Big Road</strong><div class="bc-road-scroll"><div id="bc-road-big" class="bc-road-grid"></div></div></div>
@@ -561,8 +397,43 @@
       <div><strong>蟑螂路 Cockroach Road</strong><div class="bc-road-scroll"><div id="bc-road-cockroach" class="bc-road-grid"></div></div></div>
     </div>
   </div>
+
+  <section class="section-card bc-predict-lab" id="bc-predict-lab" aria-labelledby="bc-predict-title">
+    <div class="bc-predict-header">
+      <div>
+        <div class="section-title" id="bc-predict-title">🔮 下一局预测</div>
+        <p class="bc-predict-intro">简化版专业视图：直接显示下一局参考方向。</p>
+      </div>
+      <span class="bc-predict-version">V26 · SIMPLE</span>
+    </div>
+    <div class="bc-simple-predict-shell">
+      <div class="bc-simple-predict-main">
+        <div class="bc-predict-eyebrow">NEXT ROUND</div>
+        <div class="bc-predict-main" id="bc-predict-main-hero">等待样本</div>
+        <p class="bc-predict-status" id="bc-predict-sub">先录入已开出的庄、闲、和。</p>
+      </div>
+      <div class="bc-simple-predict-probs">
+        <div class="bc-simple-prob-card is-B"><span>庄 Banker</span><strong id="bc-predict-pct-B">--</strong></div>
+        <div class="bc-simple-prob-card is-P"><span>闲 Player</span><strong id="bc-predict-pct-P">--</strong></div>
+        <div class="bc-simple-prob-card is-T"><span>和 Tie</span><strong id="bc-predict-pct-T">--</strong></div>
+      </div>
+    </div>
+    <p class="bc-simple-disclaimer">说明：这里显示的是基于公开概率与已录历史的参考方向，不是保证命中的真实开奖能力。</p>
+  </section>
+
+  <div class="section-card bc-manual-statistics">
+    <div class="section-title">📈 简要统计</div>
+    <div class="analysis-grid">
+      <div class="analysis-item banker-item"><div class="analysis-label">庄</div><div class="analysis-value banker-color" id="bc-manual-banker-count">0</div></div>
+      <div class="analysis-item player-item"><div class="analysis-label">闲</div><div class="analysis-value player-color" id="bc-manual-player-count">0</div></div>
+      <div class="analysis-item tie-item"><div class="analysis-label">和</div><div class="analysis-value tie-color" id="bc-manual-tie-count">0</div></div>
+      <div class="analysis-item"><div class="analysis-label">当前连续</div><div class="analysis-value" id="bc-manual-current-streak">--</div></div>
+      <div class="analysis-item"><div class="analysis-label">总局数</div><div class="analysis-value" id="bc-manual-total">0</div></div>
+    </div>
+  </div>
+
   <div class="section-card">
-    <div class="section-title">📜 <span id="bc-history-table">D51</span> 最近 20 局 <span class="bc-manual-pill">最新在前</span></div>
+    <div class="section-title">📜 最近 20 局</div>
     <div id="bc-manual-history" class="bc-manual-history"></div>
   </div>
 </section>

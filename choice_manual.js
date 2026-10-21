@@ -6,7 +6,7 @@
 (() => {
     "use strict";
 
-    const TABLES = Object.freeze(["D51", "D52", "D53", "D54", "D55", "D56", "D57", "D58"]);
+    const TABLES = Object.freeze(["D51"]);
     const STORAGE_KEY = "choice_manual_history_v1";
     const SELECTED_KEY = "choice_manual_selected_v1";
     const MAX_PER_TABLE = 5000;
@@ -16,7 +16,7 @@
 
     let histories = emptyHistories();
     let selectedTable = TABLES[0];
-    let windowView = 50; // Number of recent recorded rounds, including ties.
+    let windowView = 50; // reserved for legacy analysis blocks
     const WINDOWS = Object.freeze([20, 50, 100, "all"]);
 
     function emptyHistories() {
@@ -381,7 +381,7 @@
         selectedTable = table;
         try { localStorage.setItem(SELECTED_KEY, selectedTable); } catch (_) { /* still usable */ }
         render();
-        message(`已切换到 ${table}，本桌有 ${histories[table].length} 局手动记录。`);
+        message(`当前记录共有 ${histories[table].length} 局。`);
     };
 
     window.choiceManualAdd = function(code) {
@@ -415,11 +415,11 @@
         if (corruptStorage) { message("本地备份无法读取，请先恢复备份。", true); return; }
         const history = histories[selectedTable];
         if (!history.length) return;
-        if (!window.confirm(`确定清空 ${selectedTable} 已手动输入的 ${history.length} 局吗？其他桌的记录不会删除。`)) return;
+        if (!window.confirm(`确定清空当前已手动输入的 ${history.length} 局吗？`)) return;
         histories[selectedTable] = [];
         const saved = persist();
         render();
-        if (saved) message(`已清空 ${selectedTable}，其他 7 桌保持不变。`);
+        if (saved) message(`已清空当前记录。`);
     };
 
     window.choiceManualExport = function() {
@@ -437,7 +437,7 @@
         anchor.click();
         anchor.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        message("已导出全部 8 桌 JSON 备份。此文件不包含登录信息。请妥善保存。 ");
+        message("已导出当前百家乐记录 JSON 备份。此文件不包含登录信息。请妥善保存。");
     };
 
     window.choiceManualImport = async function(event) {
@@ -448,7 +448,7 @@
             if (file.size > 1024 * 1024) throw new Error("备份文件超过 1 MB");
             const incoming = validateBackup(JSON.parse(await file.text()));
             const count = TABLES.reduce((sum, table) => sum + incoming[table].length, 0);
-            if (!window.confirm(`导入将覆盖当前浏览器全部 8 桌记录。新备份包含 ${count} 局，确定继续吗？`)) {
+            if (!window.confirm(`导入将覆盖当前浏览器里的百家乐记录。新备份包含 ${count} 局，确定继续吗？`)) {
                 message("已取消导入，现有记录未改变。");
                 return;
             }
@@ -460,7 +460,7 @@
             }
             histories = incoming;
             render();
-            message(`导入成功：共 ${count} 局，8 桌记录已更新。`);
+            message(`导入成功：共 ${count} 局记录已更新。`);
         } catch (error) {
             message(`导入失败：${error.message}。原有记录没有改变。`, true);
         } finally {
@@ -476,7 +476,7 @@
             if (event.key === STORAGE_KEY) {
                 loadFromBrowser();
                 render();
-                if (!corruptStorage) message("已同步同一浏览器其他标签页更新的 百家乐手动记录。");
+                if (!corruptStorage) message("已同步同一浏览器其他标签页更新的百家乐记录。");
             }
         });
     }
