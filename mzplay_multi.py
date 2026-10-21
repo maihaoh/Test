@@ -24,7 +24,7 @@ NETWORK_RETRY_SECONDS = 45
 TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v21-direct-login-no-service-worker"
+BUILD_VERSION = "v28-auth-retry-diagnostics"
 
 GAME_DEFS = {
     "k3": {
@@ -351,6 +351,57 @@ class MZPlayTransientError(RuntimeError):
         self.path = path or ""
 
 
+class MZPlayAuthenticationError(RuntimeError):
+    """Authentication failed; only a safe, non-secret diagnostic is exposed."""
+
+    def __init__(self, category, retry_after=300):
+        self.category = str(category)
+        self.retry_after = max(30, int(retry_after))
+        super().__init__(f"MZPlay authorization unavailable ({self.category})")
+
+
+def safe_browser_failure_category(exc, stage="unknown"):
+    """Classify a browser error without printing its raw text.
+
+    Playwright errors may contain URLs, form values or other sensitive data;
+    even exception lines must not be copied directly to Render Logs.
+    """
+    if isinstance(exc, MZPlayAuthenticationError):
+        return exc.category
+    reason = str(exc).lower()
+    if "no operation permission" in reason or "msgcode=2" in reason:
+        return "permission_denied"
+    if any(word in reason for word in ("captcha", "验证码", "额外验证", "human verification")):
+        return "human_verification_required"
+    if "no executable" in reason or "executable doesn't exist" in reason or "playwright install" in reason:
+        return "chromium_not_installed"
+    if any(word in reason for word in ("browser has been closed", "target closed", "target page, context or browser")):
+        return "browser_closed"
+    if "err_name_not_resolved" in reason or "err_dns" in reason:
+        return "dns_failed"
+    if "err_connection" in reason or "err_timed_out" in reason or "err_network" in reason:
+        return "network_connection_failed"
+    if "err_blocked_by" in reason or "err_access_denied" in reason or "403 forbidden" in reason:
+        return "network_access_blocked"
+    if "timeout" in type(exc).__name__.lower() or "timeout" in reason:
+        return "browser_timeout"
+    if "log in 按钮" in reason or "login button" in reason:
+        return "login_button_unavailable"
+    if "找不到" in reason or "login form" in reason or "输入框" in reason:
+        return "login_form_unavailable"
+    if "未捕获到 login 响应" in reason:
+        return "login_response_missing"
+    if stage == "chromium_launch":
+        return "chromium_launch_failed"
+    if stage == "official_login_navigation":
+        return "official_site_navigation_failed"
+    if stage == "login_form":
+        return "login_form_failed"
+    if stage == "login_submission":
+        return "login_submission_failed"
+    return "browser_auth_unknown_error"
+
+
 class MZPlayClient:
     def __init__(self, config):
         self.config = config or {}
@@ -387,6 +438,7 @@ class MZPlayClient:
         self.api_cooldowns = {}
         self.next_network_retry_at = 0.0
         self.next_ui_login_at = 0.0
+        self.browser_auth_stage = "not_started"
         self._load_auth_state()
         # GitHub Actions fallback: the bootstrap secret is already present in the
         # job environment.  If the transient JSON file was not visible/parseable,
@@ -1118,6 +1170,8 @@ class MZPlayClient:
             return self._apply_auth(stored, source="UILogin")
 
         print("🖱️ [MZPlay/UILogin] 使用官方网页登录表单填写账号并点击 Log in")
+        self.browser_auth_stage = "login_form"
+        print("[MZPlay/Auth] stage=login_form", flush=True)
         stored, _, _ = self._ui_prepare_login_form(page)
         if stored:
             self.next_ui_login_at = 0.0
@@ -1141,6 +1195,8 @@ class MZPlayClient:
             PlaywrightTimeoutError = TimeoutError
 
         response = None
+        self.browser_auth_stage = "login_submission"
+        print("[MZPlay/Auth] stage=login_submission", flush=True)
         try:
             with page.expect_response(
                 lambda r: "/api/webapi/Login" in str(r.url) and str(r.request.method).upper() == "POST",
@@ -1247,6 +1303,8 @@ class MZPlayClient:
         except Exception as exc:
             raise RuntimeError("缺少 Playwright/Chromium，无法执行浏览器认证") from exc
 
+        self.browser_auth_stage = "chromium_launch"
+        print("[MZPlay/Auth] stage=chromium_launch", flush=True)
         manager = sync_playwright()
         p = manager.start()
         browser = None
@@ -1287,6 +1345,8 @@ class MZPlayClient:
                 script=f"try {{ localStorage.setItem('arvId', {device_js}); }} catch (e) {{}}"
             )
             page = context.new_page()
+            self.browser_auth_stage = "official_login_navigation"
+            print("[MZPlay/Auth] stage=official_login_navigation", flush=True)
             try:
                 # Go directly to the login route before a service worker/app-shell
                 # cycle can alter the first authenticated page.
@@ -1307,30 +1367,64 @@ class MZPlayClient:
             raise
 
     def login(self):
-        """Authenticate from an actual Chromium page on mzplay0.com.
+        """Attempt a legitimate website login, with safe diagnostics and cooldown.
 
-        Direct /Login from Render has repeatedly returned msgCode=2
-        "No operation permission".  The browser-origin path mirrors the official
-        web client and is now the default.  No CAPTCHA or access control is bypassed.
+        An unsuccessful attempt is shared across K3/5D/TRX. We never repeatedly
+        submit the same credentials for each game, and never bypass CAPTCHA or
+        a permission decision from the MZPlay server.
         """
         if not self.configured:
-            raise RuntimeError("未配置 MZPLAY username/password")
-        if time.time() < self.next_login_at:
-            remaining = max(1, int(self.next_login_at - time.time()))
+            raise MZPlayAuthenticationError("credentials_missing", retry_after=900)
+        now = time.time()
+        cooldown_until = max(self.next_login_at, self.next_ui_login_at)
+        if now < cooldown_until:
+            retry_after = max(1, int(cooldown_until - now))
             raise MZPlayRateLimit(
-                self._login_cooldown_message(), scope="login", retry_after=remaining, path="/Login"
+                f"授权登录冷却中，{retry_after}s 后再检查",
+                scope="login", retry_after=retry_after, path="/Login",
             )
 
         manager = p = browser = context = page = None
+        self.browser_auth_stage = "browser_setup"
         print("[MZPlay/Auth] Opening official browser login (credentials redacted)", flush=True)
         try:
             manager, p, browser, context, page = self._open_auth_browser()
-            return self.login_in_browser(page)
+            result = self.login_in_browser(page)
+            # A verified token, not merely a loaded login screen, clears cooldown.
+            if not self.token:
+                raise MZPlayAuthenticationError("no_session_after_login", retry_after=300)
+            self._clear_login_cooldown()
+            self.next_ui_login_at = 0.0
+            self.browser_auth_stage = "authenticated"
+            return result
         except Exception as exc:
-            # Avoid printing exception messages that may include session URLs,
-            # tokens, or account identifiers.
-            print(f"[MZPlay/Auth] Browser login failed: {type(exc).__name__}", flush=True)
-            raise
+            category = safe_browser_failure_category(exc, self.browser_auth_stage)
+            self.rate_limit_hits = min(6, self.rate_limit_hits + 1)
+            base = max(60, min(3600, int(os.getenv("MZPLAY_LOGIN_FAILURE_RETRY_SECONDS") or 300)))
+            retry_after = min(3600, base * (2 ** min(3, self.rate_limit_hits - 1)))
+            if category == "human_verification_required":
+                retry_after = max(1800, retry_after)
+            if isinstance(exc, MZPlayRateLimit):
+                retry_after = max(retry_after, exc.retry_after)
+            if isinstance(exc, MZPlayTransientError):
+                retry_after = max(retry_after, exc.retry_after)
+            self.next_login_at = max(self.next_login_at, self.next_ui_login_at, time.time() + retry_after)
+            self.last_login_error = f"{self.browser_auth_stage}:{category}"
+            self._save_auth_state()
+            print(
+                f"[MZPlay/Auth] Browser login failed: stage={self.browser_auth_stage} "
+                f"category={category} exception={type(exc).__name__} "
+                f"retry_after={retry_after}s (credentials hidden)",
+                flush=True,
+            )
+            if isinstance(exc, MZPlayRateLimit):
+                # A policy cooldown already occurred. Keep the same exception
+                # family for existing callers, but use the extended wait period.
+                raise MZPlayRateLimit(
+                    f"浏览器授权限频 / 冷却，{retry_after}s 后再检查",
+                    scope="login", retry_after=retry_after, path="/Login",
+                ) from None
+            raise MZPlayAuthenticationError(category, retry_after=retry_after) from None
         finally:
             if context is not None:
                 try: context.close()
@@ -1725,6 +1819,17 @@ class MultiGameCollector:
             if not self.client.token:
                 try:
                     self.client.ensure_login()
+                except MZPlayAuthenticationError as exc:
+                    # One failed sign-in affects all three games. Keep every
+                    # game's existing historical records, mark auth unavailable,
+                    # and respect the shared session cooldown.
+                    status = f"MZPlay 授权恢复失败，等待重试 ({exc.category})"
+                    for game in self.states:
+                        self.states[game]["status"] = status
+                        self.states[game]["last_attempt_at"] = int(time.time())
+                    self.on_update(self.states)
+                    self.stop_event.wait(max(5, int(exc.retry_after)))
+                    continue
                 except MZPlayTransientError as exc:
                     status = f"网络暂时不可用 ({type(exc).__name__})"
                     for game in self.states:
@@ -1754,24 +1859,46 @@ class MultiGameCollector:
                     continue
 
             rate_limited = False
+            shared_wait = 0
             for game in GAME_DEFS:
                 try:
                     self.poll_game(game)
+                except MZPlayAuthenticationError as exc:
+                    # Authentication belongs to the shared MZPlay session.
+                    # Never try the next game with the same rejected login.
+                    rate_limited = True
+                    shared_wait = max(5, int(exc.retry_after))
+                    status = f"MZPlay 授权恢复失败，等待重试 ({exc.category})"
+                    for item in self.states:
+                        self.states[item]["status"] = status
+                        self.states[item]["last_attempt_at"] = int(time.time())
+                    print(
+                        f"[Multi/Render] Shared auth failure; skip remaining games; "
+                        f"retry_after={shared_wait}s (credentials hidden)",
+                        flush=True,
+                    )
+                    break
                 except MZPlayTransientError as exc:
                     rate_limited = True
+                    shared_wait = max(5, int(getattr(exc, "retry_after", NETWORK_RETRY_SECONDS)))
                     self.states[game]["status"] = f"网络暂时不可用 ({type(exc).__name__})"
                     self.states[game]["last_attempt_at"] = int(time.time())
-                    self.stop_event.wait(max(5, int(getattr(exc, "retry_after", NETWORK_RETRY_SECONDS))))
                     break
                 except MZPlayRateLimit as exc:
                     rate_limited = True
-                    self.states[game]["status"] = "API 限频，自动等待冷却后重试"
-                    self.states[game]["last_attempt_at"] = int(time.time())
-                    # Endpoint cooldown is handled by MZPlayClient; avoid immediately hammering another endpoint.
-                    self.stop_event.wait(max(5, int(getattr(exc, "retry_after", 0) or GENERAL_RETRY_SECONDS)))
+                    shared_wait = max(5, int(getattr(exc, "retry_after", 0) or GENERAL_RETRY_SECONDS))
+                    # A failed shared login must not be attempted again for
+                    # K3, 5D, and TRX individually within the same pass.
+                    if not self.client.token:
+                        for item in self.states:
+                            self.states[item]["status"] = "MZPlay 授权冷却中，暂不重复登录"
+                            self.states[item]["last_attempt_at"] = int(time.time())
+                    else:
+                        self.states[game]["status"] = "API 限频，自动等待冷却后重试"
+                        self.states[game]["last_attempt_at"] = int(time.time())
                     break
                 except Exception as exc:
                     self.states[game]["status"] = f"授权或连接失败 ({type(exc).__name__})"
                     self.states[game]["last_attempt_at"] = int(time.time())
             self.on_update(self.states)
-            self.stop_event.wait(GENERAL_RETRY_SECONDS if rate_limited else self.poll_interval)
+            self.stop_event.wait(shared_wait if rate_limited else self.poll_interval)
