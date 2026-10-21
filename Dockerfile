@@ -5,10 +5,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Render only serves the API and WinGo collector. Choice is entered manually
-# in the browser, so Render does not require a Chromium/Playwright download.
+# Render uses Chromium for official MZPlay browser sign-in if its saved session
+# expires. Baccarat remains manual; this does not bypass account permissions.
 COPY requirements-render.txt ./
-RUN pip install --no-cache-dir -r requirements-render.txt
+RUN pip install --no-cache-dir -r requirements-render.txt \
+    && python -m playwright install --with-deps chromium
 
 COPY . .
 RUN python -m py_compile bot.py mzplay_multi.py direct_choice_render.py choice_result_decoder.py realtime_api.py multi_runtime.py multi_snapshot.py

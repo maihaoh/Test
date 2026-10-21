@@ -1322,9 +1322,15 @@ class MZPlayClient:
             )
 
         manager = p = browser = context = page = None
+        print("[MZPlay/Auth] Opening official browser login (credentials redacted)", flush=True)
         try:
             manager, p, browser, context, page = self._open_auth_browser()
             return self.login_in_browser(page)
+        except Exception as exc:
+            # Avoid printing exception messages that may include session URLs,
+            # tokens, or account identifiers.
+            print(f"[MZPlay/Auth] Browser login failed: {type(exc).__name__}", flush=True)
+            raise
         finally:
             if context is not None:
                 try: context.close()
@@ -1384,7 +1390,9 @@ class MZPlayClient:
                 scope="refresh", retry_after=retry_after, path="/RefreshToken"
             )
 
-        # Expired/revoked refresh token: discard it and perform one normal Login.
+        # Expired/revoked refresh token: discard it and attempt one official
+        # browser sign-in. Never silently retry the same rejected token.
+        print("[MZPlay/Auth] Refresh rejected; attempting official browser login once", flush=True)
         self._drop_tokens()
         return self.login()
 
