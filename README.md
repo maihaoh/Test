@@ -1,7 +1,20 @@
-# AI Gaming Dashboard (V23)
+# V25 GitHub / Render Upload
 
-请先阅读 [V23_先看这里.md](V23_先看这里.md)，再更新 GitHub Pages 与 Render。
+This is the cleaned V25 project. **Upload the contents of this folder to the root of your GitHub repository** (alongside `index.html`), not the `.zip` file.
 
-WinGo 历史统计、百家乐手动研究、K3 / 5D / TRX 数据展示分开管理。**数据源连接与账号授权必须在真实线上环境验证**；历史命中率和模拟结果不能作为实际下注优势或盈利保证。
+## Files retained
 
-本项目不会自动下注，不会启用不明授权的 Choice 订阅。
+- Web UI: `index.html`, `style.css`, `script.js`, `multi_games.js`.
+- Baccarat (庄 / 闲 / 和): `choice_manual.js` and `baccarat_*.js`. These modules remain required even though some were originally created in V24.
+- Read-only data service: Python collector and API modules, dependency files, `Dockerfile`, `render.yaml` and start scripts.
+- GitHub: `.github/workflows/pages.yml` for Pages, `choice-collector.yml` for the authorized optional collector.
+
+## What is intentionally omitted
+
+Old V14-V24 reports and setup notes, unused V16 duplicate Python code, old one-shot scripts, generated `choice_status.json`, and stale `data.json`. The backend creates its runtime data when launched. There is no old static JSON fallback on GitHub Pages.
+
+## Important during an update
+
+Uploading new files via the GitHub website **does not remove old files already committed**. Delete obsolete V14-V24 `.md` reports and `direct_choice_render_V16.py`, `run_once.py`, `full_diagnostic.py`, `requirements.txt`, `data.json`, and `.github/workflows/choice-full-diagnostic.yml` from the GitHub repository if present. Keep the JS modules and the currently listed files above.
+
+Secrets are configured only in GitHub Actions Secrets and Render environment variables, never as repository files. A missing/expired MZPlay token cannot be fixed merely by uploading source files. Pages will refresh its appearance after a successful `main` branch deployment; if needed use Ctrl+Shift+R.

@@ -2363,3 +2363,204 @@ tbody tr:hover {
 .multi-source-actions button,.multi-source-actions a {display:inline-flex;align-items:center;justify-content:center;border:1px solid #466082;border-radius:8px;background:#172943;color:#dbeafe;padding:7px 10px;font-size:11px;font-weight:700;text-decoration:none;cursor:pointer;}
 .multi-source-actions button:hover,.multi-source-actions a:hover {border-color:#93c5fd;background:#1e3a5f;}
 .multi-source-actions button:focus-visible,.multi-source-actions a:focus-visible {outline:2px solid #bfdbfe;outline-offset:2px;}
+
+/* V24 Baccarat forecasting workbench -- dark dashboard, accessible on mobile. */
+.bc-predict-lab {
+    border:1px solid #47658d;
+    background:linear-gradient(160deg,#14243a 0%,#111a2a 50%,#14172b 100%);
+    box-shadow:inset 0 1px 0 rgba(147,197,253,.14),0 16px 38px rgba(1,8,26,.14);
+}
+.bc-predict-header,.bc-predict-replay-head {display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap}
+.bc-predict-header .section-title {margin-bottom:4px}
+.bc-predict-intro {color:#aebfd5;font-size:12px;line-height:1.5;margin:3px 0 0}
+.bc-predict-version {background:#192c45;border:1px solid #3b5574;color:#93c5fd;border-radius:6px;font-size:10px;font-weight:900;letter-spacing:.06em;white-space:nowrap;padding:7px 10px}
+.bc-predict-modebar {display:flex;flex-wrap:wrap;gap:8px;margin:15px 0 13px}
+.bc-predict-modebar button {border:1px solid #39516d;background:#142033;color:#aabbcc;font-size:12px;font-weight:800;border-radius:9px;padding:10px 14px;min-height:42px;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.bc-predict-modebar button.active {background:#233d63;border-color:#60a5fa;color:#eff6ff}
+.bc-predict-modebar button:hover {border-color:#93c5fd}
+.bc-predict-modebar button:focus-visible {outline:2px solid #93c5fd;outline-offset:3px}
+.bc-predict-columns {display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:12px}
+.bc-predict-feature,.bc-predict-odds {min-width:0;background:#0d1829;border:1px solid #30445f;border-radius:14px;padding:19px}
+.bc-predict-feature {background:radial-gradient(ellipse at top left,#26335b 0%,#121f36 53%,#0e1a2b 100%);min-height:210px}
+.bc-predict-eyebrow {color:#93c5fd;font-size:11px;font-weight:900;letter-spacing:.10em}
+.bc-predict-status {display:inline-flex;align-items:center;margin:16px 0 9px;font-size:11px;font-weight:800;color:#d1d5db;background:#2b3650;border:1px solid #455675;border-radius:100px;padding:6px 10px;line-height:1.3}
+.bc-predict-main {font-size:clamp(26px,4vw,42px);line-height:1.1;font-weight:950;color:#e2e8f0;letter-spacing:-.025em;overflow-wrap:anywhere}
+.bc-predict-main.is-B {color:#fca5a5}
+.bc-predict-main.is-P {color:#93c5fd}
+.bc-predict-target {margin-top:11px;color:#fff;font-size:13px;font-weight:800}
+.bc-predict-explain {font-size:12px;line-height:1.55;color:#a8bad0;margin:10px 0 0}
+.bc-predict-odds-title {font-size:12px;font-weight:900;letter-spacing:.02em;color:#dce8f6;margin-bottom:17px}
+.bc-predict-odd-row {margin-bottom:13px}
+.bc-predict-odd-label {display:flex;justify-content:space-between;gap:12px;align-items:center;color:#cbd5e1;font-size:12px;margin-bottom:6px}
+.bc-predict-odd-label strong {font-size:15px;color:#f8fafc;font-variant-numeric:tabular-nums}
+.bc-predict-track {background:#233349;border-radius:100px;width:100%;height:9px;overflow:hidden}
+.bc-predict-fill {height:100%;border-radius:100px;transition:width .18s ease;width:0}
+.bc-predict-fill.is-B {background:linear-gradient(90deg,#be444b,#fb7185)}
+.bc-predict-fill.is-P {background:linear-gradient(90deg,#3168ca,#60a5fa)}
+.bc-predict-fill.is-T {background:linear-gradient(90deg,#0d9471,#34d399)}
+.bc-predict-mode-note {color:#91a3ba;line-height:1.6;font-size:11px;margin:13px 0 0}
+.bc-predict-math {margin-top:13px;border:1px solid #33465e;border-radius:9px;background:#17253a;padding:11px 13px;color:#b8c9db;font-size:12px;line-height:1.65}
+.bc-predict-eval-head {margin-top:20px}
+.bc-predict-eval-title {font-weight:900;color:#e7eef9;font-size:15px}
+.bc-predict-eval-title small {color:#819ab8;font-size:10px;font-weight:800;letter-spacing:.04em;margin-left:5px}
+.bc-predict-eval-head p {font-size:12px;color:#91a4b9;margin:5px 0 11px;line-height:1.5}
+.bc-predict-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.bc-predict-metrics>div {min-width:0;background:#111c2f;border:1px solid #34435c;border-radius:10px;padding:13px 12px}
+.bc-predict-metrics span {display:block;color:#a2b4c9;font-size:11px;line-height:1.4}
+.bc-predict-metrics strong {display:block;color:#e2edff;font-size:clamp(14px,1.5vw,19px);font-weight:900;font-variant-numeric:tabular-nums;margin-top:6px;overflow-wrap:anywhere}
+.bc-predict-evidence {margin:12px 0 18px;padding:11px 12px;background:#252136;border:1px solid #6b496c;border-radius:9px;color:#e9d5ff;font-size:12px;line-height:1.65}
+.bc-predict-replay-head {align-items:center;margin-bottom:9px;color:#e2e8f0;font-size:12px}
+.bc-predict-replay-head span {color:#92a6c0;font-size:11px;line-height:1.5}
+.bc-predict-replay {background:#101929;border:1px solid #2a3b54;border-radius:12px;overflow:hidden}
+.bc-predict-replay-row {display:grid;grid-template-columns:minmax(0,.8fr) repeat(3,minmax(0,1fr));gap:9px;align-items:center;padding:11px 14px;border-bottom:1px solid #27354a;color:#b9cae0;font-size:12px}
+.bc-predict-replay-row:last-child {border-bottom:0}
+.bc-predict-replay-row span {overflow-wrap:anywhere}
+.bc-predict-replay-row .round {color:#94a3b8}
+.bc-predict-replay-row .is-B {color:#fca5a5}
+.bc-predict-replay-row .is-P {color:#93c5fd}
+.bc-predict-replay-row .is-T {color:#6ee7b7}
+.bc-predict-replay-row .is-hit {color:#6ee7b7;font-weight:900}
+.bc-predict-replay-row .is-miss {color:#fca5a5;font-weight:800}
+.bc-predict-empty {text-align:center;padding:19px;color:#90a4be;font-size:12px;line-height:1.55;margin:0}
+.bc-predict-footnote {margin:13px 0 0;color:#aabbd1;font-size:11px;line-height:1.8}
+@media(max-width:740px) {
+    .bc-predict-columns {grid-template-columns:1fr}
+    .bc-predict-feature {min-height:unset}
+    .bc-predict-metrics {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:420px) {
+    .bc-predict-header .section-title {font-size:16px}
+    .bc-predict-feature,.bc-predict-odds {padding:14px}
+    .bc-predict-modebar button {padding:10px;font-size:11px;flex:1}
+    .bc-predict-replay-row {gap:3px;padding:11px 7px;font-size:10px}
+    .bc-predict-metrics strong {font-size:15px}
+}
+
+/* ===== V25 compact result rows ===== */
+.compact-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.compact-line-stack {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.compact-line-label {
+  min-width: 40px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.compact-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, .28);
+  background: rgba(15, 23, 42, .55);
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.compact-chip.is-number {
+  min-width: 34px;
+}
+.compact-chip.is-size-big,
+.compact-chip.is-size-small,
+.compact-chip.is-status,
+.compact-chip.is-metric,
+.compact-chip.is-colour {
+  min-width: 54px;
+}
+.compact-chip.is-size-big,
+.compact-chip.tone-red {
+  border-color: rgba(248, 113, 113, .45);
+  background: rgba(127, 29, 29, .35);
+}
+.compact-chip.is-size-small,
+.compact-chip.tone-green {
+  border-color: rgba(52, 211, 153, .45);
+  background: rgba(6, 78, 59, .35);
+}
+.compact-chip.tone-violet {
+  border-color: rgba(167, 139, 250, .5);
+  background: rgba(76, 29, 149, .35);
+}
+.compact-chip.is-status {
+  border-color: rgba(59, 130, 246, .45);
+  background: rgba(30, 64, 175, .25);
+}
+.compact-chip.is-metric {
+  border-color: rgba(34, 211, 238, .35);
+}
+.compact-confidence {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.result-box .compact-line,
+.prediction-box .compact-line,
+.review-value .compact-line {
+  justify-content: flex-start;
+}
+#draw-table td .compact-line {
+  min-width: 270px;
+}
+.compact-history-card,
+.compact-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(59, 130, 246, .18);
+  border-radius: 14px;
+  background: rgba(8, 16, 40, .52);
+  margin-bottom: 10px;
+}
+.compact-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #cbd5e1;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.compact-history-head strong {
+  color: #f8fafc;
+  font-size: 13px;
+}
+.compact-history-foot {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+.compact-matrix-note {
+  margin: 0;
+}
+.multi-empty {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, .45);
+  color: #94a3b8;
+  font-size: 13px;
+}
+.multi-latest .compact-line,
+.multi-prediction .compact-line {
+  justify-content: flex-start;
+}
+.multi-latest,
+.multi-prediction {
+  font-size: 14px;
+}
+#draw-table th:nth-child(1),
+#draw-table td:nth-child(1) {
+  white-space: nowrap;
+}

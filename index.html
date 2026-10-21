@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Lottery + 百家乐 Dashboard</title>
 <script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=layout-v23" rel="stylesheet"/>
+<link href="style.css?v=layout-v25-clean" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">Build V23 · UI V23 · 历史分析与实时状态分离</span>
+                Lottery 与 百家乐分区 · <span id="build-version">Build V25 · UI V25 · 简洁开奖与预测</span>
 </div>
 </div>
 <div class="header-info">
@@ -68,7 +68,7 @@
 <p class="data-status" id="wingo-data-status" role="status">正在读取数据…</p>
 <div class="wingo-diagnostics" id="wingo-diagnostics" aria-label="WinGo 数据连接诊断">
   <div class="wingo-diagnostics-header">
-    <div><strong>🛠️ V23 数据连接诊断</strong><span>从哪里取得数据、读取了多少笔、为什么尚未显示实时参考</span></div>
+    <div><strong>🛠️ 数据连接诊断</strong><span>从哪里取得数据、读取了多少笔、为什么尚未显示实时参考</span></div>
     <button type="button" class="wingo-refresh-button" id="wingo-refresh-button" onclick="safeRefreshDashboard()">↻ 立即检查数据</button>
   </div>
   <div class="wingo-diagnostics-grid">
@@ -323,7 +323,7 @@
         ================================================== -->
 <div class="section-card">
 <div class="section-title">
-                📜 WinGo 最近 50 局 · 历史回测
+                📜 WinGo 历史开奖 / 历史预测对照
             </div>
 <p class="data-status">本表按实际获得的开奖记录显示大小和逐局模拟判断。仅大小计入 WIN/LOSS；训练期和 PASS 不计入胜率；在有历史数据但未确认实时连接时也能使用。历史回测不代表下一局预测能力。</p>
 <div class="table-wrapper">
@@ -331,10 +331,8 @@
 <thead>
 <tr>
 <th>期号</th>
-<th>实际开奖</th>
-<th>号码</th>
-<th>颜色</th>
-<th>历史大小回测</th>
+<th>历史开奖</th>
+<th>历史预测</th>
 </tr>
 </thead>
 <tbody id="draw-table">
@@ -392,6 +390,66 @@
     </div>
     <p class="bc-manual-message" id="bc-manual-message" role="status" aria-live="polite">准备记录。刷新后仍会保留同一浏览器上的记录。</p>
   </div>
+
+  <!-- V24: chronological, three-outcome Baccarat research workbench. -->
+  <section class="section-card bc-predict-lab" id="bc-predict-lab" aria-labelledby="bc-predict-title">
+    <div class="bc-predict-header">
+      <div>
+        <div class="section-title" id="bc-predict-title">🔮 AI 下一局预测实验室 <span id="bc-predict-table" class="bc-manual-pill">D51</span></div>
+        <p class="bc-predict-intro">手动历史驱动 · 庄 / 闲 / 和 · 不连接赌场 · 不自动下注</p>
+      </div>
+      <span class="bc-predict-version">V25 · BACCARAT</span>
+    </div>
+    <div class="bc-predict-modebar" role="group" aria-label="百家乐预测模型选择">
+      <button type="button" data-bc-predict-mode="pattern" class="active" aria-pressed="true" onclick="BaccaratPredictor.setMode('pattern')">🧠 实验统计模式</button>
+      <button type="button" data-bc-predict-mode="baseline" aria-pressed="false" onclick="BaccaratPredictor.setMode('baseline')">📐 标准数学基准</button>
+    </div>
+    <div class="bc-predict-columns">
+      <div class="bc-predict-feature">
+        <div class="bc-predict-eyebrow">NEXT ROUND · 下一局参考</div>
+        <p class="bc-predict-status" id="bc-predict-state" role="status">资料不足 · 等待记录</p>
+        <div class="bc-predict-main" id="bc-predict-main">等待样本</div>
+        <div class="bc-predict-target" id="bc-predict-target">D51 · 待记录第 1 局</div>
+        <p class="bc-predict-explain" id="bc-predict-sub">先在上方输入已开出的庄、闲、和。</p>
+      </div>
+      <div class="bc-predict-odds">
+        <div class="bc-predict-odds-title" id="bc-predict-score-type">模型分数 · 非真实赔率</div>
+        <div class="bc-predict-odd-row">
+          <div class="bc-predict-odd-label"><span>🔴 庄 Banker</span><strong id="bc-predict-pct-B">45.9%</strong></div>
+          <div class="bc-predict-track"><div class="bc-predict-fill is-B" id="bc-predict-fill-B"></div></div>
+        </div>
+        <div class="bc-predict-odd-row">
+          <div class="bc-predict-odd-label"><span>🔵 闲 Player</span><strong id="bc-predict-pct-P">44.6%</strong></div>
+          <div class="bc-predict-track"><div class="bc-predict-fill is-P" id="bc-predict-fill-P"></div></div>
+        </div>
+        <div class="bc-predict-odd-row">
+          <div class="bc-predict-odd-label"><span>🟢 和 Tie</span><strong id="bc-predict-pct-T">9.5%</strong></div>
+          <div class="bc-predict-track"><div class="bc-predict-fill is-T" id="bc-predict-fill-T"></div></div>
+        </div>
+        <p class="bc-predict-mode-note" id="bc-predict-mode-note">贝叶斯平滑 + Markov 模式研究</p>
+      </div>
+    </div>
+    <div class="bc-predict-math" id="bc-predict-math">以标准八副牌、庄赢抽 5%、和赔率 8:1 为计算基础。</div>
+    <div class="bc-predict-eval-head">
+      <div>
+        <div class="bc-predict-eval-title">🧪 逐局回放检验 <small>CHRONOLOGICAL REPLAY</small></div>
+        <p>每次只使用该局之前的记录计算；历史重放，不冒充当时已锁定的真实预测。</p>
+      </div>
+    </div>
+    <div class="bc-predict-metrics">
+      <div><span>已回放局数</span><strong id="bc-predict-tested">--</strong></div>
+      <div><span>模式方向吻合率</span><strong id="bc-predict-hit">--</strong></div>
+      <div><span>固定选庄吻合率</span><strong id="bc-predict-base-hit">--</strong></div>
+      <div><span>Brier 误差 · 模式 / 基准</span><strong id="bc-predict-brier">--</strong></div>
+    </div>
+    <p class="bc-predict-evidence" id="bc-predict-evidence" role="status">尚无足够的回测证据。</p>
+    <div class="bc-predict-replay-head">
+      <strong>📑 最近 8 笔历史回放</strong>
+      <span id="bc-predict-range">等待历史记录</span>
+    </div>
+    <div class="bc-predict-replay" id="bc-predict-replay" aria-label="百家乐历史预测和结果对照"></div>
+    <p class="bc-predict-footnote">重要：模式分数不等于真实条件胜率；回放吻合率包含<strong>和局</strong>，和局对庄 / 闲下注通常为退回本金，不等于预测命中。没有实际发牌顺序和剩余牌张，不能从庄闲走势推断下一手。请勿将任何统计信号视为保证盈利。</p>
+  </section>
 
   <div class="section-card bc-sample-dashboard" aria-label="百家乐样本成熟度">
     <div class="section-title">📐 样本观察进度 <span id="bc-sample-table" class="bc-manual-pill">D51</span></div>
@@ -518,7 +576,7 @@
 </div>
 <div class="prediction-matrix" id="k3-prediction-grid"></div>
 <div class="multi-note">预测依据：近期加权频率 + 状态转移。仅用于历史统计分析，随机开奖无法保证预测准确。</div>
-<div class="multi-columns"><div><div class="multi-block-title">🤖 实盘复盘</div><div class="multi-review" id="k3-review"></div></div><div><div class="multi-block-title">📜 最近开奖</div><div class="multi-history" id="k3-history"></div></div></div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 最近复盘</div><div class="multi-review" id="k3-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="k3-history"></div></div></div>
 </div>
 </section>
 <section class="main-section multi-game-section" id="5d-section">
@@ -531,7 +589,7 @@
 </div>
 <div class="prediction-matrix prediction-matrix-5d" id="5d-prediction-grid"></div>
 <div class="multi-note">每一位独立使用近期加权频率与状态转移计算。</div>
-<div class="multi-columns"><div><div class="multi-block-title">🤖 实盘复盘</div><div class="multi-review" id="5d-review"></div></div><div><div class="multi-block-title">📜 最近开奖</div><div class="multi-history" id="5d-history"></div></div></div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 最近复盘</div><div class="multi-review" id="5d-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="5d-history"></div></div></div>
 </div>
 </section>
 <section class="main-section multi-game-section" id="trx-section">
@@ -544,17 +602,18 @@
 </div>
 <div class="prediction-matrix" id="trx-prediction-grid"></div>
 <div class="multi-note">号码、大小、颜色同时给出统计预测。</div>
-<div class="multi-columns"><div><div class="multi-block-title">🤖 实盘复盘</div><div class="multi-review" id="trx-review"></div></div><div><div class="multi-block-title">📜 最近开奖</div><div class="multi-history" id="trx-history"></div></div></div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 最近复盘</div><div class="multi-review" id="trx-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="trx-history"></div></div></div>
 </div>
 </section>
 </div>
-<script src="script.js?v=layout-v23"></script>
-<script src="baccarat_analysis.js?v=23"></script>
-<script src="baccarat_engine.js?v=23"></script>
-<script src="baccarat_roads.js?v=23"></script>
-<script src="choice_manual.js?v=23"></script>
-<script src="multi_games.js?v=23"></script>
+<script src="script.js?v=layout-v25-clean"></script>
+<script src="baccarat_analysis.js?v=25-clean"></script>
+<script src="baccarat_engine.js?v=25-clean"></script>
+<script src="baccarat_roads.js?v=25-clean"></script>
+<script src="baccarat_predictor.js?v=25-clean"></script>
+<script src="choice_manual.js?v=25-clean"></script>
+<script src="multi_games.js?v=25-clean"></script>
 </body>
 </html>
 
-<!-- V23 build 20261021. Online data sources require independent validation. -->
+

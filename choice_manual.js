@@ -358,6 +358,7 @@
             setText("bc-ai-ev", `押庄 ${pct(ev.B)} · 押闲 ${pct(ev.P)} · 押和 ${pct(ev.T)}（每单位押注的长期期望净回报）`);
         }
         renderRoadmaps(history);
+        if (window.BaccaratPredictor) window.BaccaratPredictor.render(history, selectedTable);
         const trend = trendReference(history);
         const pick = element("bc-manual-pick");
         pick.textContent = trend.pick ? `历史偏多：${CODE_NAMES[trend.pick]}` : (decisiveCount ? "观察中／无明显偏多" : "等待记录");

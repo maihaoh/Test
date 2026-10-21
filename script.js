@@ -485,6 +485,44 @@ function getNumberIconHtml(num) {
     `;
 }
 
+function getWingoColourLabel(num) {
+    const n = Number(num);
+    if (!Number.isInteger(n) || n < 0 || n > 9) return '—';
+    if (n === 0) return '红紫';
+    if (n === 5) return '绿紫';
+    return n % 2 === 0 ? '红' : '绿';
+}
+
+function getColourTone(label) {
+    const value = String(label || '').toLowerCase();
+    if (value.includes('紫')) return 'violet';
+    if (value.includes('green') || value.includes('绿')) return 'green';
+    if (value.includes('red') || value.includes('红')) return 'red';
+    return 'neutral';
+}
+
+function compactChip(content, kind = 'neutral', tone = '') {
+    return `<span class="compact-chip is-${kind}${tone ? ` tone-${tone}` : ''}">${escapeHtml(content)}</span>`;
+}
+
+function renderWingoLine(result, label = '') {
+    if (!result || (result.size === 'PASS' && result.num == null)) {
+        return `<div class="compact-line"><span class="compact-line-label">${escapeHtml(label || '预测')}</span>${compactChip('等待', 'status')}</div>`;
+    }
+    const number = result.num ?? result.number ?? '—';
+    const size = result.size || '—';
+    const colour = result.colour || getWingoColourLabel(number);
+    const tone = getColourTone(colour);
+    return `
+        <div class="compact-line">
+            ${label ? `<span class="compact-line-label">${escapeHtml(label)}</span>` : ''}
+            ${compactChip(number, 'number', Number(number) % 2 === 0 || Number(number) === 0 ? 'red' : 'green')}
+            ${compactChip(size, size === '大' ? 'size-big' : size === '小' ? 'size-small' : 'status')}
+            ${compactChip(colour, 'colour', tone)}
+        </div>
+    `;
+}
+
 
 /* =========================================================
    FEATURE EXTRACTION
@@ -3249,13 +3287,7 @@ function updateLatestCard(
 
     if (resultEl) {
 
-        resultEl.innerHTML = `
-            ${getNumberIconHtml(
-                latest.number
-            )}
-            ${escapeHtml(latest.number)}
-            ${escapeHtml(latest.size)}
-        `;
+        resultEl.innerHTML = renderWingoLine({number: latest.number, size: latest.size, colour: latest.colour}, '开奖');
     }
 }
 
@@ -3283,61 +3315,20 @@ function updatePredictionCard(
     if (!prediction) {
 
         el.innerHTML = `
-            <strong>
-                ---
-            </strong>
-
-            <span>
-                等待数据（未确认实时更新）
-            </span>
+            <div class="compact-line compact-line-stack">
+                <span class="compact-line-label">预测</span>
+                ${compactChip('等待数据', 'status')}
+            </div>
         `;
 
         return;
     }
 
-
-    /*
-     * PASS
-     */
-
-    if (
-        prediction.size === "PASS"
-    ) {
-
-        el.innerHTML = `
-            <strong>
-                ⏸ PASS
-            </strong>
-
-            <span>
-                ${escapeHtml(prediction.confidence)}%
-            </span>
-        `;
-
-        return;
-    }
-
-
-    /*
-     * 正常预测
-     *
-     * 例如：
-     * 7 / 大
-     * 72%
-     *
-     * 注意：
-     * 号码只是显示
-     * WIN / LOSS 仍然只看大小
-     */
-
+    const colour = getWingoColourLabel(prediction.num);
+    const size = prediction.size === 'PASS' ? 'PASS' : prediction.size;
     el.innerHTML = `
-        <strong>
-            ${escapeHtml(prediction.num ?? "-")} / ${escapeHtml(prediction.size)}
-        </strong>
-
-        <span>
-            ${escapeHtml(prediction.confidence)}%
-        </span>
+        ${renderWingoLine({num: prediction.num, size, colour}, '预测')}
+        <div class="compact-confidence">信心 ${escapeHtml(prediction.confidence)}%</div>
     `;
 }
 
@@ -3545,7 +3536,8 @@ function runBacktest(draws) {
         }
         if (i >= firstEvaluated) {
             result.reviewRows[String(actual.issue)] = {
-                outcome, predictionSize: prediction.size, actualSize
+                outcome, predictionSize: prediction.size, actualSize,
+                predictionNum: prediction.num, predictionColour: getWingoColourLabel(prediction.num)
             };
             result.evaluated++;
             result.baselineWins += Number(actualSize === '大');
@@ -3580,27 +3572,29 @@ function renderWingoHistoricalReview(result, draws) {
     const write = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
     const label = document.getElementById('review-status');
     const summary = document.getElementById('review-summary');
+    const predNode = document.getElementById('review-prediction');
+    const actualNode = document.getElementById('review-actual');
+    const resultNode = document.getElementById('review-result');
     if (!review) {
         if (label) {label.className = 'review-status review-wait'; label.textContent = '样本不足';}
-        for (const id of ['review-prediction','review-actual','review-result']) write(id, '--');
+        if (predNode) predNode.textContent = '--';
+        if (actualNode) actualNode.textContent = '--';
+        if (resultNode) resultNode.textContent = '--';
         write('review-message', '已读取的历史数据不足：至少 11 笔才能以过去 10 笔判断第 11 笔。');
     } else {
         if (label) {label.className = 'review-status ' + (review.outcome === 'WIN' ? 'review-win' : review.outcome === 'LOSS' ? 'review-loss' : 'review-pass'); label.textContent = `历史 ${review.outcome}`;}
-        write('review-prediction', review.predictionSize === 'PASS' ? 'PASS' : `${review.predictionNum ?? '-'} / ${review.predictionSize}`);
-        write('review-actual', `${review.actualNum} / ${review.actualSize}`);
-        write('review-result', review.outcome === 'PASS' ? '本局跳过' : review.outcome === 'WIN' ? '大小吻合' : '大小不吻合');
+        if (predNode) predNode.innerHTML = renderWingoLine({num: review.predictionNum, size: review.predictionSize, colour: getWingoColourLabel(review.predictionNum)}, '预测');
+        if (actualNode) actualNode.innerHTML = renderWingoLine({number: review.actualNum, size: review.actualSize, colour: getWingoColourLabel(review.actualNum)}, '开奖');
+        if (resultNode) resultNode.textContent = review.outcome === 'PASS' ? '本局跳过' : review.outcome === 'WIN' ? '大小吻合' : '大小不吻合';
         write('review-message', `示例期号 ${review.issue}：只用此期以前的开奖数据逐局推演，属于历史回测，不是实时预测。`);
     }
     if (summary) {
         const wins = draws.slice(0,50).filter(d => d.size === '大').length;
         const count = Math.min(draws.length,50);
-        summary.textContent = `可用历史 ${draws.length} 笔｜最近 ${count} 笔：大 ${wins} / 小 ${count-wins}｜严格逐局回测 ${result.evaluated} 局：WIN ${result.win} · LOSS ${result.loss} · PASS ${result.pass}；不能据此保证下一期。`;
+        summary.textContent = `可用历史 ${draws.length} 笔 | 最近 ${count} 笔：大 ${wins} / 小 ${count - wins} | 严格逐局回测 ${result.evaluated} 局：WIN ${result.win} · LOSS ${result.loss} · PASS ${result.pass}；不能据此保证下一期。`;
     }
 }
 
-/* =========================================================
-   UPDATE WIN RATE
-========================================================= */
 
 function updateWinRate(result, historyCount = 0) {
     const el = document.getElementById('win-rate');
@@ -3649,43 +3643,22 @@ function renderDrawTable(
 
     const rows =
         draws
-            .slice(
-                0,
-                50
-            )
+            .slice(0, 50)
             .map(
                 draw => {
-
+                    const review = reviewRows[String(draw.issue)] || null;
+                    const predictionHtml = review
+                        ? renderWingoLine({
+                            num: review.predictionNum,
+                            size: review.predictionSize,
+                            colour: review.predictionColour || getWingoColourLabel(review.predictionNum)
+                        }, review.outcome)
+                        : `<div class="compact-line"><span class="compact-line-label">预测</span>${compactChip('训练期', 'status')}</div>`;
                     return `
                         <tr>
-
-                            <td>
-                                ${escapeHtml(draw.issue)}
-                            </td>
-
-                            <td>
-                                ${getNumberIconHtml(
-                                    draw.number
-                                )}
-                                ${escapeHtml(draw.number)}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(draw.size)}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(draw.colour || "-")}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(reviewRows[String(draw.issue)]
-                                    ? (reviewRows[String(draw.issue)].outcome === 'PASS'
-                                        ? 'PASS（跳过）'
-                                        : `${reviewRows[String(draw.issue)].outcome} · ${reviewRows[String(draw.issue)].predictionSize}→${draw.size}`)
-                                    : '训练期 / 未回测')}
-                            </td>
-
+                            <td>${escapeHtml(draw.issue)}</td>
+                            <td>${renderWingoLine({number: draw.number, size: draw.size, colour: draw.colour}, '开奖')}</td>
+                            <td>${predictionHtml}</td>
                         </tr>
                     `;
                 }
@@ -3702,7 +3675,7 @@ function renderDrawTable(
             rows ||
             `
                 <tr>
-                    <td colspan="5">
+                    <td colspan="3">
                         暂无数据
                     </td>
                 </tr>
@@ -3723,13 +3696,9 @@ function renderDrawTable(
 
                         <th>期号</th>
 
-                        <th>号码</th>
+                        <th>历史开奖</th>
 
-                        <th>大小</th>
-
-                        <th>颜色</th>
-
-                        <th>-</th>
+                        <th>历史预测</th>
 
                     </tr>
 
