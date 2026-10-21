@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Lottery + 百家乐 Dashboard</title>
 <script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=layout-v25-clean" rel="stylesheet"/>
+<link href="style.css?v=29" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">Build V25 · UI V25 · 简洁开奖与预测</span>
+                Lottery 与 百家乐分区 · <span id="build-version">UI V29</span>
 </div>
 </div>
 <div class="header-info">
@@ -58,7 +58,7 @@
       <span class="game-hub-title">🃏 百家乐手动 <small>庄 · 闲 · 和</small></span>
       <span class="game-hub-badge">简化预测</span>
     </button>
-    <div class="game-hub-description">每张桌独立记录 · 20/50/100 局样本观察 · 不自动下注</div>
+    <div class="game-hub-description">单一记录 · 下局参考 · 不自动下注</div>
   </div>
 </div>
 <!-- =====================================================
@@ -351,91 +351,43 @@
          Results come exclusively from the user's button presses.
     ====================================================== -->
 <section class="main-section" id="baccarat-section">
-  <p class="data-status" id="baccarat-data-status" role="status">✍️ 百家乐为手动记录模式：你每开完一局，就按一次庄 / 闲 / 和；系统只根据你录入的历史，显示下一局参考，不连接自动开奖，不自动下注。</p>
-
-  <div class="bc-simple-top">
-    <div class="section-card">
-      <div class="section-title">📊 当前记录概览</div>
-      <div class="bc-simple-overview">
-        <div class="card"><div class="card-title">已录局数</div><div class="card-value" id="bc-manual-round-count">0</div><div class="card-subvalue">庄 / 闲 / 和都算一局</div></div>
-        <div class="card"><div class="card-title">最新结果</div><div class="baccarat-result" id="bc-manual-latest">--</div><div class="card-subvalue" id="bc-manual-streak">目前没有记录</div></div>
-        <div class="card"><div class="card-title">下一局参考</div><div class="card-value bc-next-pick" id="bc-top-next-pick">等待样本</div><div class="card-subvalue" id="bc-predict-state">先录入已开出的结果</div></div>
-      </div>
+  <section class="section-card bc-focus" id="bc-predict-lab" aria-labelledby="bc-predict-title">
+    <div class="bc-focus-head"><h2 id="bc-predict-title">下一局预测</h2><span id="bc-predict-target">第 1 局参考</span></div>
+    <div class="bc-focus-body" aria-live="polite" aria-atomic="true">
+      <div class="bc-call is-wait" id="bc-predict-main">观察</div>
+      <div class="bc-call-details"><strong id="bc-predict-strategy">等待录入</strong><p id="bc-predict-reason">先记录已开出的结果。</p></div>
     </div>
-  </div>
-
-  <div class="section-card bc-manual-entry">
-    <div class="section-title">🎯 输入本局开奖结果</div>
-    <p class="bc-manual-note">只需要记录已经开出的结果。系统会自动刷新下一个参考方向。</p>
-    <div class="bc-manual-outcomes">
-      <button type="button" class="bc-manual-outcome is-banker" onclick="choiceManualAdd('B')"><strong>庄</strong><span>BANKER</span></button>
-      <button type="button" class="bc-manual-outcome is-player" onclick="choiceManualAdd('P')"><strong>闲</strong><span>PLAYER</span></button>
-      <button type="button" class="bc-manual-outcome is-tie" onclick="choiceManualAdd('T')"><strong>和</strong><span>TIE</span></button>
+    <div class="bc-entry-bar"><span>录入已开结果</span><span id="bc-session-summary">已录 0 局</span></div>
+    <div class="bc-inputs">
+      <button type="button" class="is-B" data-bc-result="B" onclick="choiceManualAdd('B')">庄</button>
+      <button type="button" class="is-P" data-bc-result="P" onclick="choiceManualAdd('P')">闲</button>
+      <button type="button" class="is-T" data-bc-result="T" onclick="choiceManualAdd('T')">和</button>
     </div>
-    <div class="bc-manual-actions">
-      <button type="button" id="bc-manual-undo" onclick="choiceManualUndo()">↶ 撤销上一局</button>
-      <button type="button" id="bc-manual-clear" class="bc-manual-danger" onclick="choiceManualClear()">清空记录</button>
-      <button type="button" onclick="choiceManualExport()">↓ 导出备份</button>
-      <button type="button" onclick="document.getElementById('bc-manual-import').click()">↑ 导入备份</button>
-      <input type="file" id="bc-manual-import" accept=".json,application/json" onchange="choiceManualImport(event)" hidden />
+    <div class="bc-tools">
+      <button type="button" id="bc-manual-undo" onclick="choiceManualUndo()">撤销上局</button>
+      <button type="button" id="bc-manual-clear" onclick="choiceManualClear()">新牌靴 / 清空</button>
+      <button type="button" onclick="choiceManualExport()">导出备份</button>
+      <button type="button" onclick="document.getElementById('bc-manual-import').click()">导入备份</button>
+      <input type="file" id="bc-manual-import" accept=".json,application/json" onchange="choiceManualImport(event)" hidden/>
     </div>
-    <p class="bc-manual-message" id="bc-manual-message" role="status" aria-live="polite">准备记录。刷新后仍会保留同一浏览器上的记录。</p>
-  </div>
-
-  <div class="section-card bc-roadmaps" aria-label="百家乐历史路单">
-    <div class="section-title">🧭 标准历史路单</div>
-    <p class="bc-manual-note">把常见路单放到上面，方便直接看走势。仅作历史整理参考，不代表能保证下一局准确。</p>
-    <div class="section-card bc-sequence-card">
-      <div class="section-title">🟡 结果顺序</div>
-      <div id="bc-manual-road" class="bc-manual-road" aria-label="手动开奖结果顺序"></div>
-    </div>
-    <div class="bc-roadmaps-list">
-      <div><strong>珠盘路 Bead Plate</strong><div class="bc-road-scroll"><div id="bc-road-bead" class="bc-road-grid"></div></div></div>
-      <div><strong>大路 Big Road</strong><div class="bc-road-scroll"><div id="bc-road-big" class="bc-road-grid"></div></div></div>
-      <div><strong>大眼仔 Big Eye Boy</strong><div class="bc-road-scroll"><div id="bc-road-eye" class="bc-road-grid"></div></div></div>
-      <div><strong>小路 Small Road</strong><div class="bc-road-scroll"><div id="bc-road-small" class="bc-road-grid"></div></div></div>
-      <div><strong>蟑螂路 Cockroach Road</strong><div class="bc-road-scroll"><div id="bc-road-cockroach" class="bc-road-grid"></div></div></div>
-    </div>
-  </div>
-
-  <section class="section-card bc-predict-lab" id="bc-predict-lab" aria-labelledby="bc-predict-title">
-    <div class="bc-predict-header">
-      <div>
-        <div class="section-title" id="bc-predict-title">🔮 下一局预测</div>
-        <p class="bc-predict-intro">简化版专业视图：直接显示下一局参考方向。</p>
-      </div>
-      <span class="bc-predict-version">V26 · SIMPLE</span>
-    </div>
-    <div class="bc-simple-predict-shell">
-      <div class="bc-simple-predict-main">
-        <div class="bc-predict-eyebrow">NEXT ROUND</div>
-        <div class="bc-predict-main" id="bc-predict-main-hero">等待样本</div>
-        <p class="bc-predict-status" id="bc-predict-sub">先录入已开出的庄、闲、和。</p>
-      </div>
-      <div class="bc-simple-predict-probs">
-        <div class="bc-simple-prob-card is-B"><span>庄 Banker</span><strong id="bc-predict-pct-B">--</strong></div>
-        <div class="bc-simple-prob-card is-P"><span>闲 Player</span><strong id="bc-predict-pct-P">--</strong></div>
-        <div class="bc-simple-prob-card is-T"><span>和 Tie</span><strong id="bc-predict-pct-T">--</strong></div>
-      </div>
-    </div>
-    <p class="bc-simple-disclaimer">说明：这里显示的是基于公开概率与已录历史的参考方向，不是保证命中的真实开奖能力。</p>
+    <p class="bc-state-message" id="bc-manual-message" role="status"></p>
+    <p class="bc-limit">模式参考，未验证预测优势。不自动下注，不保证命中。</p>
   </section>
-
-  <div class="section-card bc-manual-statistics">
-    <div class="section-title">📈 简要统计</div>
-    <div class="analysis-grid">
-      <div class="analysis-item banker-item"><div class="analysis-label">庄</div><div class="analysis-value banker-color" id="bc-manual-banker-count">0</div></div>
-      <div class="analysis-item player-item"><div class="analysis-label">闲</div><div class="analysis-value player-color" id="bc-manual-player-count">0</div></div>
-      <div class="analysis-item tie-item"><div class="analysis-label">和</div><div class="analysis-value tie-color" id="bc-manual-tie-count">0</div></div>
-      <div class="analysis-item"><div class="analysis-label">当前连续</div><div class="analysis-value" id="bc-manual-current-streak">--</div></div>
-      <div class="analysis-item"><div class="analysis-label">总局数</div><div class="analysis-value" id="bc-manual-total">0</div></div>
-    </div>
-  </div>
-
-  <div class="section-card">
-    <div class="section-title">📜 最近 20 局</div>
-    <div id="bc-manual-history" class="bc-manual-history"></div>
-  </div>
+  <section class="section-card bc-road-panel">
+    <div class="bc-focus-head"><h2>历史路单</h2><span>红庄 / 蓝闲 / 绿和</span></div>
+    <div class="bc-road-primary"><div><h3>大路</h3><div class="bc-road-scroll"><div id="bc-road-big" class="bc-road-grid"></div></div></div><div><h3>珠盘路</h3><div class="bc-road-scroll"><div id="bc-road-bead" class="bc-road-grid"></div></div></div></div>
+    <details class="bc-extra-roads"><summary>大眼仔 / 小路 / 蟑螂路</summary>
+      <p class="bc-limit">下面三路的红蓝表示历史形态，不表示下局庄闲。</p>
+      <h3>大眼仔</h3><div class="bc-road-scroll"><div id="bc-road-eye" class="bc-road-grid"></div></div>
+      <h3>小路</h3><div class="bc-road-scroll"><div id="bc-road-small" class="bc-road-grid"></div></div>
+      <h3>蟑螂路</h3><div class="bc-road-scroll"><div id="bc-road-cockroach" class="bc-road-grid"></div></div>
+    </details>
+  </section>
+  <section class="section-card bc-ledger-panel">
+    <div class="bc-focus-head"><h2>开奖 / 预测对照</h2><span>最新在右</span></div>
+    <div id="bc-ledger" class="bc-ledger" aria-label="同局开奖与先前预测"></div>
+    <p class="bc-limit">只展示录入前已保存的预测；旧记录没有预测时留空，不事后补算。</p>
+  </section>
 </section>
 <section class="main-section multi-game-section" id="k3-section">
 <div class="section-card multi-shell">
@@ -477,13 +429,13 @@
 </div>
 </section>
 </div>
-<script src="script.js?v=layout-v25-clean"></script>
-<script src="baccarat_analysis.js?v=25-clean"></script>
-<script src="baccarat_engine.js?v=25-clean"></script>
-<script src="baccarat_roads.js?v=25-clean"></script>
-<script src="baccarat_predictor.js?v=25-clean"></script>
-<script src="choice_manual.js?v=25-clean"></script>
-<script src="multi_games.js?v=25-clean"></script>
+<script src="script.js?v=29"></script>
+<script src="baccarat_analysis.js?v=29"></script>
+<script src="baccarat_engine.js?v=29"></script>
+<script src="baccarat_roads.js?v=29"></script>
+<script src="baccarat_predictor.js?v=29"></script>
+<script src="choice_manual.js?v=29"></script>
+<script src="multi_games.js?v=29"></script>
 </body>
 </html>
 

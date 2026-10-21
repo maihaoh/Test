@@ -17,17 +17,19 @@
     }
     function stack(codes) {
         const cells = [], occupied = new Set();
-        let lastCode = null, lastCol = -1, lastRow = 0, startCol = -1;
+        let lastCode = null, lastCol = -1, lastRow = 0, startCol = -1, tailing = false;
         for (const [index, code] of codes.entries()) {
             let col, row;
             if (code !== lastCode) {
+                tailing = false;
                 startCol += 1;
                 while (occupied.has(`${startCol},0`)) startCol++;
                 col = startCol; row = 0;
             } else {
                 col = lastCol; row = lastRow;
-                if (row < 5 && !occupied.has(`${col},${row + 1}`)) row++;
+                if (!tailing && row < 5 && !occupied.has(`${col},${row + 1}`)) row++;
                 else {
+                    tailing = true;
                     col++;
                     while (occupied.has(`${col},${row}`)) col++;
                 }

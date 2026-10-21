@@ -2585,3 +2585,48 @@ tbody tr:hover {
 @media (max-width: 900px){
   .bc-simple-overview,.bc-simple-predict-shell,.bc-simple-predict-probs{grid-template-columns:1fr}
 }
+
+/* V29: one next-round call, controls and roads directly below. */
+#baccarat-section .section-card {background:#101a2b;box-shadow:none;border:1px solid #334155;padding:18px;margin-bottom:12px;min-width:0}
+#baccarat-section .bc-focus {border-top:3px solid #60a5fa}
+.bc-focus-head {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bc-focus-head h2 {font-size:17px;margin:0;line-height:1.5;color:#f1f5f9}
+.bc-focus-head>span {font-size:12px;color:#a8bbd1}
+.bc-focus-body {display:flex;align-items:center;gap:22px;padding:18px 0}
+.bc-call {font-size:58px;font-weight:850;line-height:1.1;min-width:90px;text-align:center}
+.bc-call.is-B,.bc-ledger-token.is-B {color:#fca5a5}
+.bc-call.is-P,.bc-ledger-token.is-P {color:#93c5fd}
+.bc-ledger-token.is-T {color:#6ee7b7}
+.bc-call.is-wait {color:#cbd5e1;font-size:36px}
+.bc-call-details {min-width:0;flex:1}
+.bc-call-details strong {font-size:15px;color:#e2e8f0}
+.bc-call-details p {color:#a8bbd1;font-size:13px;line-height:1.6;margin:5px 0 0}
+.bc-entry-bar {display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#b9c9dd;margin-bottom:8px;flex-wrap:wrap}
+.bc-inputs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.bc-inputs button {border:1px solid #42566e;border-radius:8px;padding:12px 4px;font-size:25px;font-weight:800;cursor:pointer;min-height:58px}
+.bc-inputs .is-B {background:#3b202b;color:#fca5a5;border-color:#87515c}
+.bc-inputs .is-P {background:#1b304c;color:#93c5fd;border-color:#47699a}
+.bc-inputs .is-T {background:#143c34;color:#6ee7b7;border-color:#357364}
+.bc-tools {display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.bc-tools button {border:1px solid #3b4b63;background:#17243a;color:#cbd5e1;border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;min-height:36px}
+.bc-tools button:disabled,.bc-inputs button:disabled {opacity:.5;cursor:not-allowed}
+#baccarat-section button:focus-visible, #baccarat-section summary:focus-visible {outline:2px solid #93c5fd;outline-offset:3px}
+.bc-state-message {font-size:12px;color:#a8bbd1;margin:8px 0 0;line-height:1.5;overflow-wrap:anywhere}
+.bc-state-message.is-error {color:#fca5a5}
+.bc-limit {font-size:11px;line-height:1.5;color:#94a3b8;margin:8px 0 0}
+.bc-road-primary {display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px;margin-top:10px}
+.bc-road-primary>div {min-width:0}
+#baccarat-section h3 {font-size:12px;color:#b5c9e3;margin:5px 0 7px}
+#baccarat-section .bc-road-scroll {max-width:100%;overflow-x:auto;border-radius:5px;background:#0d1525}
+#baccarat-section .bc-road-grid {min-width:100%;min-height:146px;display:grid;grid-template-rows:repeat(6,24px);gap:0;padding:0;justify-content:start;background-image:linear-gradient(#253248 1px,transparent 1px),linear-gradient(90deg,#253248 1px,transparent 1px);background-size:24px 24px}
+#baccarat-section .bc-road-mark {width:22px;height:22px;align-self:center;justify-self:center;font-size:10px}
+#baccarat-section #bc-road-big .bc-road-mark {background:transparent;border-width:2px}
+.bc-extra-roads {margin-top:12px}
+.bc-extra-roads summary {font-size:12px;color:#aec4df;cursor:pointer}
+.bc-extra-roads h3 {margin-top:10px!important}
+.bc-ledger {display:grid;grid-template-rows:22px 32px 32px;grid-auto-flow:column;gap:5px;margin-top:12px;max-width:100%;overflow-x:auto;padding-bottom:5px;position:relative}
+.bc-ledger-label {grid-column:1;position:sticky;left:0;background:#101a2b;z-index:1;min-width:40px;color:#a8bbd1;font-size:12px;display:flex;align-items:center}
+.bc-ledger-round {text-align:center;font-size:10px;color:#94a3b8;min-width:30px}
+.bc-ledger-token {display:flex;align-items:center;justify-content:center;border:1px solid #42526b;border-radius:5px;width:30px;height:30px;min-width:30px;font-size:14px;font-weight:700;background:#142138}
+.bc-ledger-token.is-empty {color:#94a3b8}
+@media(max-width:620px){#baccarat-section .section-card{padding:12px}.bc-road-primary{grid-template-columns:minmax(0,1fr)}.bc-focus-body{gap:12px;padding:14px 0}.bc-call{font-size:48px;min-width:68px}.bc-call-details p{font-size:12px}.bc-tools button{padding:6px 7px;font-size:11px}.bc-focus-head h2{font-size:15px}}

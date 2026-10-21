@@ -1,178 +1,108 @@
-/* V24 Baccarat next-round research workbench.
- * Browser-local, manual B/P/T history only. NO betting, RNG prediction claim,
- * casino scraping, or authentication. Multi-class chronological replay includes ties.
- * Reference: Wizard of Odds, 8-deck commission Punto Banco.
+/* V29 pattern hypotheses, not guaranteed predictions or betting automation.
+ * Rule thresholds below are design choices, NOT statistically proven edges.
+ * No future result, internet feed, or randomness is used to generate a call.
  */
-(function (root, factory) {
-    'use strict';
-    const analysis = root && root.BaccaratAnalysis ||
-        (typeof module === 'object' && module.exports ? require('./baccarat_analysis.js') : null);
+(function(root, factory) {
+    const analysis = root.BaccaratAnalysis || (typeof module === 'object' && module.exports ? require('./baccarat_analysis.js') : null);
     const api = factory(analysis);
     if (typeof module === 'object' && module.exports) module.exports = api;
-    if (root) root.BaccaratPredictor = api;
-})(typeof globalThis === 'object' ? globalThis : this, function (analysis) {
+    root.BaccaratPredictor = api;
+})(typeof globalThis === 'object' ? globalThis : this, function(analysis) {
     'use strict';
-    if (!analysis) throw new Error('BaccaratAnalysis must load before BaccaratPredictor');
-
+    const VERSION = 'V29-patterns-1';
     const BASE = Object.freeze({...analysis.BASE});
-    const LABEL = Object.freeze({B:'庄', P:'闲', T:'和'});
-    const CODES = Object.freeze(['B', 'P', 'T']);
-    const MIN_PATTERN_DECISIVE = 20;
-    const MIN_BACKTEST_DECISIVE = 40;
-    const MAX_BACKTEST_ROUNDS = 240;
-    const REPLAY_ROWS = 8;
-    let selectedMode = 'pattern';
-    let displayState = null;
-
+    const NAME = Object.freeze({B:'\u5e84', P:'\u95f2', T:'\u548c'});
+    const RULES = Object.freeze({dragon:4, single:5, doublePairs:3, modelMinimum:20, scoreMargin:0.02});
     function validate(history) {
-        if (!Array.isArray(history) || history.some(code => !CODES.includes(code))) {
-            throw new TypeError('History must be an array of B, P, T codes');
-        }
+        if (!Array.isArray(history) || history.some(x => !['B','P','T'].includes(x))) throw new TypeError('Expected B/P/T history');
         return history;
     }
-    function scoreForDecisive(decisive) {
-        const pBanker = analysis.estimateDecisive(decisive).pBanker;
-        return {B: pBanker * (1 - BASE.T), P: (1 - pBanker) * (1 - BASE.T), T: BASE.T};
-    }
-    function leading(score) {
-        return score.B >= score.P ? 'B' : 'P';
-    }
-    function brier(score, actual) {
-        return CODES.reduce((sum, code) => sum + (score[code] - Number(code === actual)) ** 2, 0);
-    }
-    function makeForecast(history, mode = 'pattern') {
-        validate(history);
-        if (!['pattern', 'baseline'].includes(mode)) throw new TypeError('Invalid mode');
-        const decisive = history.filter(code => code !== 'T');
-        const enough = decisive.length >= MIN_PATTERN_DECISIVE;
-        const experimental = mode === 'pattern';
-        const score = experimental && enough ? scoreForDecisive(decisive) : {...BASE};
-        return {
-            mode,
-            recorded: history.length,
-            decisive: decisive.length,
-            ties: history.length - decisive.length,
-            targetRound: history.length + 1,
-            ready: !experimental || enough,
-            missing: experimental ? Math.max(0, MIN_PATTERN_DECISIVE - decisive.length) : 0,
-            pick: experimental && !enough ? null : leading(score),
-            score,
-            baseline: {...BASE},
-            scoreType: experimental && enough ? '实验模型分数（非真实概率）' : '八副牌理论概率',
-        };
-    }
-
-    /** Chronological *retrospective* replay: each round is predicted from the prefix only.
-     * Truncating to the most recent 240 rounds saves render time and avoids implying that
-     * old-model real-time predictions were actually locked or prospectively evaluated.
-     * All results (including ties) are scored, with a 3-class Brier and direction hit.
-     */
-    function evaluate(history, opts = {}) {
-        validate(history);
-        const limit = opts.maxRounds ?? MAX_BACKTEST_ROUNDS;
-        if (!Number.isInteger(limit) || limit < 1 || limit > 5000) {
-            throw new RangeError('maxRounds must be 1..5000');
+    const other = c => c === 'B' ? 'P' : 'B';
+    function runsOf(codes) {
+        const runs = [];
+        for (const c of codes) {
+            if (runs.length && runs[runs.length-1].code === c) runs[runs.length-1].length++;
+            else runs.push({code:c, length:1});
         }
-        const start = Math.max(0, history.length - limit);
-        const decisive = [];
-        const rows = [];
-        let baselineHits = 0, modelHits = 0, modelBrier = 0, baselineBrier = 0;
-        const pairedImprovement = [];
-        for (let i = 0; i < history.length; i++) {
-            const actual = history[i];
-            if (i >= start && decisive.length >= MIN_BACKTEST_DECISIVE) {
-                const score = scoreForDecisive(decisive);
-                const pick = leading(score);
-                const modelLoss = brier(score, actual);
-                const referenceLoss = brier(BASE, actual);
-                rows.push({round: i + 1, pick, actual, hit: pick === actual,
-                    baselinePick:'B', baselineHit:actual === 'B'});
-                modelHits += Number(pick === actual);
-                baselineHits += Number(actual === 'B');
-                modelBrier += modelLoss;
-                baselineBrier += referenceLoss;
-                pairedImprovement.push(referenceLoss - modelLoss);
+        return runs;
+    }
+    function makeForecast(history) {
+        validate(history);
+        const decisive = history.filter(c => c !== 'T');
+        const codes = decisive.slice(-300);
+        const n = codes.length, runs = runsOf(codes), last = runs.at(-1);
+        const result = (pick, strategy, reason, extra = {}) => ({
+            version: VERSION, targetRound: history.length+1, recorded:history.length,
+            decisive:decisive.length, ties:history.length-decisive.length,
+            ready:pick !== null, pick, strategy, reason, ...extra
+        });
+        if (!n) return result(null, 'waiting', '\u5148\u5f55\u5165\u5df2\u5f00\u51fa\u7684\u5e84\u3001\u95f2\u3001\u548c\u3002');
+        // Ignore ties for shape matching, but retain every tie in history/scoring.
+        if (last.length >= RULES.dragon)
+            return result(last.code, 'dragon', `\u957f\u9f99\u8ddf\u968f\uff1a${NAME[last.code]} ${last.length} \u8fde\uff08\u548c\u4e0d\u6253\u65ad\uff09\uff0c\u672c\u6b21\u6309\u5ef6\u7eed\u65b9\u5411\u53c2\u8003\u3002`);
+        if (last.length === 1 && runs.at(-2)?.length >= RULES.dragon)
+            return result(null, 'break', '\u957f\u9f99\u521a\u65ad\uff0c\u5148\u89c2\u5bdf\u4e00\u4e2a\u5e84\u95f2\u7ed3\u679c\uff0c\u4e0d\u76f4\u63a5\u8ffd\u53cd\u5411\u3002');
+        let alternating = 1;
+        for (let i = n-1; i > 0 && codes[i] !== codes[i-1]; i--) alternating++;
+        if (alternating >= RULES.single)
+            return result(other(last.code), 'single', `\u5355\u8df3\u5ef6\u7eed\uff1a\u6700\u8fd1 ${alternating} \u4e2a\u5e84\u95f2\u4ea4\u66ff\uff0c\u53c2\u8003\u4e0e\u6700\u540e\u4e00\u5c40\u76f8\u53cd\u65b9\u5411\u3002`);
+        if (last.length === 2 && runs.length >= 5 && runs.slice(-5,-1).every(r => r.length === 1))
+            return result(null, 'break', '\u5355\u8df3\u521a\u65ad\uff0c\u7b49\u5f85\u65b0\u5f62\u6001\uff0c\u4e0d\u5f3a\u884c\u5224\u65ad\u3002');
+        const completed = runs.slice(0,-1);
+        if ((last.length === 2 && completed.length >= 2 && completed.slice(-2).every(r => r.length === 2)) ||
+            (last.length === 1 && completed.length >= 3 && completed.slice(-3).every(r => r.length === 2))) {
+            return result(last.length === 2 ? other(last.code) : last.code, 'double',
+                last.length === 2 ? '\u53cc\u8df3\u5ef6\u7eed\uff1a\u5f53\u524d\u5df2\u51fa\u73b0\u4e00\u5bf9\uff0c\u53c2\u8003\u5207\u6362\u65b9\u5411\u3002' : '\u53cc\u8df3\u5ef6\u7eed\uff1a\u65b0\u4e00\u7ec4\u5df2\u51fa\u4e00\u5c40\uff0c\u53c2\u8003\u540c\u65b9\u5411\u8865\u7b2c\u4e8c\u5c40\u3002');
+        }
+        if (last.length === 3 && completed.length >= 2 && completed.slice(-2).every(r => r.length === 2))
+            return result(null, 'break', '\u53cc\u8df3\u521a\u65ad\uff0c\u6682\u505c\u539f\u5f62\u6001\u53c2\u8003\u3002');
+        if (decisive.length < RULES.modelMinimum)
+            return result('B', 'baseline', '\u6682\u65e0\u7a33\u5b9a\u5f62\u6001\uff1b\u663e\u793a\u516b\u526f\u724c\u6570\u5b66\u57fa\u51c6\u53c2\u8003\uff0c\u4e0d\u662f\u5df2\u9a8c\u8bc1\u4f18\u52bf\u3002');
+        const estimate = analysis.estimateDecisive(codes).pBanker;
+        if (Math.abs(estimate - 0.5) < RULES.scoreMargin)
+            return result(null, 'mixed', '\u65e0\u6e05\u6670\u957f\u9f99\u6216\u8df3\u8def\uff0c\u7edf\u8ba1\u6a21\u578b\u5206\u6b67\u5c0f\uff0c\u672c\u5c40\u89c2\u5bdf\u3002');
+        return result(estimate >= 0.5 ? 'B' : 'P', 'model',
+            '\u65e0\u56fa\u5b9a\u8def\u578b\uff1b\u4f7f\u7528\u5e73\u6ed1\u9891\u7387\u4e0e\u4e00\u3001\u4e8c\u9636\u8f6c\u79fb\u7684\u5b9e\u9a8c\u65b9\u5411\u3002');
+    }
+    function settle(pick, actual) {
+        if (pick === null) return {status:'PASS', exact:false, net:0};
+        if (!['B','P'].includes(pick) || !['B','P','T'].includes(actual)) throw new TypeError('Invalid result');
+        if (actual === 'T') return {status:'TIE', exact:false, net:0};
+        return {status:pick === actual ? 'HIT' : 'MISS', exact:pick === actual,
+            net:pick === actual ? (pick === 'B' ? 0.95 : 1) : -1};
+    }
+    function evaluate(history, options = {}) {
+        validate(history);
+        const start = options.start ?? 0;
+        if (!Number.isInteger(start) || start < 0 || start > history.length) throw new RangeError('Invalid replay start');
+        const rows = [], summary = {evaluated:0, actionable:0, pass:0, hits:0, misses:0, ties:0, net:0, matchedBankerNet:0};
+        for (let i = start; i < history.length; i++) {
+            const f = makeForecast(history.slice(0,i)), s = settle(f.pick, history[i]);
+            summary.evaluated++;
+            if (s.status === 'PASS') summary.pass++;
+            else {
+                summary.actionable++;
+                summary.hits += s.status === 'HIT'; summary.misses += s.status === 'MISS'; summary.ties += s.status === 'TIE';
+                summary.net += s.net; summary.matchedBankerNet += settle('B', history[i]).net;
             }
-            if (actual !== 'T') decisive.push(actual);
+            rows.push({round:i+1, pick:f.pick, actual:history[i], strategy:f.strategy, ...s});
         }
-        const n = rows.length;
-        const delta = n ? (baselineBrier - modelBrier) / n : null;
-        const sampleStdErr = n > 1 ? Math.sqrt(pairedImprovement.reduce((sum, value) =>
-            sum + (value - delta) ** 2, 0) / (n * (n - 1))) : null;
-        const lower95 = sampleStdErr === null ? null : delta - 1.96 * sampleStdErr;
-        const mid = Math.floor(n / 2);
-        const avg = arr => arr.reduce((sum, v) => sum + v, 0) / (arr.length || 1);
-        const halvesImproved = n >= 2 && avg(pairedImprovement.slice(0, mid)) > 0 &&
-            avg(pairedImprovement.slice(mid)) > 0;
-        // Informational research flag only; NOT independent validation or advice.
-        const tentativeImprovement = n >= 120 && halvesImproved && lower95 > 0;
-        const status = n < 60 ? 'insufficient' :
-            (tentativeImprovement ? 'retrospective_improvement' : 'no_supported_improvement');
-        return {
-            rounds: n,
-            firstRound: n ? rows[0].round : null,
-            lastRound: n ? rows[n-1].round : null,
-            modelHits,
-            baselineHits,
-            modelAccuracy: n ? modelHits / n : null,
-            baselineAccuracy: n ? baselineHits / n : null,
-            modelBrier: n ? modelBrier / n : null,
-            baselineBrier: n ? baselineBrier / n : null,
-            deltaBrier: delta,
-            lower95,  // Approximate, ignores dependence; exploratory only.
-            status,
-            recent: rows.slice(-REPLAY_ROWS).reverse(),
-        };
+        return {...summary, accuracyIncludingTies:summary.actionable ? summary.hits/summary.actionable : null,
+            accuracyExcludingTies:summary.hits+summary.misses ? summary.hits/(summary.hits+summary.misses) : null,
+            coverage:summary.evaluated ? summary.actionable/summary.evaluated : null,
+            kind:'retrospective_prefix_only', rows};
     }
-
-    function setText(id, value) {
-        const node = document.getElementById(id);
-        if (node) node.textContent = String(value);
+    function render(history, pending) {
+        const f = pending && pending.version === VERSION ? pending : makeForecast(history);
+        const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+        set('bc-predict-main', f.pick ? NAME[f.pick] : '\u89c2\u5bdf');
+        const main = document.getElementById('bc-predict-main');
+        if (main) main.className = 'bc-call' + (f.pick ? ` is-${f.pick}` : ' is-wait');
+        set('bc-predict-target', `\u7b2c ${f.targetRound} \u5c40\u53c2\u8003`);
+        set('bc-predict-strategy', ({dragon:'\u957f\u9f99\u8ddf\u968f',single:'\u5355\u8df3\u5ef6\u7eed',double:'\u53cc\u8df3\u5ef6\u7eed',
+            break:'\u65ad\u8def\u89c2\u5bdf',baseline:'\u6570\u5b66\u57fa\u51c6',model:'\u7edf\u8ba1\u6a21\u578b',mixed:'\u6df7\u5408\u8d70\u52bf',waiting:'\u7b49\u5f85\u5f55\u5165'})[f.strategy]);
+        set('bc-predict-reason', f.reason);
+        return f;
     }
-    const percent = value => value === null ? '--' : `${(100 * value).toFixed(1)}%`;
-    const percentExact = value => `${(100 * value).toFixed(2)}%`;
-
-    function render(history, table) {
-        validate(history);
-        displayState = {table, history: history.slice()};
-        if (typeof document === 'undefined' || !document.getElementById('bc-predict-lab')) return;
-
-        const patternResult = makeForecast(history, 'pattern');
-        const result = patternResult.ready
-            ? patternResult
-            : {
-                ...patternResult,
-                ready: true,
-                pick: leading(BASE),
-                score: {...BASE}
-            };
-
-        const pickText = result.pick ? `${LABEL[result.pick]} ${result.pick === 'B' ? 'BANKER' : result.pick === 'P' ? 'PLAYER' : 'TIE'}` : '等待样本';
-        setText('bc-top-next-pick', pickText);
-        setText('bc-predict-main-hero', pickText);
-        const topPick = document.getElementById('bc-top-next-pick');
-        if (topPick) topPick.className = 'card-value bc-next-pick' + (result.pick ? ` is-${result.pick}` : '');
-        const hero = document.getElementById('bc-predict-main-hero');
-        if (hero) hero.className = 'bc-predict-main' + (result.pick ? ` is-${result.pick}` : '');
-
-        setText('bc-predict-state', patternResult.ready ? '已根据当前历史自动刷新下一局参考' : '样本不足时先用标准基准显示参考');
-        setText('bc-predict-sub', patternResult.ready
-            ? `依据当前已录的 ${patternResult.recorded} 局历史，输出简化版下一局参考方向。`
-            : `目前已录 ${patternResult.recorded} 局（含和 ${patternResult.ties} 局），样本不足时先显示标准基准参考。`);
-
-        for (const code of CODES) {
-            setText(`bc-predict-pct-${code}`, percent(result.score[code]));
-            const bar = document.getElementById(`bc-predict-fill-${code}`);
-            if (bar) bar.style.width = `${Math.min(100, Math.max(0, 100 * result.score[code]))}%`;
-        }
-    }
-
-    function setMode(mode) {
-        if (!['pattern', 'baseline'].includes(mode)) return;
-        selectedMode = mode;
-        if (displayState) render(displayState.history, displayState.table);
-    }
-
-    return Object.freeze({BASE, MIN_PATTERN_DECISIVE, MIN_BACKTEST_DECISIVE,
-        MAX_BACKTEST_ROUNDS, makeForecast, evaluate, render, setMode});
+    return Object.freeze({VERSION,BASE,RULES,makeForecast,settle,evaluate,render,validate,runsOf});
 });

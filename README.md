@@ -1,24 +1,58 @@
-# V28 | MZPlay K3 / 5D / TRX 授权诊断与防重复登录
+# V29 | 浏览器路径修复 + 百家乐顶部预测
 
-完整 V27 网站基础上升级，保留 WinGo、百家乐手动三按钮、K3、5D、TRX 界面及 Render API。
+## 如何更新
 
-## 修复内容
+1. 把 ZIP 里的文件放到原 GitHub 仓库根目录，包括 .github 和新文件 browser_runtime.py。不要把 ZIP 本身当成网页上传。
+2. 现有 Render Python 3 服务：Build Command = `bash render_build.sh`；Start Command = `bash start_render.sh`。
+3. Render Environment 将 `PLAYWRIGHT_BROWSERS_PATH` 设为 `.playwright-browsers`。代码会以项目根目录解析它。保留现有的账号密码、Token 及 INGEST_SECRET，不要写进前端。
+4. 提交后用 Render Manual Deploy -> Clear build cache & deploy，这次需要重新安装浏览器并实际试启动。
+5. 前端等 GitHub Pages 部署后刷新，页面标识 UI V29。原记录仍在原浏览器同一网站域名下；更换域名需先导出备份。
 
-- MZPlay 旧 Token 被拒绝后，三个游戏**共用一次**浏览器重新登录尝试；失败不再逐个游戏重复提交。
-- 登录失败时自动进入 **5–15 分钟**逐级冷却；遇到人工验证时至少 **30 分钟**，不尝试绕过验证码或权限限制。
-- Render Logs 输出安全阶段，例如 `stage=chromium_launch`、`stage=official_login_navigation`、`stage=login_form`、`stage=login_submission`，以及故障类别；不输出账号、密码、Token、带参数的 URL 或原始 Playwright 报错文本。
-- 浏览器登录失败的冷却时间保存到服务器本地状态文件；采集器保留已有历史记录，不会把失败当成功。
-- 更新 `render_build.sh`：支持 **Render Python 3 原生 Web Service** 安装 Playwright Chromium。此前的 `Dockerfile` 浏览器安装步骤对 Python 3 类型服务**不会生效**。
+## 此次修改
 
-## 按当前 Render「Test · Python 3」服务部署
+- Chromium 安装、试启动、正式登录共用同一个目录与完整 Chromium channel。安装或启动检查失败会阻止构建报成功。不在每次登录中反复下载。
+- 区分浏览器未安装、系统依赖缺失、执行权限、超时。保留三游戏共享授权冷却。
+- Bearer 字段补正常分隔空格，不再拼成 `BearerTOKEN`。这是格式修复，不等于已证明之前 401 的唯一原因。
+- 百家乐只保留一个顶部下局预测，简短策略原因，三个录入按钮。路单紧接在下方，没有房间或照片。
+- 修复已删页面元素仍被 JS 直接访问的问题；修复大路龙尾遇占位后错误再向下转弯。
+- 保存录入前显示的预测。旧记录不事后补预测。开奖一排、预测一排，同局对齐，格式一致。
+- 旧版记录只继承上次选中的一组，不混合牌桌，不删除旧存储。新牌靴需确认，存储损坏时阻止覆盖。
 
-1. 把 ZIP 解压后的所有文件上传到你现有的 GitHub 仓库**根目录**，覆盖原文件并 Commit。
-2. 进入 Render → Test → **Settings**，确认 Repository / Branch（通常 `main`）正确。
-3. **Build Command** 改成：`bash render_build.sh`
-4. **Start Command** 改成：`bash start_render.sh`
-5. Environment 中保留现有的 `MZPLAY_USERNAME`、`MZPLAY_PASSWORD`、`MZPLAY_DEVICE_ID`、`MZPLAY_AUTH_STATE_B64`、`MULTI_GAMES_ENABLED=1` 和 `CHOICE_MANUAL_ONLY=1`（存在才保留，不必往聊天里发敏感值）。
-6. **Manual Deploy → Deploy latest commit**。首次构建会下载 Chromium，时间可能比较久；如果 Build 失败，查看 Chromium 下载/系统库错误。
-7. Logs 搜索 `MZPlay/Auth`，看新的 `stage`、`category`、`retry_after`。不要短时间内反复 Deploy。
-8. 浏览器访问 [连接状态](https://test-4bvi.onrender.com/api/connection-status)，查看 K3 / 5D / TRX 的 `records`、`sourceStatus`、`observedRecently`。
+## 预测策略是什么
 
-**重要：** 这是程序防重复登录、错误诊断与运行环境修复，并非已验证的官方授权恢复。如果 MZPlay 仍返回 HTTP 401 / `No operation permission`，或要求验证码、设备验证、账号权限，必须通过官方登录或官方支持确认。代码不会也不能绕过服务端拒绝权限的决定。Render 免费实例也可能因休眠或浏览器资源不足而无法持续运行。
+这些是本项目设计的「可测试模式假设」，不是赌场官方的预知算法，不是从网上找到的已验证高胜率方法。
+
+| 规则 | 本版处理 |
+| --- | --- |
+| 长龙 | 忽略和后同方向至少 4 连，输出延续方向参考 |
+| 单跳 | 最近至少 5 个庄闲交替，输出相反方向参考 |
+| 双跳 | 识别至少 3 组双连；每组第一局后参考同方向，第二局后参考切换 |
+| 断路 | 既有长龙或跳路刚断，暂停强行判断 |
+| 其他 | 少样本使用明确标注的数学基准；足够样本使用平滑频率和转移，无清晰分数差时显示观察 |
+
+和局不打断庄闲路型，但仍作为一个结果记录。预测仅显示庄 / 闲 / 观察；和按钮用于记录。不显示伪造的下局胜率，不追损加倍，不自动投注。
+
+## 连接怎样才算恢复
+
+`[Browser/Check]` 的 `status=ready` 和 `launchVerified=true` 只说明能打开浏览器。这个预检不访问 MZPlay。
+
+`/api/connection-status` 新增 `browserRuntime` 和 `release=V29`。游戏真正连通需要分别看 `records>0`、有效 `latestIssue`、后续新期号被观察到。即使浏览器能启动，仍可能需官方账号权限或人工验证。
+
+若构建试启动报 `system_libraries_missing`，那是本机系统依赖缺失，不要反复换 Token。包内 Dockerfile 包含 `--with-deps` 备用部署；现有 Python 服务不会自动使用它。
+
+## 测试范围
+
+本地 18 项策略 JS 测试、19 项 Python 授权/路径测试、15 项浏览器组件测试通过，共 52 项。组件测试使用系统 Chromium，存储和网络是测试替身，不等于真实部署验证。
+
+本地尝试下载 Playwright Chromium 时，CDN 域名解析返回 `EAI_AGAIN`。因此未验证真实 Render 构建、配套浏览器安装或官方账号登录。本版不声称已经连通三个游戏。
+
+随机负对照：种子 290210，20000 局独立合成结果，不是赌场历史，不模拟牌靴消耗。出方向 7331 局，观察 12669 局；含和的方向命中比例 45.53%，排除和后 50.46%；固定单位、庄抽 5% 模拟净额 -53.35。同一批出手局固定选庄 -25.95。这个负对照没有显示模式预测优势。没有为这个种子再调参。
+
+## 公开依据与本项目设计的区别
+
+- Playwright 官方文档：每个库版本需对应浏览器版本，安装与运行需一致的浏览器路径和 channel。https://playwright.dev/python/docs/browsers
+- Render 官方部署文档：修改构建后可清除构建缓存再部署。https://render.com/docs/deploys
+- IETF RFC 6750 第 2.1 节：Bearer 和 Token 用空格分隔。https://www.rfc-editor.org/rfc/rfc6750
+- Wizard of Odds 数学分析：标准补牌规则、概率基准和抽佣。https://wizardofodds.com/games/baccarat/basics/
+
+资料查阅日期：2026-10-21。长龙、单跳、双跳的识别阈值是本项目的设计选择，上述资料没有证明这些策略对未来有优势。

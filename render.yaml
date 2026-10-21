@@ -1,9 +1,8 @@
 services:
   - type: web
     name: test-realtime
-    runtime: docker
+    runtime: python
     plan: free
-    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     buildCommand: bash ./render_build.sh
     startCommand: bash ./start_render.sh
@@ -20,8 +19,6 @@ services:
         sync: false
       - key: DASHBOARD_ORIGIN
         value: https://maihaoh.github.io
-      - key: CHOICE_HEADLESS
-        value: "1"
       - key: CHOICE_MANUAL_ONLY
         value: "1"
       - key: MULTI_GAMES_ENABLED

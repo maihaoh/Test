@@ -24,7 +24,7 @@ NETWORK_RETRY_SECONDS = 45
 TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v28-auth-retry-diagnostics"
+BUILD_VERSION = "v29-browser-path-auth-header"
 
 GAME_DEFS = {
     "k3": {
@@ -368,6 +368,11 @@ def safe_browser_failure_category(exc, stage="unknown"):
     """
     if isinstance(exc, MZPlayAuthenticationError):
         return exc.category
+    from browser_runtime import BrowserRuntimeError, failure_category
+    if isinstance(exc, BrowserRuntimeError):
+        return exc.category
+    if stage == "chromium_launch":
+        return failure_category(exc)
     reason = str(exc).lower()
     if "no operation permission" in reason or "msgcode=2" in reason:
         return "permission_denied"
@@ -467,6 +472,8 @@ class MZPlayClient:
             self.next_ui_login_at = float(state.get("nextUiLoginAtEpoch") or 0)
             # Reuse auth from an earlier process in the same Render instance.
             self.token_header = str(state.get("tokenHeader") or "")
+            if state.get("deviceId") and not os.getenv("MZPLAY_DEVICE_ID"):
+                self.device_id = str(state["deviceId"])
             self.token = str(state.get("token") or "")
             self.refresh_token = str(state.get("refreshToken") or "")
             if self.token or self.refresh_token:
@@ -510,6 +517,7 @@ class MZPlayClient:
             "lastLoginError": self.last_login_error or "",
             "nextUiLoginAtEpoch": float(self.next_ui_login_at or 0),
             "tokenHeader": self.token_header or "",
+            "deviceId": self.device_id,
             "token": self.token or "",
             "refreshToken": self.refresh_token or "",
             "updatedAtEpoch": time.time(),
@@ -552,8 +560,21 @@ class MZPlayClient:
         return payload
 
     def _auth_header(self, refresh=False):
-        token = self.refresh_token if refresh else self.token
-        return f"{self.token_header}{token}" if token else ""
+        token = str(self.refresh_token if refresh else self.token).strip()
+        header = str(self.token_header or "Bearer")
+        if not token:
+            return ""
+        if any(c in token + header for c in ("\r", "\n")):
+            raise MZPlayAuthenticationError("invalid_authorization_format", retry_after=900)
+        # RFC 6750: a Bearer scheme and token MUST be separated by a space.
+        # Bootstrap states sometimes store 'Bearer' without that trailing space.
+        if header.strip().lower() == "bearer":
+            if token.lower().startswith("bearer "):
+                token = token[7:].strip()
+            if not token:
+                raise MZPlayAuthenticationError("invalid_authorization_format", retry_after=900)
+            return "Bearer " + token
+        return header + token  # preserve a provider-specified non-Bearer scheme
 
     def _throttle(self):
         with self.rate_lock:
@@ -1298,6 +1319,8 @@ class MZPlayClient:
         raise RuntimeError(f"官方网页登录未取得 session（{detail}）")
 
     def _open_auth_browser(self):
+        from browser_runtime import configure_browser_path, launch_chromium
+        configure_browser_path()
         try:
             from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
         except Exception as exc:
@@ -1309,7 +1332,8 @@ class MZPlayClient:
         p = manager.start()
         browser = None
         try:
-            browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+            browser = launch_chromium(p)
+            print("[MZPlay/Auth] stage=chromium_ready (not yet authenticated)", flush=True)
             context = browser.new_context(
                 user_agent=(
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -1373,6 +1397,8 @@ class MZPlayClient:
         submit the same credentials for each game, and never bypass CAPTCHA or
         a permission decision from the MZPlay server.
         """
+        if os.getenv("MZPLAY_ALLOW_UI_LOGIN", "1").strip() == "0":
+            raise MZPlayAuthenticationError("browser_login_disabled", retry_after=900)
         if not self.configured:
             raise MZPlayAuthenticationError("credentials_missing", retry_after=900)
         now = time.time()

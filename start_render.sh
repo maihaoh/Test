@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(dirname "$0")"
 export PYTHONUNBUFFERED=1
+# No download loop and no website login in startup preflight.
+if ! python browser_runtime.py --check; then
+  echo '[Render] Browser preflight failed: WinGo/API will start; MZPlay auth remains unavailable until fixed.'
+fi
 PORT="${PORT:-10000}"
 
 echo "[Render] starting realtime API on port ${PORT}..."

@@ -1,489 +1,190 @@
-/* 百家乐 manual tracker (UI v18).
- * This file intentionally never contacts the Choice service and never submits bets.
- * Results are entered by the user, stored locally, and used only for descriptive
- * statistics. It must not be described as a predictive advantage.
+/* V29 single-session manual entry and pre-result prediction ledger.
+ * Legacy tables are read ONCE for migration, never merged, deleted or rewritten.
+ * Three buttons record actual results. No network requests or gambling actions.
  */
 (() => {
-    "use strict";
-
-    const TABLES = Object.freeze(["D51"]);
-    const STORAGE_KEY = "choice_manual_history_v1";
-    const SELECTED_KEY = "choice_manual_selected_v1";
-    const MAX_PER_TABLE = 5000;
-    let corruptStorage = false;
-    const CODE_NAMES = Object.freeze({B: "庄", P: "闲", T: "和"});
-    const CODE_CLASSES = Object.freeze({B: "is-banker", P: "is-player", T: "is-tie"});
-
-    let histories = emptyHistories();
-    let selectedTable = TABLES[0];
-    let windowView = 50; // reserved for legacy analysis blocks
-    const WINDOWS = Object.freeze([20, 50, 100, "all"]);
-
-    function emptyHistories() {
-        return Object.fromEntries(TABLES.map(table => [table, []]));
+    'use strict';
+    const KEY = 'baccarat_session_v29';
+    const LEGACY = 'choice_manual_history_v1';
+    const OLD_SELECTED = 'choice_manual_selected_v1';
+    const MAX = 5000;
+    const NAMES = {B:'\u5e84',P:'\u95f2',T:'\u548c'};
+    const STRATEGIES = ['waiting','dragon','single','double','break','baseline','model','mixed'];
+    let state, lastRaw = null, damaged = false, lastCorruptRaw = '', busy = false;
+    const el = id => document.getElementById(id);
+    function msg(text, error = false) {
+        const p = el('bc-manual-message');
+        if (p) {p.textContent = text; p.classList.toggle('is-error', error);}
     }
-
-    function element(id) { return document.getElementById(id); }
-    function setText(id, value) {
-        const node = element(id);
-        if (node) node.textContent = String(value);
-    }
-
-    function message(text, isError = false) {
-        const node = element("bc-manual-message");
-        if (!node) return;
-        node.textContent = text;
-        node.classList.toggle("is-error", isError);
-    }
-
-    function validateBackup(input) {
-        if (!input || typeof input !== "object" || Array.isArray(input) || input.version !== 1 ||
-            !input.tables || typeof input.tables !== "object" || Array.isArray(input.tables)) {
-            throw new Error("格式不符合 百家乐手动记录 v1 备份规范");
+    const historyOf = s => s.records.map(r => r.result);
+    const fresh = () => ({version:29,records:[],pending:window.BaccaratPredictor.makeForecast([])});
+    function forecast(f, target) {
+        if (f === null || f === undefined) return null;
+        if (typeof f !== 'object' || !['B','P',null].includes(f.pick) || f.targetRound !== target ||
+            typeof f.version !== 'string' || !STRATEGIES.includes(f.strategy) || typeof f.reason !== 'string')
+            throw new Error('invalid_forecast');
+        const counts = {};
+        if (Number.isInteger(f.decisive) && Number.isInteger(f.ties) && f.decisive >= 0 && f.ties >= 0 && f.decisive + f.ties === target - 1) {
+            counts.decisive = f.decisive; counts.ties = f.ties;
         }
-        const parsed = emptyHistories();
-        for (const table of TABLES) {
-            const values = input.tables[table];
-            if (!Array.isArray(values) || values.length > MAX_PER_TABLE ||
-                !values.every(item => item === "B" || item === "P" || item === "T")) {
-                throw new Error(`${table} 的记录无效或超过 ${MAX_PER_TABLE} 局`);
+        return {version:f.version.slice(0,60), targetRound:target, pick:f.pick, strategy:f.strategy,
+            reason:f.reason.slice(0,280), recorded:target-1, ready:f.pick !== null, ...counts};
+    }
+    function validate(value) {
+        if (!value || value.version !== 29 || !Array.isArray(value.records) || value.records.length > MAX)
+            throw new Error('invalid_backup');
+        const records = value.records.map((r,i) => {
+            if (!r || !Object.hasOwn(NAMES, r.result)) throw new Error('invalid_result');
+            return {result:r.result,forecast:forecast(r.forecast,i+1),
+                enteredAt:typeof r.enteredAt === 'number' && Number.isFinite(r.enteredAt) ? r.enteredAt : null};
+        });
+        let pending = forecast(value.pending,records.length+1);
+        if (!pending || pending.version !== window.BaccaratPredictor.VERSION)
+            pending = window.BaccaratPredictor.makeForecast(records.map(r=>r.result));
+        return {version:29,records,pending};
+    }
+    function legacySession(value, selected) {
+        if (!value || value.version !== 1 || !value.tables || typeof value.tables !== 'object') throw new Error('invalid_legacy');
+        // Select one existing session, not the combined histories of eight rooms.
+        const keys = Object.keys(value.tables).filter(k => /^D5[1-8]$/.test(k));
+        const key = keys.includes(selected) ? selected : keys.includes('D51') ? 'D51' : keys[0];
+        const codes = value.tables[key];
+        if (!Array.isArray(codes) || codes.length > MAX) throw new Error('invalid_legacy');
+        window.BaccaratPredictor.validate(codes);
+        return {version:29,records:codes.map(result => ({result,forecast:null,enteredAt:null})),
+            pending:window.BaccaratPredictor.makeForecast(codes)};
+    }
+    function load() {
+        let raw = null;
+        try {
+            raw = localStorage.getItem(KEY);
+            lastRaw = raw;
+            damaged = false;
+            if (raw) {state = validate(JSON.parse(raw)); return;}
+            const legacy = localStorage.getItem(LEGACY);
+            if (legacy) {
+                lastCorruptRaw = legacy;
+                state = legacySession(JSON.parse(legacy),localStorage.getItem(OLD_SELECTED));
+                // Save the new key only. All legacy data remains untouched.
+                const next = JSON.stringify(state);
+                localStorage.setItem(KEY,next); lastRaw = next;
+                msg('\u5df2\u7ee7\u627f\u4e0a\u6b21\u9009\u62e9\u7684\u8bb0\u5f55\uff1b\u65e7\u5907\u4efd\u4fdd\u7559\u4e0d\u53d8\u3002');
+            } else state = fresh();
+        } catch (_) {
+            damaged = true; lastCorruptRaw = raw || lastCorruptRaw;
+            state = fresh();
+            msg('\u672c\u5730\u8bb0\u5f55\u65e0\u6cd5\u8bfb\u53d6\uff0c\u5df2\u7981\u6b62\u8986\u76d6\u3002\u53ef\u5148\u5bfc\u51fa\u539f\u59cb\u5907\u4efd\u518d\u5bfc\u5165\u6709\u6548\u8bb0\u5f55\u3002',true);
+        }
+    }
+    function commit(next, replacing = false) {
+        if (damaged && !replacing) return false;
+        try {
+            const current = localStorage.getItem(KEY);
+            if (current !== lastRaw) {
+                load(); render(); msg('\u5176\u4ed6\u6807\u7b7e\u9875\u5df2\u66f4\u65b0\uff0c\u5df2\u540c\u6b65\uff1b\u8bf7\u91cd\u65b0\u786e\u8ba4\u672c\u6b21\u64cd\u4f5c\u3002',true); return false;
             }
-            parsed[table] = values.slice();
-        }
-        return parsed;
-    }
-
-    function loadFromBrowser() {
-        let initialMessage = "准备记录。刷新后仍会保留本浏览器上的记录。";
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            // An external tab may have removed all records; do not keep a stale
-            // in-memory copy while claiming the browser is empty.
-            histories = raw ? validateBackup(JSON.parse(raw)) : emptyHistories();
-            corruptStorage = false;
-            if (raw) initialMessage = "已从本浏览器恢复手动记录。";
-            const previousTable = localStorage.getItem(SELECTED_KEY);
-            if (TABLES.includes(previousTable)) selectedTable = previousTable;
-        } catch (error) {
-            // An invalid existing backup must never be overwritten silently by
-            // an Add/Undo action. Explicit confirmed import can recover it.
-            corruptStorage = true;
-            initialMessage = `无法读取本地记录：${error.message}。请先导出/保留原浏览器数据，再通过确认导入恢复；已禁止自动覆盖。`;
-            message(initialMessage, true);
-            return;
-        }
-        message(initialMessage);
-    }
-
-    function persist(next = histories, confirmedReplacement = false) {
-        if (corruptStorage && !confirmedReplacement) {
-            message("旧本地记录损坏，为避免覆盖已停止修改；可在确认后导入有效 JSON 备份。", true);
-            return false;
-        }
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({version: 1, tables: next}));
-            corruptStorage = false;
+            const serialized = JSON.stringify(next);
+            localStorage.setItem(KEY,serialized);
+            lastRaw = serialized; state = next; damaged = false;
             return true;
-        } catch (error) {
-            message("浏览器保存失败：记录仅暂存在页面内，刷新可能丢失。请检查浏览器储存权限。", true);
-            return false;
-        }
+        } catch (_) {msg('\u4fdd\u5b58\u5931\u8d25\uff0c\u672c\u6b21\u672a\u5199\u5165\uff0c\u539f\u8bb0\u5f55\u4e0d\u53d8\u3002',true);return false;}
     }
-
-    function currentCounts(history) {
-        return history.reduce((counts, code) => {
-            counts[code]++;
-            return counts;
-        }, {B: 0, P: 0, T: 0});
-    }
-
-    function decisiveOnly(history) { return history.filter(code => code !== "T"); }
-
-    function trailingStreak(history) {
-        const decisive = decisiveOnly(history);
-        if (!decisive.length) return {type: null, count: 0};
-        const type = decisive[decisive.length - 1];
-        let count = 0;
-        for (let i = decisive.length - 1; i >= 0 && decisive[i] === type; i--) count++;
-        return {type, count};
-    }
-
-    function maxStreak(history, type) {
-        let best = 0;
-        let count = 0;
-        for (const code of decisiveOnly(history)) {
-            if (code === type) {
-                count++;
-                best = Math.max(best, count);
-            } else {
-                count = 0;
-            }
-        }
-        return best;
-    }
-
-    // Wilson score interval for historical banker fraction among non-ties.
-    // Assumes independent observations for its approximate coverage; never a
-    // prediction of the next outcome or a claimed betting advantage.
-    function wilsonInterval(successes, total) {
-        if (total === 0) return null;
-        const z = 1.96;
-        const p = successes / total;
-        const denom = 1 + z * z / total;
-        const center = (p + z * z / (2 * total)) / denom;
-        const delta = z * Math.sqrt(p * (1 - p) / total + z * z / (4 * total * total)) / denom;
-        return {low: Math.max(0, center - delta), high: Math.min(1, center + delta)};
-    }
-
-    function transitionCounts(history) {
-        const decisive = decisiveOnly(history);
-        const counts = {BB: 0, BP: 0, PB: 0, PP: 0};
-        for (let i = 1; i < decisive.length; i++) {
-            counts[decisive[i - 1] + decisive[i]]++;
-        }
-        return counts;
-    }
-
-    function sampleStage(nonTieCount) {
-        if (nonTieCount < 20) return {label: "收集中 · 暂不显示走势方向", next: `还差 ${20 - nonTieCount} 局庄／闲到 20 局初步观察`, threshold: 20};
-        if (nonTieCount < 50) return {label: "初步观察 · 已满 20 局", next: `再录 ${50 - nonTieCount} 局庄／闲，可比较 50 局窗口`, threshold: 50};
-        if (nonTieCount < 100) return {label: "分段对照 · 已满 50 局", next: `再录 ${100 - nonTieCount} 局庄／闲，可比较 100 局窗口`, threshold: 100};
-        return {label: "较多历史样本 · 已满 100 局", next: "历史比例描述更有样本基础，但不能稳定预测下一局", threshold: 100};
-    }
-
-    function trendReference(history) {
-        const decisive = decisiveOnly(history);
-        const n = decisive.length;
-        if (n < 20) return {
-            pick: null,
-            sample: `本桌 ${n} 局庄／闲 · 至少 20 局才展示历史偏多方`,
-            reason: `还差 ${20 - n} 局庄／闲才开始显示走势描述；和局不计算在这 20 局内。这些门槛不是命中率门槛。`
-        };
-
-        // Past frequencies may be interesting descriptively; they do not
-        // establish a forecasting relationship for an independent next hand.
-        const recent = decisive.slice(-50);
-        const counts = currentCounts(recent);
-        const last = decisive[n - 1];
-        const sameAsLast = transitionCounts(decisive.slice(-100));
-        const transitions = last === "B"
-            ? {B: sameAsLast.BB, P: sameAsLast.BP}
-            : {B: sameAsLast.PB, P: sameAsLast.PP};
-        const transitionSample = transitions.B + transitions.P;
-        const isTie = counts.B === counts.P;
-        const pick = isTie ? null : counts.B > counts.P ? "B" : "P";
-        const reason = `最近 ${recent.length} 局有效庄闲：庄 ${counts.B} 次、闲 ${counts.P} 次。过去最多 100 局中，出现「${CODE_NAMES[last]}」后接庄 ${transitions.B} 次、接闲 ${transitions.P} 次（共 ${transitionSample} 次）。这些是历史记录频率，不支持推断下局必然偏向哪边。`;
-        return {
-            pick,
-            sample: `最近 ${recent.length} 局庄／闲历史频率 · 非下局胜率`,
-            reason: isTie ? `两边历史次数相同，暂无偏多方。${reason}` : reason
-        };
-    }
-
-    function makeChip(code, round, latest = false) {
-        const chip = document.createElement("span");
-        chip.className = `bc-manual-chip ${CODE_CLASSES[code]}${latest ? " is-latest" : ""}`;
-        chip.textContent = CODE_NAMES[code];
-        chip.title = `手动记录第 ${round} 局：${CODE_NAMES[code]}`;
-        chip.setAttribute("aria-label", chip.title);
-        return chip;
-    }
-
-    function renderChips(containerId, history, limit, reverse = false) {
-        const node = element(containerId);
-        if (!node) return;
-        const fragment = document.createDocumentFragment();
-        if (!history.length) {
-            const empty = document.createElement("span");
-            empty.className = "bc-manual-empty";
-            empty.textContent = "还没有结果。上方点击庄／闲／和开始记录。";
-            fragment.appendChild(empty);
-        } else {
-            const firstIndex = Math.max(0, history.length - limit);
-            const recent = history.slice(firstIndex).map((code, i) => ({code, round: firstIndex + i + 1}));
-            if (reverse) recent.reverse();
-            for (const item of recent) {
-                fragment.appendChild(makeChip(item.code, item.round, item.round === history.length));
-            }
-        }
-        node.replaceChildren(fragment);
-    }
-
-    function renderRoadGrid(id, cells) {
-        const node = element(id);
-        if (!node) return;
-        const fragment = document.createDocumentFragment();
-        const maxCol = cells.reduce((max, cell) => Math.max(max, cell.col), -1);
-        node.style.gridTemplateColumns = `repeat(${Math.max(1, maxCol + 1)}, 24px)`;
-        if (!cells.length) {
-            const note = document.createElement("span");
-            note.className = "bc-manual-empty";
-            note.textContent = "历史样本不足";
-            fragment.appendChild(note);
-        }
-        for (const cell of cells) {
-            const mark = document.createElement("span");
-            mark.className = `bc-road-mark bc-road-${cell.code}`;
-            mark.style.gridColumnStart = String(cell.col + 1);
-            mark.style.gridRowStart = String(cell.row + 1);
-            mark.textContent = cell.code === "B" ? "庄" : cell.code === "P" ? "闲" :
-                cell.code === "T" ? "和" : cell.code === "R" ? "●" : "○";
-            if (cell.ties) {
-                const tie = document.createElement("span");
-                tie.className = "bc-road-ties";
-                tie.textContent = cell.ties > 1 ? `和${cell.ties}` : "和";
-                mark.appendChild(tie);
-            }
-            mark.title = cell.ties ? `${mark.textContent}（含和 ${cell.ties} 局）` : mark.textContent;
-            fragment.appendChild(mark);
-        }
-        node.replaceChildren(fragment);
-    }
-
-    function renderRoadmaps(history) {
-        if (!window.BaccaratRoads) return;
-        const recent = history.slice(-120);
-        const roads = window.BaccaratRoads.build(recent);
-        setText("bc-roads-table", selectedTable);
-        renderRoadGrid("bc-road-bead", roads.bead);
-        renderRoadGrid("bc-road-big", roads.big);
-        renderRoadGrid("bc-road-eye", roads.bigEyeBoy);
-        renderRoadGrid("bc-road-small", roads.smallRoad);
-        renderRoadGrid("bc-road-cockroach", roads.cockroachRoad);
-    }
-
-    function render() {
-        const history = histories[selectedTable];
-        const length = history.length;
-        const counts = currentCounts(history);
-        const streak = trailingStreak(history);
-        const last = length ? history[length - 1] : null;
-        const allCount = TABLES.reduce((sum, table) => sum + histories[table].length, 0);
-        const decisiveCount = counts.B + counts.P;
-        const stage = sampleStage(decisiveCount);
-        const windowHistory = windowView === "all" ? history : history.slice(-windowView);
-        const wc = currentCounts(windowHistory);
-        const windowNonTies = wc.B + wc.P;
-        const confidenceInterval = wilsonInterval(wc.B, windowNonTies);
-        const transitions = transitionCounts(windowHistory);
-
-        document.querySelectorAll("[data-manual-table]").forEach(button => {
-            const name = button.getAttribute("data-manual-table");
-            const isCurrent = selectedTable === name;
-            button.classList.toggle("active", isCurrent);
-            button.setAttribute("aria-pressed", isCurrent ? "true" : "false");
-            setText(`bc-tab-count-${name}`, `${histories[name].length} 局`);
-        });
-
-        setText("bc-all-total", allCount);
-        for (const id of ["bc-manual-table-name", "bc-entry-table", "bc-prediction-table", "bc-stats-table", "bc-road-table", "bc-history-table", "bc-sample-table", "bc-window-table"]) {
-            setText(id, selectedTable);
-        }
-        setText("bc-manual-round-count", length);
-        setText("bc-manual-total", length);
-        setText("bc-manual-latest", last ? CODE_NAMES[last] : "--");
-        setText("bc-manual-streak", streak.type ? `连续${CODE_NAMES[streak.type]} ${streak.count} 局（和不打断）` : "目前没有庄／闲记录");
-        setText("bc-manual-banker-count", counts.B);
-        setText("bc-manual-player-count", counts.P);
-        setText("bc-manual-tie-count", counts.T);
-        setText("bc-manual-banker-percent", length ? `${(100 * counts.B / length).toFixed(1)}%` : "--");
-        setText("bc-manual-player-percent", length ? `${(100 * counts.P / length).toFixed(1)}%` : "--");
-        setText("bc-manual-current-streak", streak.type ? `${CODE_NAMES[streak.type]} ${streak.count} 连` : "--");
-        setText("bc-manual-max-banker", maxStreak(history, "B"));
-        setText("bc-manual-max-player", maxStreak(history, "P"));
-        element("bc-manual-undo").disabled = length === 0;
-        element("bc-manual-clear").disabled = length === 0;
-
-        // Local progress milestones describe sample sizes, not accuracy levels.
-        setText("bc-sample-stage", stage.label);
-        setText("bc-sample-next", stage.next);
-        setText("bc-sample-decisive", decisiveCount);
-        const sampleProgress = element("bc-sample-progress");
-        if (sampleProgress) sampleProgress.setAttribute("aria-valuenow", String(Math.min(100, decisiveCount)));
-        const bar = element("bc-sample-progress-fill");
-        if (bar) bar.style.width = `${Math.min(100, decisiveCount)}%`;
-        for (const threshold of [20, 50, 100]) {
-            const milestone = element(`bc-milestone-${threshold}`);
-            if (milestone) milestone.classList.toggle("achieved", decisiveCount >= threshold);
-        }
-        document.querySelectorAll("[data-bc-window]").forEach(button => {
-            const selected = String(windowView) === button.getAttribute("data-bc-window");
-            button.classList.toggle("active", selected);
-            button.setAttribute("aria-pressed", selected ? "true" : "false");
-        });
-        const windowLabel = windowView === "all" ? "全部历史" : `最近 ${windowView} 局`;
-        setText("bc-window-summary", `${windowLabel} · 实际录入 ${windowHistory.length} 局（其中庄／闲 ${windowNonTies} 局，和 ${wc.T} 局）`);
-        setText("bc-window-banker", windowNonTies ? `${(wc.B / windowNonTies * 100).toFixed(1)}% · ${wc.B} 局` : "--");
-        setText("bc-window-player", windowNonTies ? `${(wc.P / windowNonTies * 100).toFixed(1)}% · ${wc.P} 局` : "--");
-        setText("bc-window-tie", windowHistory.length ? `${(wc.T / windowHistory.length * 100).toFixed(1)}% · ${wc.T} 局` : "--");
-        setText("bc-window-ci", confidenceInterval
-            ? `${(confidenceInterval.low * 100).toFixed(1)}% – ${(confidenceInterval.high * 100).toFixed(1)}%（庄 ${wc.B} / 有效 ${windowNonTies} 局）`
-            : "没有庄／闲有效样本");
-        setText("bc-window-transition", windowNonTies > 1
-            ? `庄→庄 ${transitions.BB} · 庄→闲 ${transitions.BP} · 闲→庄 ${transitions.PB} · 闲→闲 ${transitions.PP}`
-            : "至少需要 2 局庄／闲结果（忽略和局）");
-
-        // Separate the defensible theoretical odds from exploratory pattern
-        // correlations. Never label pattern scores as a validated win chance.
-        if (window.BaccaratAnalysis) {
-            const analysis = window.BaccaratAnalysis.analyze(history);
-            const base = analysis.baseline;
-            const pct = n => `${(100 * n).toFixed(2)}%`;
-            setText("bc-ai-table", selectedTable);
-            setText("bc-ai-base-banker", pct(base.B));
-            setText("bc-ai-base-player", pct(base.P));
-            setText("bc-ai-base-tie", pct(base.T));
-            setText("bc-ai-baseline-call", `庄 · ${pct(base.B)}`);
-            const direction = analysis.patternDirection === "B" ? "庄" : "闲";
-            setText("bc-ai-pattern-call", analysis.decisive < 20
-                ? "资料不足 · 先记录 20 局庄／闲" :
-                (analysis.hasDistinctPattern ? `模式参考：${direction}` : "庄闲模式接近五五开"));
-            setText("bc-ai-pattern-note", `${analysis.decisive} 局有效庄／闲，${analysis.ties} 局和。${analysis.caveat}`);
-            setText("bc-ai-score", analysis.decisive < 20
-                ? "至少 20 局庄／闲后显示平滑的实验性模式分数"
-                : `庄 ${pct(analysis.patternScore.B)} · 闲 ${pct(analysis.patternScore.P)} · 和 ${pct(analysis.patternScore.T)}（仅模型分数）`);
-            const bt = analysis.backtest;
-            const label = bt.status === "observed_improvement"
-                ? "过去回测略优于基准 · 未证明未来优势"
-                : (bt.status === "not_better" ? "没有发现优于数学基准的稳定证据" : "回测样本不足 · 不给出可靠信号");
-            setText("bc-ai-validation", label);
-            setText("bc-ai-evaluation", bt.observations
-                ? `只看该桌最近 ${bt.observations} 个历史可检验决胜局：模型方向吻合 ${pct(bt.candidateHitRate)}，固定选庄基准 ${pct(bt.baselineHitRate)}；模型 Brier ${bt.candidateBrier.toFixed(4)}，理论基准 ${bt.baselineBrier.toFixed(4)}（越低越好）。这仅是历史逐局回测，非未来命中率。`
-                : "在拥有至少 40 局庄／闲作为训练数据后，才开始计入回测；达到 120 个回测样本也不代表可预测。");
-        }
-
-        if (window.BaccaratEngine) {
-            const ev = window.BaccaratEngine.referenceEV();
-            const pct = number => `${(number * 100).toFixed(2)}%`;
-            setText("bc-ai-ev", `押庄 ${pct(ev.B)} · 押闲 ${pct(ev.P)} · 押和 ${pct(ev.T)}（每单位押注的长期期望净回报）`);
-        }
-        renderRoadmaps(history);
-        if (window.BaccaratPredictor) window.BaccaratPredictor.render(history, selectedTable);
-        const trend = trendReference(history);
-        const pick = element("bc-manual-pick");
-        pick.textContent = trend.pick ? `历史偏多：${CODE_NAMES[trend.pick]}` : (decisiveCount ? "观察中／无明显偏多" : "等待记录");
-        pick.className = `bc-manual-pick${trend.pick ? " " + CODE_CLASSES[trend.pick] : ""}`;
-        setText("bc-manual-pick-sample", trend.sample);
-        setText("bc-manual-pick-reason", trend.reason);
-        renderChips("bc-manual-road", history, 120, false);
-        renderChips("bc-manual-history", history, 20, true);
-    }
-
-    window.choiceManualSetWindow = function(nextWindow) {
-        const parsed = nextWindow === "all" ? "all" : Number(nextWindow);
-        if (!WINDOWS.includes(parsed)) return;
-        windowView = parsed;
-        render();
-    };
-
-    window.choiceManualSelect = function(table) {
-        if (!TABLES.includes(table)) return;
-        selectedTable = table;
-        try { localStorage.setItem(SELECTED_KEY, selectedTable); } catch (_) { /* still usable */ }
-        render();
-        message(`当前记录共有 ${histories[table].length} 局。`);
-    };
-
-    window.choiceManualAdd = function(code) {
-        if (!Object.hasOwn(CODE_NAMES, code)) return;
-        if (corruptStorage) {
-            message("本地备份无法读取，请先导入有效备份，避免覆盖旧记录。", true);
-            return;
-        }
-        const history = histories[selectedTable];
-        if (history.length >= MAX_PER_TABLE) {
-            message(`每桌最多保存 ${MAX_PER_TABLE} 局，请先导出备份后清空。`, true);
-            return;
-        }
-        history.push(code);
-        const saved = persist();
-        render();
-        if (saved) message(`${selectedTable} 第 ${history.length} 局：${CODE_NAMES[code]}。已保存至本浏览器。`);
-    };
-
-    window.choiceManualUndo = function() {
-        if (corruptStorage) { message("本地备份无法读取，请先恢复备份。", true); return; }
-        const history = histories[selectedTable];
-        if (!history.length) return;
-        const removed = history.pop();
-        const saved = persist();
-        render();
-        if (saved) message(`已撤销 ${selectedTable} 的最后一局「${CODE_NAMES[removed]}」，剩余 ${history.length} 局。`);
-    };
-
-    window.choiceManualClear = function() {
-        if (corruptStorage) { message("本地备份无法读取，请先恢复备份。", true); return; }
-        const history = histories[selectedTable];
-        if (!history.length) return;
-        if (!window.confirm(`确定清空当前已手动输入的 ${history.length} 局吗？`)) return;
-        histories[selectedTable] = [];
-        const saved = persist();
-        render();
-        if (saved) message(`已清空当前记录。`);
-    };
-
-    window.choiceManualExport = function() {
-        const backup = {
-            version: 1,
-            exportedAt: new Date().toISOString(),
-            tables: histories
-        };
-        const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = `baccarat-manual-${new Date().toISOString().slice(0, 10)}.json`;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        message("已导出当前百家乐记录 JSON 备份。此文件不包含登录信息。请妥善保存。");
-    };
-
-    window.choiceManualImport = async function(event) {
-        const input = event && event.target;
-        const file = input && input.files && input.files[0];
-        if (!file) return;
+    async function mutate(action) {
+        if (busy) return;
+        busy = true;
         try {
-            if (file.size > 1024 * 1024) throw new Error("备份文件超过 1 MB");
-            const incoming = validateBackup(JSON.parse(await file.text()));
-            const count = TABLES.reduce((sum, table) => sum + incoming[table].length, 0);
-            if (!window.confirm(`导入将覆盖当前浏览器里的百家乐记录。新备份包含 ${count} 局，确定继续吗？`)) {
-                message("已取消导入，现有记录未改变。");
-                return;
-            }
-            // Commit validated storage first; if quota/permissions reject the
-            // write, keep existing in-memory records and show a real failure.
-            if (!persist(incoming, true)) {
-                message("导入失败：浏览器无法保存备份，现有页面记录没有改变。", true);
-                return;
-            }
-            histories = incoming;
-            render();
-            message(`导入成功：共 ${count} 局记录已更新。`);
-        } catch (error) {
-            message(`导入失败：${error.message}。原有记录没有改变。`, true);
-        } finally {
-            if (input) input.value = "";
+            if (navigator.locks) await navigator.locks.request('baccarat-v29-write', action);
+            else action();
+        } catch (_) {msg('\u64cd\u4f5c\u5931\u8d25\uff0c\u539f\u8bb0\u5f55\u4fdd\u7559\u3002',true);}
+        finally {busy = false;}
+    }
+    function mark(code, round, isPrediction = false) {
+        const p = document.createElement('span');
+        p.className = 'bc-ledger-token ' + (code ? `is-${code}` : 'is-empty');
+        p.textContent = code ? NAMES[code] : '\u2014';
+        p.title = `\u7b2c ${round} \u5c40${isPrediction?'\u9884\u6d4b':'\u5f00\u5956'}\uff1a${code?NAMES[code]:'\u672a\u8bb0\u5f55 / \u89c2\u5bdf'}`;
+        return p;
+    }
+    function renderLedger() {
+        const node = el('bc-ledger'); if (!node) return;
+        const fragment = document.createDocumentFragment();
+        for (const [i,label] of ['\u5c40\u6570','\u5f00\u5956','\u9884\u6d4b'].entries()) {
+            const p=document.createElement('span');p.className='bc-ledger-label';p.style.gridRow=String(i+1);p.textContent=label;fragment.appendChild(p);
         }
+        const start = Math.max(0,state.records.length-40);
+        for (let i=start;i<state.records.length;i++) {
+            const r=state.records[i], col=i-start+2;
+            const num=document.createElement('span');num.className='bc-ledger-round';num.textContent=String(i+1);num.style.gridRow='1';num.style.gridColumn=String(col);fragment.appendChild(num);
+            const actual=mark(r.result,i+1);actual.style.gridRow='2';actual.style.gridColumn=String(col);fragment.appendChild(actual);
+            const pred=mark(r.forecast?.pick,i+1,true);pred.style.gridRow='3';pred.style.gridColumn=String(col);fragment.appendChild(pred);
+        }
+        node.replaceChildren(fragment);node.scrollLeft=node.scrollWidth;
+    }
+    function grid(id,cells) {
+        const node=el(id);if (!node) return;
+        const max=Math.max(0,...cells.map(c=>c.col)), first=Math.max(0,max-39), fragment=document.createDocumentFragment();
+        node.style.gridTemplateColumns=`repeat(${Math.max(10,max-first+1)},24px)`;
+        for (const c of cells) {
+            if (c.col<first) continue;
+            const p=document.createElement('span');p.className=`bc-road-mark bc-road-${c.code}`;
+            p.style.gridColumn=String(c.col-first+1);p.style.gridRow=String(c.row+1);
+            p.textContent=Object.hasOwn(NAMES,c.code)?NAMES[c.code]:'\u2022';
+            if (c.ties) {const t=document.createElement('small');t.className='bc-road-ties';t.textContent=String(c.ties);p.appendChild(t);p.title=`\u548c ${c.ties} \u6b21`;}
+            fragment.appendChild(p);
+        }
+        node.replaceChildren(fragment);
+        const scroll=node.parentElement;if(scroll)scroll.scrollLeft=scroll.scrollWidth;
+    }
+    function render() {
+        if (!state) return;
+        const codes=historyOf(state), counts={B:0,P:0,T:0}; codes.forEach(c=>counts[c]++);
+        window.BaccaratPredictor.render(codes,state.pending);
+        const summary=el('bc-session-summary');if(summary)summary.textContent=`\u5df2\u5f55 ${codes.length} \u5c40 \u00b7 \u5e84 ${counts.B} / \u95f2 ${counts.P} / \u548c ${counts.T}`;
+        document.querySelectorAll('[data-bc-result]').forEach(b=>b.disabled=damaged || codes.length>=MAX);
+        const undo=el('bc-manual-undo'),clear=el('bc-manual-clear');
+        if(undo)undo.disabled=damaged || !codes.length;if(clear)clear.disabled=damaged || !codes.length;
+        const roads=window.BaccaratRoads?.build(codes);
+        if(roads){grid('bc-road-big',roads.big);grid('bc-road-bead',roads.bead);grid('bc-road-eye',roads.bigEyeBoy);grid('bc-road-small',roads.smallRoad);grid('bc-road-cockroach',roads.cockroachRoad);}
+        renderLedger();
+    }
+    window.choiceManualAdd = code => mutate(() => {
+        if(damaged || !Object.hasOwn(NAMES,code) || state.records.length>=MAX)return;
+        const next=JSON.parse(JSON.stringify(state));
+        next.records.push({result:code,forecast:{...state.pending},enteredAt:Date.now()});
+        next.pending=window.BaccaratPredictor.makeForecast(historyOf(next));
+        if(commit(next)){render();msg(`\u7b2c ${next.records.length} \u5c40 ${NAMES[code]} \u5df2\u4fdd\u5b58\uff0c\u4e0b\u5c40\u53c2\u8003\u5df2\u66f4\u65b0\u3002`);}
+    });
+    window.choiceManualUndo = () => mutate(() => {
+        if(damaged || !state.records.length)return;
+        const next=JSON.parse(JSON.stringify(state)); const removed=next.records.pop();
+        next.pending=removed.forecast && removed.forecast.version===window.BaccaratPredictor.VERSION ? removed.forecast : window.BaccaratPredictor.makeForecast(historyOf(next));
+        if(commit(next)){render();msg('\u5df2\u64a4\u9500\u4e0a\u5c40\uff0c\u6062\u590d\u5230\u8f93\u5165\u524d\u7684\u9884\u6d4b\u3002');}
+    });
+    window.choiceManualClear = () => mutate(() => {
+        if(damaged || !state.records.length)return;
+        if(!confirm('\u5f00\u59cb\u65b0\u724c\u9774\u4f1a\u6e05\u7a7a\u5f53\u524d\u8bb0\u5f55\u4e0e\u9884\u6d4b\u5bf9\u7167\u3002\u9700\u4fdd\u7559\u65f6\u8bf7\u5148\u5bfc\u51fa\u5907\u4efd\u3002\u786e\u5b9a\uff1f'))return;
+        if(commit(fresh())){render();msg('\u65b0\u724c\u9774\u5df2\u5f00\u59cb\u3002');}
+    });
+    window.choiceManualExport = () => {
+        const raw = damaged ? lastCorruptRaw : JSON.stringify({...state,exportedAt:new Date().toISOString()},null,2);
+        const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));
+        const a=document.createElement('a');a.href=url;a.download=damaged?'baccarat-recovery-raw.json':'baccarat-v29-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     };
-
-    function initialize() {
-        if (!element("bc-manual-round-count")) return;
-        loadFromBrowser();
-        render();
-        window.addEventListener("storage", event => {
-            if (event.key === STORAGE_KEY) {
-                loadFromBrowser();
-                render();
-                if (!corruptStorage) message("已同步同一浏览器其他标签页更新的百家乐记录。");
-            }
-        });
+    window.choiceManualImport = async event => {
+        const input=event?.target, file=input?.files?.[0];if(!file)return;
+        try {
+            if(file.size>3*1024*1024)throw new Error('too_large');
+            const data=JSON.parse(await file.text());
+            const incoming=data.version===1?legacySession(data,localStorage.getItem(OLD_SELECTED)):validate(data);
+            if(!confirm(`\u5bfc\u5165 ${incoming.records.length} \u5c40\u5e76\u66ff\u6362\u5f53\u524d\u8bb0\u5f55\uff1f`))return;
+            await mutate(()=>{if(commit(incoming,true)){render();msg('\u5bfc\u5165\u6210\u529f\u3002');}});
+        } catch(_){msg('\u5bfc\u5165\u5931\u8d25\uff1a\u8bf7\u4f7f\u7528\u6709\u6548 JSON \u5907\u4efd\uff08\u6700\u591a 5000 \u5c40\uff09\u3002\u539f\u8bb0\u5f55\u4e0d\u53d8\u3002',true);}
+        finally{if(input)input.value='';}
+    };
+    function init(){
+        if(!el('bc-predict-main'))return;
+        load();render();
+        window.addEventListener('storage', e=>{if(e.key===KEY){load();render();}});
     }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initialize, {once: true});
-    } else {
-        initialize();
-    }
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

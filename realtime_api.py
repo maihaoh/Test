@@ -7,6 +7,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 from multi_snapshot import merge_snapshots
+from browser_runtime import public_status
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "data.json"
@@ -189,6 +190,8 @@ def connection_status():
         "service": "responding",
         "checkedAt": now,
         "multiGameSources": sources,
+        "browserRuntime": public_status(),
+        "release": "V29",
         "anyNewIssueObservedRecently": any(item["observedRecently"] for item in sources.values()),
         "note": "The API responds; fresh timestamps are not proof of an authorized or continuous external game feed."
     })
