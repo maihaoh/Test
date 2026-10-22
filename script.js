@@ -110,7 +110,10 @@ function resetWingoLiveAnalysis() {
     if (fill) fill.style.width = '0%';
 }
 
-const AI_LEARNING_KEY = "wingo_ai_learning_v2";
+// V35 uses fresh live-only learning stats. V2 remains untouched as a backup:
+// it mixed replayed predictions with genuinely pre-recorded forecasts.
+const AI_LEARNING_KEY = "wingo_ai_learning_v35";
+const WINGO_PENDING_KEY = "wingo_pending_forecast_v35";
 
 
 /* =========================================================
@@ -488,6 +491,7 @@ function getNumberIconHtml(num) {
 }
 
 function getWingoColourLabel(num) {
+    if (num === null || num === undefined || num === '') return '—';
     const n = Number(num);
     if (!Number.isInteger(n) || n < 0 || n > 9) return '—';
     if (n === 0) return '红紫';
@@ -1521,10 +1525,16 @@ function getLearnedPrediction(
     }
 
 
+    // Never display a candidate 7 next to size 小 (or a 3 next to 大).
+    // Model only estimates the SIZE direction; choose a compatible number as
+    // a separate historical example, not an independent winning number.
+    const coherentNumber = isPass ? null :
+        (window.WingoConsistency ? window.WingoConsistency.chooseNumber(nums, prediction) :
+            (prediction === '大' ? 7 : 2));
     return {
 
         num:
-            predictedNum,
+            coherentNumber,
 
         size:
             isPass
@@ -2007,179 +2017,70 @@ function learnFromReview(
    ONLY SIZE DECIDES WIN / LOSS
 ========================================================= */
 
-function reviewNewOutcome(
-    draws
-) {
-
-    if (
-        !draws ||
-        draws.length < 12
-    ) {
-
+function reviewNewOutcome(draws) {
+    // V35: a real-time WIN/LOSS is allowed ONLY for a forecast that was
+    // committed to localStorage BEFORE the next exact issue was observed.
+    // Do not recompute yesterday's forecast using today's result and call it
+    // a live win. Historical walk-forward simulation is handled separately.
+    if (!Array.isArray(draws) || draws.length < 2 || !window.WingoConsistency) return null;
+    let pending;
+    try { pending = JSON.parse(localStorage.getItem(WINGO_PENDING_KEY) || 'null'); }
+    catch (_) { return null; }
+    if (!pending || !pending.fromIssue) return null;
+    const latest = draws[0];
+    if (String(latest.issue) === pending.fromIssue) return null;
+    // Unknown gap or reordered results: do NOT invent an adjudication.
+    if (!window.WingoConsistency.legitimateReview(pending,draws.slice(0,2))) {
+        try { localStorage.removeItem(WINGO_PENDING_KEY); } catch (_) {}
         return null;
     }
-
-
-    const actual =
-        draws[0];
-
-
-    if (!actual) {
-        return null;
-    }
-
-
-    if (
-        aiLearning.lastReviewedIssue ===
-        actual.issue
-    ) {
-
-        return null;
-    }
-
-
-    const history =
-        draws.slice(1);
-
-
-    const prediction =
-        getLearnedPrediction(
-            history
-        );
-
-
-    if (!prediction) {
-        return null;
-    }
-
-
-    const actualSize =
-        actual.size === "大"
-            ? "大"
-            : "小";
-
-
-    let outcome =
-        "PASS";
-
-    let counterfactual =
-        "NONE";
-
-
-    /*
-     * =====================================================
-     * PASS
-     * =====================================================
-     */
-
-    if (
-        prediction.size === "PASS"
-    ) {
-
-        const forced =
-            getForcedCounterfactual(
-                history
-            );
-
-
-        if (forced) {
-
-            counterfactual =
-                forced.size ===
-                actualSize
-                    ? "WIN"
-                    : "LOSS";
-        }
-
-    } else {
-
-        /*
-         * =================================================
-         * 核心：
-         *
-         * 只比较 SIZE
-         *
-         * 号码不同没关系
-         * 颜色不同没关系
-         * =================================================
-         */
-
-        outcome =
-            prediction.size ===
-                actualSize
-                ? "WIN"
-                : "LOSS";
-    }
-
-
+    const prior = pending.forecast;
+    const actualSize = latest.size === '大' ? '大' : '小';
+    const outcome = prior.size === 'PASS' ? 'PASS' :
+        prior.size === actualSize ? 'WIN' : 'LOSS';
     const review = {
-
-        issue:
-            actual.issue,
-
-        predictionSize:
-            prediction.size,
-
-        /*
-         * 预测号码只是记录
-         * 不参与 WIN / LOSS
-         */
-        predictedNum:
-            prediction.num,
-
-        signal:
-            prediction.signal,
-
-        actualSize,
-
-        actualNum:
-            actual.number,
-
-        outcome,
-
-        counterfactual,
-
-        pattern:
-            getCurrentPattern(
-                history
-            ),
-
-        featureSnapshot:
-            prediction.features,
-
-        weightBefore:
-            getCurrentWeights(),
-
-        weightAfter:
-            null,
-
-        timestamp:
-            Date.now()
+        issue:String(latest.issue),
+        predictionSize:prior.size,
+        predictedNum:prior.num ?? null,
+        signal:prior.signal,
+        actualSize,actualNum:latest.number,outcome,
+        counterfactual:'NONE',
+        pattern:pending.pattern || '',
+        featureSnapshot:prior.features || {},
+        weightBefore:getCurrentWeights(),
+        weightAfter:null,
+        sourceIssue:pending.fromIssue,
+        proof:'pre_result_local_ledger_v35',
+        timestamp:Date.now()
     };
-
-
-    learnFromReview(
-        review
-    );
-
-
-    review.weightAfter =
-        getCurrentWeights();
-
-
-    if (
-        aiLearning.recentReviews[0]
-    ) {
-
-        aiLearning.recentReviews[0]
-            .weightAfter =
-            review.weightAfter;
-
+    learnFromReview(review);
+    review.weightAfter=getCurrentWeights();
+    if(aiLearning.recentReviews[0]) {
+        aiLearning.recentReviews[0].weightAfter=review.weightAfter;
         saveAILearning();
     }
-
-
+    try { localStorage.removeItem(WINGO_PENDING_KEY); } catch (_) {}
     return review;
+}
+
+function getFrozenLivePrediction(draws) {
+    if (!draws?.length) return null;
+    const sourceIssue=String(draws[0].issue||'');
+    let pending=null;
+    try { pending=JSON.parse(localStorage.getItem(WINGO_PENDING_KEY)||'null'); }
+    catch (_) {}
+    if (pending && pending.fromIssue === sourceIssue && pending.forecast &&
+        (pending.forecast.size==='PASS' ||
+         window.WingoConsistency?.sizeOf(pending.forecast.num)===pending.forecast.size)) {
+        return pending.forecast;
+    }
+    const prediction=getLearnedPrediction(draws);
+    if (!sourceIssue) return prediction;
+    const record={fromIssue:sourceIssue,
+        forecast:prediction,pattern:getCurrentPattern(draws),createdAt:Date.now()};
+    try {localStorage.setItem(WINGO_PENDING_KEY,JSON.stringify(record));}
+    catch (_) {console.warn('WinGo 无法持久保存开奖前预测；实时复盘将不会声称 WIN/LOSS。');}
+    return prediction;
 }
 
 
@@ -3330,7 +3231,7 @@ function updatePredictionCard(
     const size = prediction.size === 'PASS' ? 'PASS' : prediction.size;
     el.innerHTML = `
         ${renderWingoLine({num: prediction.num, size, colour}, '预测')}
-        <div class="compact-confidence">信心 ${escapeHtml(prediction.confidence)}%</div>
+        <div class="compact-confidence">模式评分 ${escapeHtml(prediction.confidence)} / 100（非命中率）</div>
     `;
 }
 
@@ -3916,9 +3817,10 @@ async function refreshDashboard() {
             renderDrawTable([]);
             return;
         }
-        // Only new observed results may train the real-time model.
-        if (live) reviewNewOutcome(networkDraws);
-        const prediction = live ? getLearnedPrediction(draws) : null;
+        // Settle only an actually frozen previous forecast; repeated refresh
+        // cannot create a fake live success after the result is already known.
+        if (hasNetwork) reviewNewOutcome(networkDraws);
+        const prediction = live ? getFrozenLivePrediction(draws) : null;
         updateLatestCard(latest);
         updatePredictionCard(prediction);
         // V23: descriptive historical statistics are valid without a live feed.

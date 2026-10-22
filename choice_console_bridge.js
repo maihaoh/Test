@@ -1,4 +1,4 @@
-/* V31 local Choice D51 bridge. Paste this code into the Chrome DevTools Console
+/* V34 local Choice D51 bridge. Paste this code into the Chrome DevTools Console
  * on the already-authorized official Choice D51 game page. This script reads
  * received application messages ONLY and relays decoded B/P/T results via
  * postMessage to the user's own dashboard; it does not access credentials,
@@ -7,9 +7,9 @@
  */
 (() => {
   'use strict';
-  const TARGET_URL = '__V31_DASHBOARD_URL__';
-  const TARGET_ORIGIN = '__V31_DASHBOARD_ORIGIN__';
-  const TAG = 'choice-d51-browser-bridge-v31';
+  const TARGET_URL = '__V34_DASHBOARD_URL__';
+  const TARGET_ORIGIN = '__V34_DASHBOARD_ORIGIN__';
+  const TAG = 'choice-d51-browser-bridge-v34';
   const RESULT_PACKET = 135176; // Source-derived BAC_FULL_RESULT_LIST
   const LIMIT = 4 * 1024 * 1024;
   const utf8 = new TextDecoder('utf-8', {fatal: true});
@@ -22,20 +22,21 @@
     console.warn('[Choice D51] 当前 Console 不支持 queryObjects(WebSocket)。请使用 Chrome DevTools Console。');
     return;
   }
-  if (window.__CHOICE_D51_BRIDGE_V31__) window.__CHOICE_D51_BRIDGE_V31__.stop();
+  if (window.__CHOICE_D51_BRIDGE_V34__) window.__CHOICE_D51_BRIDGE_V34__.stop();
 
   let running = true;
   let board = null;
   let openerAcknowledged = false;
   let watched = new Map();
   let lastDigest = '';
+  let lastSnapshot = null;
   let accepted = 0;
   let frames = 0;
   let malformed = 0;
 
   function openBoard() {
     try {
-      if (!board || board.closed) board = window.open(TARGET_URL, 'choice-d51-board-v31');
+      if (!board || board.closed) board = window.open(TARGET_URL, 'choice-d51-board-v34');
     } catch (_) { board = null; }
   }
   function publish(type, extra = {}) {
@@ -125,6 +126,7 @@
     const signature = frame.join('');
     if (signature !== lastDigest) {
       lastDigest = signature;
+      lastSnapshot = frame.slice();
       accepted++;
       publish('snapshot', {results: frame, count: frame.length});
       console.log(`[Choice D51] 已解析第 ${accepted} 份 D51 历史快照，记录 ${frame.length} 条；仅同步庄/闲/和。`);
@@ -192,21 +194,27 @@
     if (event.origin === TARGET_ORIGIN && event.data?.tag === TAG && event.data?.type === 'ack') {
       openerAcknowledged = true;
       console.log('[Choice D51] 已确认网站标签页可接收 D51 结果。');
+      if (lastSnapshot) publish('snapshot', {results:lastSnapshot, count:lastSnapshot.length});
     }
   }
   window.addEventListener('message', onDashboardAck);
   attach();
+  // The existing dashboard tab is preferred; try opening it immediately if no opener exists.
+  // A timed popup is more likely to be blocked by the browser.
+  if (!window.opener) openBoard();
   publish('hello');
   const boardTimer = setTimeout(() => {
     if (!running || openerAcknowledged) return;
     openBoard();
+    publish('hello');
     publish('heartbeat', {connections: watched.size, receivedFrames: frames, decodedSnapshots: accepted, skippedFrames: malformed});
   }, 1000);
   const timer = setInterval(() => {
     attach();
+    if (!openerAcknowledged) publish('hello');
     publish('heartbeat', {connections: watched.size, receivedFrames: frames, decodedSnapshots: accepted, skippedFrames: malformed});
   }, 5000);
-  window.__CHOICE_D51_BRIDGE_V31__ = {
+  window.__CHOICE_D51_BRIDGE_V34__ = {
     stop() {
       running = false;
       clearInterval(timer);
@@ -218,9 +226,9 @@
       watched.clear();
       console.log('[Choice D51] 本地桥接已停止。');
     },
-    status() { return {listeningSockets: watched.size, receivedFrames: frames, decodedSnapshots: accepted, skippedFrames: malformed}; }
+    status() { return {listeningSockets: watched.size, receivedFrames: frames, decodedSnapshots: accepted, skippedFrames: malformed, dashboardAcknowledged:openerAcknowledged, dashboardWindowOpened:!!(board && !board.closed), openerAvailable:!!window.opener}; }
   };
   publish('heartbeat', {connections: watched.size, receivedFrames: frames, decodedSnapshots: accepted, skippedFrames: malformed});
-  console.log('[Choice D51] V31 桥接运行中。请保持游戏页面和网站页面打开，等待下一局开奖记录。');
-  if (!window.opener) console.warn('[Choice D51] 网站窗口可能被浏览器阻止；请允许打开网站窗口，或从网站打开 D51 后重试。');
+  console.log('[Choice D51] V34 桥接运行中。请保持游戏页面和网站页面打开，等待下一局开奖记录。');
+  if (!window.opener && (!board || board.closed)) console.warn('[Choice D51] 无法打开网站窗口。请允许弹窗，或从网站的「打开 Choice 官方页」进入 D51 后再次执行。');
 })();

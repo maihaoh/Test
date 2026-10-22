@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Lottery + 百家乐 Dashboard</title>
 <script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=32" rel="stylesheet"/>
+<link href="style.css?v=35" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">UI V33</span>
+                Lottery 与 百家乐分区 · <span id="build-version">UI V35</span>
 </div>
 </div>
 <div class="header-info">
@@ -359,7 +359,7 @@
     ====================================================== -->
 <section class="main-section" id="baccarat-section">
   <section class="section-card bc-focus" id="bc-predict-lab" aria-labelledby="bc-predict-title">
-    <div class="bc-focus-head"><h2 id="bc-predict-title">下一局预测</h2><span id="bc-predict-target">第 1 局参考</span></div>
+    <div class="bc-focus-head"><h2 id="bc-predict-title">下一局路型参考</h2><span id="bc-predict-target">第 1 局参考</span></div>
     <div class="bc-focus-body" aria-live="polite" aria-atomic="true">
       <div class="bc-call is-wait" id="bc-predict-main">观察</div>
       <div class="bc-call-details"><strong id="bc-predict-strategy">等待录入</strong><p id="bc-predict-reason">先记录已开出的结果。</p></div>
@@ -378,7 +378,7 @@
       <input type="file" id="bc-manual-import" accept=".json,application/json" onchange="choiceManualImport(event)" hidden/>
     </div>
     <p class="bc-state-message" id="bc-manual-message" role="status"></p>
-    <p class="bc-limit">模式参考，未验证预测优势。不自动下注，不保证命中。</p>
+    <p class="bc-limit">路单只描述历史；长龙、单双跳不是下一局胜率保证。记录每局前已形成的参考，不自动下注。</p>
   </section>
   <section class="section-card bc-road-panel">
     <div class="bc-focus-head"><h2>历史路单</h2><span>红庄 / 蓝闲 / 绿和</span></div>
@@ -396,20 +396,27 @@
     <p class="bc-limit">只展示录入前已保存的预测；旧记录没有预测时留空，不事后补算。</p>
   </section>
 </section>
-<!-- V33: Choice D51 read-only auto collector on Render; no local DevTools -->
+<!-- V34: Choice D51 local Console auto-save bridge with Render fallback -->
 <section class="main-section choice-live-section" id="choice-section" aria-labelledby="choice-room-heading">
   <section class="section-card choice-room-card">
     <div class="choice-room-head">
       <div><div class="choice-room-eyebrow">CHOICE BACCARAT · READ-ONLY</div>
       <h2 id="choice-room-heading">房间 1 <small>D51</small></h2>
-      <p class="choice-room-description">Render 自动复用已有登录状态，尝试打开官方 Choice 并读取 D51 的真实开奖结果；不自动下注。</p></div>
+      <p class="choice-room-description">D51 页面 Console 运行一次后，读取已验证的开奖结果并自动保存到本机浏览器；保留 Render 作为后备。不自动下注。</p></div>
       <button type="button" id="choice-room-refresh" onclick="refreshChoiceRoom()">↻ 检查开奖</button>
     </div>
-    <div class="choice-bridge-panel" aria-label="Choice D51 Render 自动连接">
-      <div class="choice-bridge-title">🔌 Render 自动连接 · Choice D51（V33）</div>
-      <p>无需打开官方游戏、粘贴 Console 或保持自己的电脑在线。服务器使用原有 MZPlay 授权请求官方 Choice 入口；能否连接成功仍取决于游戏方是否允许服务器访问。</p>
-      <p id="choice-room-bridge-detail" class="choice-bridge-info" aria-live="polite">正在检查 Render 的 Choice 自动连接…</p>
-      <p class="choice-bridge-hint"><a href="https://test-4bvi.onrender.com/api/choice-status" target="_blank" rel="noopener noreferrer">查看安全连接诊断 ↗</a> · 如遇到授权失败或 Cloudflare 拦截，网站不会显示模拟开奖记录。</p>
+    <div class="choice-bridge-panel" aria-label="Choice D51 Console 自动保存">
+      <div class="choice-bridge-title">🔌 Choice D51 · Console 一次连接，抓到就自动保存（V34）</div>
+      <p>① 在此点击「复制 Console 代码」；② 打开你已登录的官方 D51 房间，按 F12 → Console → Ctrl+V → Enter；③ 有效开奖结果会自动保存到<strong>当前浏览器的网站储存</strong>，并更新路单。</p>
+      <div class="choice-bridge-actions">
+        <button type="button" onclick="copyChoiceBridgeCode()" id="choice-room-copy">① 复制 Console 代码</button>
+        <button type="button" onclick="openChoiceOfficial()" id="choice-room-open">② 打开 Choice 官方页 ↗</button>
+        <button type="button" onclick="exportChoiceLocalHistory()" id="choice-room-export">导出已保存历史</button>
+      </div>
+      <p id="choice-room-copy-status" class="choice-bridge-hint" aria-live="polite">从 D51 游戏窗口执行代码后即可自动保存；不读取、不发送 Token。</p>
+      <p id="choice-room-last-saved" class="choice-bridge-hint">尚未保存有效 D51 开奖历史</p>
+      <p id="choice-room-bridge-detail" class="choice-bridge-info" aria-live="polite">等待本机游戏连接…</p>
+      <p class="choice-bridge-hint">只在游戏和你的网站保持打开时同步；清除浏览器网站数据会删除本地历史。<a href="https://test-4bvi.onrender.com/api/choice-status" target="_blank" rel="noopener noreferrer">Render 后台诊断 ↗</a></p>
     </div>
     <p class="data-status is-offline" id="choice-room-status" role="status" aria-live="polite">等待 Choice 房间数据…</p>
     <div class="choice-room-source-line">当前数据来源：<strong id="choice-room-source">等待数据源</strong></div>
@@ -443,7 +450,7 @@
 </div>
 <div class="prediction-matrix" id="k3-prediction-grid"></div>
 <div class="multi-note">预测依据：近期加权频率 + 状态转移。仅用于历史统计分析，随机开奖无法保证预测准确。</div>
-<div class="multi-columns"><div><div class="multi-block-title">🤖 最近复盘</div><div class="multi-review" id="k3-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="k3-history"></div></div></div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 事前预测复盘</div><div class="multi-review" id="k3-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="k3-history"></div></div></div>
 </div>
 </section>
 <section class="main-section multi-game-section" id="5d-section">
@@ -456,7 +463,7 @@
 </div>
 <div class="prediction-matrix prediction-matrix-5d" id="5d-prediction-grid"></div>
 <div class="multi-note">每一位独立使用近期加权频率与状态转移计算。</div>
-<div class="multi-columns"><div><div class="multi-block-title">🤖 最近复盘</div><div class="multi-review" id="5d-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="5d-history"></div></div></div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 事前预测复盘</div><div class="multi-review" id="5d-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="5d-history"></div></div></div>
 </div>
 </section>
 <section class="main-section multi-game-section" id="trx-section">
@@ -469,18 +476,19 @@
 </div>
 <div class="prediction-matrix" id="trx-prediction-grid"></div>
 <div class="multi-note">号码、大小、颜色同时给出统计预测。</div>
-<div class="multi-columns"><div><div class="multi-block-title">🤖 最近复盘</div><div class="multi-review" id="trx-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="trx-history"></div></div></div>
+<div class="multi-columns"><div><div class="multi-block-title">🤖 事前预测复盘</div><div class="multi-review" id="trx-review"></div></div><div><div class="multi-block-title">📜 开奖 / 预测对照</div><div class="multi-history" id="trx-history"></div></div></div>
 </div>
 </section>
 </div>
-<script src="script.js?v=30"></script>
+<script src="wingo_consistency.js?v=35"></script>
+<script src="script.js?v=35"></script>
 <script src="baccarat_analysis.js?v=29"></script>
 <script src="baccarat_engine.js?v=29"></script>
 <script src="baccarat_roads.js?v=29"></script>
-<script src="baccarat_predictor.js?v=29"></script>
+<script src="baccarat_predictor.js?v=35"></script>
 <script src="choice_manual.js?v=29"></script>
-<script src="choice_live.js?v=32"></script>
-<script src="multi_games.js?v=29"></script>
+<script src="choice_live.js?v=34"></script>
+<script src="multi_games.js?v=35"></script>
 </body>
 </html>
 

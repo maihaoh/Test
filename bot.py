@@ -269,15 +269,15 @@ def normalize_wingo_colour(number, api_colour=""):
 def predict_wingo_next(draws):
     if not draws or len(draws) < 10:
         return {
-            "num": 5,
-            "size": "大",
+            "num": None,
+            "size": "PASS",
             "signal": "观望",
-            "confidence": "低",
+            "confidence": "历史数据不足",
             "big_score": 0,
             "small_score": 0,
             "difference": 0,
-            "markov_num": 5,
-            "markov_size": "大",
+            "markov_num": None,
+            "markov_size": "等待",
             "mean_size": "平",
             "streak": 0,
             "special": False
@@ -301,15 +301,15 @@ def predict_wingo_next(draws):
 
     if len(nums) < 10:
         return {
-            "num": 5,
-            "size": "大",
+            "num": None,
+            "size": "PASS",
             "signal": "观望",
-            "confidence": "低",
+            "confidence": "历史数据不足",
             "big_score": 0,
             "small_score": 0,
             "difference": 0,
-            "markov_num": 5,
-            "markov_size": "大",
+            "markov_num": None,
+            "markov_size": "等待",
             "mean_size": "平",
             "streak": 0,
             "special": False
@@ -435,7 +435,7 @@ def predict_wingo_next(draws):
     # --------------------------------------------------------
 
     signal = "观望"
-    confidence = "普通"
+    confidence = "模型信号一般"
 
     if difference < 0.8:
         signal = "观望"
@@ -449,17 +449,17 @@ def predict_wingo_next(draws):
         signal = "BUY"
 
         if big_score >= 2.5:
-            confidence = "高确信"
+            confidence = "模型信号较强（非命中率）"
         else:
-            confidence = "普通"
+            confidence = "模型信号一般"
 
     else:
         signal = "SELL"
 
         if small_score >= 2.5:
-            confidence = "高确信"
+            confidence = "模型信号较强（非命中率）"
         else:
-            confidence = "普通"
+            confidence = "模型信号一般"
 
     # --------------------------------------------------------
     # 目标数字
@@ -1155,37 +1155,59 @@ def wingo_loop():
 # ============================================================
 
 def predict_baccarat_next(history):
+    """Historical Baccarat roadmap descriptor, newest history first.
 
-    if not history:
-        return "庄"
-
-    recent = history[:10]
-
-    banker_cnt = sum(
-        1
-        for item in recent
-        if item.get("result") == "庄"
-    )
-
-    player_cnt = sum(
-        1
-        for item in recent
-        if item.get("result") == "闲"
-    )
-
-    if banker_cnt >= 6:
-        return "闲"
-
-    if player_cnt >= 6:
-        return "庄"
-
-    if banker_cnt > player_cnt:
-        return "闲"
-
-    if player_cnt > banker_cnt:
-        return "庄"
-
-    return "庄"
+    Mirrors V35 browser road rules. A path or streak is not evidence of
+    better-than-chance prediction; unclear roads return 观察 instead of a
+    forced Banker/Player call. Ties count as hands but don't break the road.
+    """
+    if not isinstance(history, list):
+        return "观察"
+    labels = {"庄": "B", "闲": "P", "和": "T", "B": "B", "P": "P", "T": "T"}
+    codes = [labels.get(row.get("result")) for row in reversed(history)
+             if isinstance(row, dict)]
+    decisive = [code for code in codes if code in {"B", "P"}]
+    if not decisive:
+        return "观察"
+    runs = []
+    for code in decisive:
+        if runs and runs[-1][0] == code:
+            runs[-1][1] += 1
+        else:
+            runs.append([code, 1])
+    last_code, last_len = runs[-1]
+    def translated(code):
+        return "庄" if code == "B" else "闲"
+    def opposite(code):
+        return "P" if code == "B" else "B"
+    if last_len == 1 and len(runs) > 1 and runs[-2][1] >= 4:
+        return "观察"
+    if last_len >= 4:
+        return translated(last_code)
+    completed = runs[:-1]
+    prior_singles = 0
+    for _, length in reversed(completed):
+        if length != 1: break
+        prior_singles += 1
+    if last_len == 2 and prior_singles >= 4:
+        return "观察"
+    alternating = 1
+    for i in range(len(decisive)-1, 0, -1):
+        if decisive[i] == decisive[i-1]: break
+        alternating += 1
+    if alternating >= 5:
+        return translated(opposite(last_code))
+    prior_pairs = 0
+    for _, length in reversed(completed):
+        if length != 2: break
+        prior_pairs += 1
+    if last_len >= 3 and prior_pairs >= 2:
+        return "观察"
+    if last_len == 1 and prior_pairs >= 3:
+        return translated(last_code)
+    if last_len == 2 and prior_pairs >= 2:
+        return translated(opposite(last_code))
+    return "观察"
 
 
 # ============================================================

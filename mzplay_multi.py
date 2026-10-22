@@ -24,7 +24,7 @@ NETWORK_RETRY_SECONDS = 45
 TRANSIENT_HTTP_STATUS = {500, 502, 503, 504, 520, 521, 522, 523, 524}
 AUTH_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mzplay_auth_state.json")
 MYT = timezone(timedelta(hours=8))
-BUILD_VERSION = "v29-browser-path-auth-header"
+BUILD_VERSION = "v35-consistent-results"
 
 GAME_DEFS = {
     "k3": {
@@ -164,7 +164,9 @@ def normalize_k3(items):
         dice = [int(ch) for ch in premium[:3]]
         if any(n < 1 or n > 6 for n in dice):
             continue
-        total = int(item.get("sumCount") or sum(dice))
+        # A three-dice draw has exactly one true sum. Never trust a stale or
+        # unrelated upstream sumCount over the parsed dice.
+        total = sum(dice)
         out.append({
             "issueNumber": issue,
             "dice": dice,
@@ -187,7 +189,9 @@ def normalize_5d(items):
         if not issue or len(premium) < 5 or not premium[:5].isdigit():
             continue
         digits = [int(ch) for ch in premium[:5]]
-        total = int(item.get("sumCount") or sum(digits))
+        # Derive the 5D sum from the five actual digits, not a conflicting
+        # optional response attribute.
+        total = sum(digits)
         out.append({
             "issueNumber": issue,
             "digits": digits,
@@ -238,24 +242,19 @@ def predict_k3(draws):
         pred, conf = combine_pick(values, list(range(1, 7)))
         dice_prediction.append(int(pred))
         dice_conf.append(conf)
-    sizes = [d["size"] for d in draws]
-    oe = [d["oddEven"] for d in draws]
-    ranges = [d["sumRange"] for d in draws]
-    size_pred, size_conf = combine_pick(sizes, ["小", "大"])
-    oe_pred, oe_conf = combine_pick(oe, ["单", "双"])
-    range_pred, range_conf = combine_pick(ranges, ["3-7", "8-13", "14-18"])
-    sums = [d["sum"] for d in draws[:60]]
-    weighted_sum = round(sum(v * (len(sums) - i) for i, v in enumerate(sums)) / max(1, sum(len(sums) - i for i in range(len(sums))))) if sums else sum(dice_prediction)
-    weighted_sum = max(3, min(18, weighted_sum))
+    # Every displayed property MUST describe the same proposed dice.
+    # Mixing separately chosen size / odd-even / range created impossible cards.
+    total = sum(dice_prediction)
     return {
         "dice": dice_prediction,
-        "sum": weighted_sum,
-        "size": size_pred,
-        "oddEven": oe_pred,
-        "sumRange": range_pred,
-        "confidence": round(sum(dice_conf + [size_conf, oe_conf, range_conf]) / 6),
-        "detailConfidence": {"dice": dice_conf, "size": size_conf, "oddEven": oe_conf, "sumRange": range_conf},
-        "method": "近期加权频率 + 状态转移",
+        "sum": total,
+        "size": k3_size(total),
+        "oddEven": odd_even(total),
+        "sumRange": k3_sum_range(total),
+        "confidence": round(sum(dice_conf) / len(dice_conf)),
+        "detailConfidence": {"dice": dice_conf},
+        "scoreMeaning": "历史模型集中度，不代表下一期命中概率",
+        "method": "三颗骰子分别选候选值；和值、大小、单双、区间由相同三颗骰子推导",
     }
 
 
@@ -277,7 +276,8 @@ def predict_5d(draws):
         "sum": sum(digits),
         "confidence": round(sum(digit_conf) / len(digit_conf)),
         "detailConfidence": digit_conf,
-        "method": "每位近期加权频率 + 状态转移",
+        "scoreMeaning": "历史模型集中度，不代表下一期命中概率",
+        "method": "五位候选值分别计算；其大小、单双与和值均由候选数字推导",
     }
 
 
@@ -286,18 +286,49 @@ def predict_trx(draws):
         return {}
     numbers = [d["number"] for d in draws]
     number, nconf = combine_pick(numbers, list(range(10)))
-    sizes = [d["size"] for d in draws]
-    size, sconf = combine_pick(sizes, ["小", "大"])
-    colours = [d["colour"] for d in draws]
-    colour, cconf = combine_pick(colours, ["红", "绿", "红+紫", "绿+紫"])
     return {
         "number": int(number),
-        "size": size,
-        "colour": colour,
-        "confidence": round((nconf + sconf + cconf) / 3),
-        "detailConfidence": {"number": nconf, "size": sconf, "colour": cconf},
-        "method": "近期加权频率 + 状态转移",
+        "size": size_0_9(number),
+        "colour": trx_colour(number),
+        "confidence": nconf,
+        "detailConfidence": {"number": nconf},
+        "scoreMeaning": "历史模型集中度，不代表下一期命中概率",
+        "method": "选取单个号码，再根据该号码一致推导大小与颜色",
     }
+
+
+def walk_forward_validation(game, draws, *, max_rounds=25, min_train=20):
+    """Descriptive historical holdout. Each round uses ONLY older draws.
+
+    Returns counts, never a made-up probability that the next draw is right.
+    Draws must be newest first. No future/result information enters forecasts.
+    """
+    if len(draws) < min_train + 1:
+        return {"evaluated": 0, "label": "历史数据不足，无法回测"}
+    limit = min(max_rounds, len(draws) - min_train)
+    totals = {"evaluated": 0, "primaryHits": 0, "exactHits": 0,
+              "primaryLabel": "大小" if game != "5d" else "单个位数字",
+              "exactLabel": "三个骰子全中" if game == "k3" else "五位全中" if game == "5d" else "号码全中"}
+    for idx in range(limit - 1, -1, -1):
+        older = draws[idx + 1:]
+        if len(older) < min_train:
+            continue
+        outcome = draws[idx]
+        guess = predict_k3(older) if game == "k3" else predict_5d(older) if game == "5d" else predict_trx(older)
+        totals["evaluated"] += 1
+        if game == "k3":
+            totals["primaryHits"] += int(guess["size"] == outcome["size"])
+            totals["exactHits"] += int(guess["dice"] == outcome["dice"])
+        elif game == "5d":
+            totals["primaryHits"] += sum(a == b for a, b in zip(guess["digits"], outcome["digits"]))
+            totals["exactHits"] += int(guess["digits"] == outcome["digits"])
+        else:
+            totals["primaryHits"] += int(guess["size"] == outcome["size"])
+            totals["exactHits"] += int(guess["number"] == outcome["number"])
+    totals["primaryTrials"] = totals["evaluated"] * (5 if game == "5d" else 1)
+    totals["kind"] = "walk_forward_prefix_only"
+    totals["note"] = "严格使用每期之前的历史回测；不代表未来正确率"
+    return totals
 
 
 def review_prediction(game, prediction, draw):
@@ -1789,9 +1820,12 @@ class MultiGameCollector:
 
         previous_prediction = state.get("prediction") or {}
         target = str(previous_prediction.get("issueNumber") or "")
-        if target:
+        # Review only a forecast frozen before the target result existed.
+        # Legacy predictions without a recorded input issue are not provable.
+        if target and previous_prediction.get("generatedFromLatestIssue"):
             actual = next((d for d in draws if d.get("issueNumber") == target), None)
-            if actual and not any(r.get("issueNumber") == target for r in state.get("reviews", [])):
+            if (actual and str(actual.get("issueNumber")) > str(previous_prediction["generatedFromLatestIssue"])
+                    and not any(r.get("issueNumber") == target for r in state.get("reviews", []))):
                 review = review_prediction(game, previous_prediction, actual)
                 if review:
                     state.setdefault("reviews", []).insert(0, review)
@@ -1813,9 +1847,22 @@ class MultiGameCollector:
         # The very first successful fetch establishes a baseline; only a
         # subsequent changed issue proves that a NEW result was observed.
         new_result = bool(latest_id) and bool(previous_latest_id) and latest_id != previous_latest_id
-        prediction = self._predict(game, draws)
-        prediction["issueNumber"] = current_issue.get("issueNumber") or ""
-        prediction["generatedAt"] = int(time.time())
+        next_issue = str(current_issue.get("issueNumber") or "")
+        # Freeze a next-issue forecast while its target stays unchanged. A
+        # prediction must never be generated AFTER its target already appears
+        # in the outcomes and then described as a real pre-result prediction.
+        target_exists = next_issue and any(d["issueNumber"] == next_issue for d in draws)
+        if target_exists or not next_issue or (latest_id and next_issue <= latest_id):
+            prediction = {}
+        elif (str(previous_prediction.get("issueNumber") or "") == next_issue
+                and previous_prediction.get("generatedFromLatestIssue")):
+            prediction = previous_prediction
+        else:
+            prediction = self._predict(game, draws)
+            prediction["issueNumber"] = next_issue
+            prediction["generatedAt"] = int(time.time())
+            prediction["generatedFromLatestIssue"] = latest_id
+            prediction["validation"] = walk_forward_validation(game, draws)
         successful_at = int(time.time())
         state.update({
             "typeId": definition["type_id"],

@@ -157,6 +157,41 @@
             ]
         };
     }
+    // Refuse to publish logically contradictory predictions even if a stale
+    // backend version is still responding during deployment.
+    function coherentForecast(game, pred) {
+        if (!pred || typeof pred !== 'object') return false;
+        if (game === 'k3') {
+            const dice = pred.dice;
+            if (!Array.isArray(dice) || dice.length !== 3 ||
+                !dice.every(x => Number.isInteger(x) && x >= 1 && x <= 6)) return false;
+            const sum = dice.reduce((a,b)=>a+b,0);
+            return pred.sum === sum && pred.size === (sum<=10?'小':'大') &&
+                pred.oddEven === (sum%2?'单':'双') &&
+                pred.sumRange === (sum<=7?'3-7':sum<=13?'8-13':'14-18');
+        }
+        if (game === '5d') {
+            const ds=pred.digits;
+            if (!Array.isArray(ds) || ds.length!==5 ||
+                !ds.every(x=>Number.isInteger(x)&&x>=0&&x<=9)) return false;
+            return pred.sum === ds.reduce((a,b)=>a+b,0) &&
+                Array.isArray(pred.sizeByPosition) && pred.sizeByPosition.length===5 &&
+                Array.isArray(pred.oddEvenByPosition) && pred.oddEvenByPosition.length===5 &&
+                ds.every((v,i)=>pred.sizeByPosition[i]===(v<=4?'小':'大') &&
+                    pred.oddEvenByPosition[i]===(v%2?'单':'双'));
+        }
+        const num=pred.number;
+        if (!Number.isInteger(num)||num<0||num>9) return false;
+        const color=num===0?'红+紫':num===5?'绿+紫':num%2===0?'红':'绿';
+        return pred.size===(num<=4?'小':'大') && pred.colour===color;
+    }
+    function historicalValidationText(game, pred) {
+        const v = pred.validation;
+        if (!v || !Number.isInteger(v.evaluated) || v.evaluated<=0) return '暂无足够逐期历史回测';
+        if (game==='5d')
+            return `历史逐期回测 ${v.evaluated} 期：各位数字 ${v.primaryHits}/${v.primaryTrials}，五位全中 ${v.exactHits}/${v.evaluated}；不代表下期胜率`;
+        return `历史逐期回测 ${v.evaluated} 期：大小 ${v.primaryHits}/${v.evaluated}，${game==='k3'?'三颗骰子':'号码'}全中 ${v.exactHits}/${v.evaluated}；不代表下期胜率`;
+    }
     function drawDetails(game, draw) {
         if (game === 'k3') return `和值 ${draw.sum ?? '--'} / ${draw.size || '--'} / ${draw.oddEven || '--'}`;
         if (game === '5d') return `和值 ${draw.sum ?? '--'}`;
@@ -286,15 +321,13 @@
         const pred = state.prediction && typeof state.prediction === 'object' ? state.prediction : {};
         const issue = String(state.current_issue?.issueNumber || '');
         const validTarget = !!issue && String(pred.issueNumber || '') === issue;
-        const hasPred = game === 'k3' ? Array.isArray(pred.dice) && pred.dice.length === 3
-            : game === '5d' ? Array.isArray(pred.digits) && pred.digits.length === 5
-                : pred.number !== undefined && pred.number !== null;
+        const hasPred = coherentForecast(game, pred);
         const canShow = fresh && validTarget && hasPred;
         const matrix = el(game + '-prediction-grid');
         if (canShow) {
             const details = predictionInfo(game, pred);
             html(game + '-prediction', resultLine(game, pred, '预测'));
-            write(game + '-confidence', `${details.sub} | 历史模型分数 ${pred.confidence ?? '--'}（非命中率）`);
+            write(game + '-confidence', `${details.sub} | 模式评分 ${pred.confidence ?? '--'}/100（非命中率） | ${historicalValidationText(game,pred)}`);
             write(game + '-target', issue);
             if (matrix) {
                 matrix.replaceChildren();
@@ -304,8 +337,10 @@
                 matrix.appendChild(note);
             }
         } else {
-            html(game + '-prediction', line('预测', [chip(fresh ? '等待下期模型数据' : '过期数据暂停预测', 'status')]));
-            write(game + '-confidence', fresh ? '模型目标期号尚未匹配' : '请先恢复实时开奖，不能用旧预测当作下一期结果');
+            html(game + '-prediction', line('预测', [chip(fresh ? '等待下期有效模型数据' : '过期数据暂停预测', 'status')]));
+            write(game + '-confidence', !fresh ? '请先恢复实时开奖，不能用旧预测当作下一期结果'
+                : validTarget && !hasPred ? '预测号码与大小/颜色/和值不一致，已禁止显示；等待后端更新 V35'
+                : '模型目标期号尚未匹配');
             write(game + '-target', '--');
             empty(matrix, '只有后台最新期号及模型数据都有效时才显示参考。');
         }
