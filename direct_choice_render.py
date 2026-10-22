@@ -347,37 +347,44 @@ class DirectChoiceCollector:
 
 
 def main() -> None:
-    manual_only = str(os.getenv("CHOICE_MANUAL_ONLY", "1")).strip().lower() not in {"0", "false", "off"}
     print("=" * 67, flush=True)
-    if manual_only:
-        print("Render WinGo + 手动百家乐 + K3/5D/TRX", flush=True)
-        print("百家乐由浏览器手动输入；不需要 Choice WebSocket", flush=True)
-    else:
-        print("Render WinGo + legacy direct Choice protocol observer", flush=True)
-        print("No guessed 77826 login payload / no Cloudflare bypass", flush=True)
-        print(f"Choice observe-only attempts: {MAX_UNACKED_ATTEMPTS}; timeout: {ACK_TIMEOUT_SECONDS}s", flush=True)
+    print("Render WinGo + K3/5D/TRX + Choice D51 自动只读 + 手动百家乐", flush=True)
+    print("Choice 使用官方授权入口；不发送投注指令", flush=True)
     print("=" * 67, flush=True)
 
     bot.initialize_data()
     threading.Thread(target=bot.wingo_loop, name="wingo", daemon=True).start()
+
+    # Reuse ONE locked MZPlay client for K3/5D/TRX and signed Choice launch.
+    # This avoids competing RefreshToken and Login attempts in the same worker.
+    from mzplay_multi import MZPlayClient, load_config
+    shared_client = MZPlayClient(load_config())
 
     # Independently fetch K3/5D/TRX via their authorized official web APIs.
     # Uses a separate file so /api/ingest from GitHub and bot.py cannot stomp
     # each other's results. No credentials are exposed to the frontend.
     if str(os.getenv("MULTI_GAMES_ENABLED", "1")).strip().lower() not in {"0", "false", "off"}:
         from multi_runtime import run as run_multi
-        threading.Thread(target=run_multi, name="k3-5d-trx", daemon=True).start()
+        threading.Thread(target=run_multi, args=(shared_client,), name="k3-5d-trx", daemon=True).start()
 
-    # WinGo remains active in both modes. Only the Choice observer is skipped.
-    if manual_only:
-        STATUS_PATH.write_text(json.dumps({
-            "status": "manual_only",
-            "note": "Choice is entered manually in the browser; WinGo collector stays active"
-        }, ensure_ascii=False), encoding="utf-8")
-        print("[Choice] Manual input enabled; skipping unauthorized Choice WebSocket. WinGo continues.", flush=True)
-        threading.Event().wait()
+    # V32: official signed Choice launch, separate from manual baccarat.
+    # Existing CHOICE_MANUAL_ONLY=1 does not disable the new D51 read-only feed.
+    # Explicit CHOICE_AUTO_ENABLED=0 opts out without affecting other games.
+    auto_enabled = str(os.getenv("CHOICE_AUTO_ENABLED", "1")).strip().lower() not in {"0", "false", "off", "no"}
+    if auto_enabled:
+        from choice_collector import ChoiceHeadlessCollector
+        from choice_runtime import ChoiceRuntime
+        runtime = ChoiceRuntime()
+        collector = ChoiceHeadlessCollector(shared_client, runtime.accept_snapshot, runtime.set_stage)
+        print("[Choice/D51] server auto observer enabled; signed official launch; no wagering", flush=True)
+        collector.run()
     else:
-        DirectChoiceCollector().run_forever()
+        STATUS_PATH.write_text(json.dumps({
+            "release": "V32", "stage": "stopped", "room": "D51",
+            "note": "Auto Choice disabled by CHOICE_AUTO_ENABLED=0; other games continue"
+        }, ensure_ascii=False), encoding="utf-8")
+        print("[Choice/D51] disabled by CHOICE_AUTO_ENABLED=0; WinGo/K3/5D/TRX continue", flush=True)
+        threading.Event().wait()
 
 
 if __name__ == "__main__":

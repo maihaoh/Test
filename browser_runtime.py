@@ -83,12 +83,12 @@ def public_status() -> dict:
     return {'status': status, 'checkedAt': raw.get('checkedAt') if isinstance(raw.get('checkedAt'), int) else None,
             'executableFound': raw.get('executableFound') is True,
             'launchVerified': raw.get('launchVerified') is True,
-            'release': 'V29', 'note': 'Browser ready does not mean account authorized.'}
+            'release': 'V32', 'note': 'Browser ready does not mean account authorized.'}
 
 
 def check_browser(write_report: bool = True) -> dict:
     configure_browser_path()
-    result = {'release': 'V29', 'status': 'check_failed', 'checkedAt': int(time.time()),
+    result = {'release': 'V32', 'status': 'check_failed', 'checkedAt': int(time.time()),
               'executableFound': False, 'launchVerified': False}
     try:
         from playwright.sync_api import sync_playwright

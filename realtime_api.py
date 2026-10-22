@@ -7,6 +7,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 from multi_snapshot import merge_snapshots
+from choice_runtime import merge_choice
 from browser_runtime import public_status
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,9 +43,18 @@ def read_data():
     try:
         with MULTI_RUNTIME_FILE.open("r", encoding="utf-8") as f:
             local = json.load(f)
+        data = merge_snapshots(data, local)
     except (OSError, ValueError):
-        return data
-    return merge_snapshots(data, local)
+        pass
+    # Choice lives in a separate atomic file. /api/ingest must never overwrite
+    # a new verified D51 result with an old GitHub relay snapshot.
+    try:
+        with (BASE_DIR / "choice_runtime.json").open("r", encoding="utf-8") as f:
+            choice = json.load(f)
+        data = merge_choice(data, choice)
+    except (OSError, ValueError):
+        pass
+    return data
 
 
 def _extract_secret():
@@ -191,7 +201,8 @@ def connection_status():
         "checkedAt": now,
         "multiGameSources": sources,
         "browserRuntime": public_status(),
-        "release": "V29",
+        "release": "V32",
+        "choiceRoom": _choice_status_payload(data),
         "anyNewIssueObservedRecently": any(item["observedRecently"] for item in sources.values()),
         "note": "The API responds; fresh timestamps are not proof of an authorized or continuous external game feed."
     })
@@ -228,19 +239,26 @@ def choice_diagnostic():
         return jsonify({"ok": False, "error": f"diagnostic read failed: {type(exc).__name__}"}), 500
 
 
-@app.get("/api/choice-status")
-def choice_status():
-    """Report safe high-level Choice transport status, without session data."""
+def _choice_status_payload(data=None):
+    """Never echo provider URLs, credentials or raw exception text to users."""
     status_path = BASE_DIR / "choice_status.json"
     try:
-        data = json.loads(status_path.read_text(encoding="utf-8"))
-        if not isinstance(data, dict):
-            raise ValueError("status is not an object")
-        return jsonify(data)
+        status = json.loads(status_path.read_text(encoding="utf-8"))
+        if not isinstance(status, dict):
+            return {"stage": "invalid_status"}
+        return {key: status.get(key) for key in (
+            "release", "mode", "room", "stage", "updatedAt", "snapshotCount",
+            "records", "lastSnapshotAt", "lastNewResultAt", "lastError", "note"
+        ) if key in status}
     except FileNotFoundError:
-        return jsonify({"status": "not_started", "note": "No Choice diagnostic status yet"}), 200
+        return {"release": "V32", "room": "D51", "stage": "not_started"}
     except (ValueError, OSError):
-        return jsonify({"status": "invalid_status"}), 500
+        return {"release": "V32", "room": "D51", "stage": "invalid_status"}
+
+
+@app.get("/api/choice-status")
+def choice_status():
+    return jsonify(_choice_status_payload())
 
 
 @app.post("/api/ingest")

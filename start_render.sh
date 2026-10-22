@@ -24,7 +24,7 @@ PY
   sleep 1
 done
 
-echo "[Render] starting direct Choice + WinGo collector..."
+echo "[Render] starting WinGo, K3/5D/TRX and Choice D51 read-only collector..."
 python -u direct_choice_render.py &
 COLLECTOR_PID=$!
 echo "[Render] collector PID: ${COLLECTOR_PID}"

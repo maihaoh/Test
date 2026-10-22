@@ -21,6 +21,10 @@ services:
         value: https://maihaoh.github.io
       - key: CHOICE_MANUAL_ONLY
         value: "1"
+      # V32: Choice is read-only and independent of the manual baccarat page.
+      # It reuses the shared MZPlay session and follows the official game launch.
+      - key: CHOICE_AUTO_ENABLED
+        value: "1"
       - key: MULTI_GAMES_ENABLED
         value: "1"
       - key: MULTI_POLL_SECONDS

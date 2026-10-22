@@ -2696,3 +2696,7 @@ tbody tr:hover {
 .choice-room-source-line{font-size:12px;color:#a6bad4;margin:7px 0 12px}
 .choice-room-source-line strong{color:#7dd3fc}
 @media(max-width:590px){.choice-bridge-actions{display:grid;grid-template-columns:1fr}.choice-bridge-actions button{width:100%}.choice-bridge-panel{padding:11px}}
+
+/* V32: accessible connection-status link inside Choice diagnostics */
+.choice-bridge-panel a{color:#7dd3fc;text-decoration:underline;text-underline-offset:2px}
+.choice-bridge-panel a:hover,.choice-bridge-panel a:focus-visible{color:#d0f1ff}

@@ -7,4 +7,4 @@ python -m pip install -r requirements-render.txt
 # No MZPlay credentials are submitted by this install/launch verification.
 python browser_runtime.py --install --check
 python -m compileall -q . -x '(^|/)(\.playwright-browsers|\.venv|public-site)/'
-echo '[Render/Build] V29 Chromium launch verified; account connection not tested.'
+echo '[Render/Build] V32 Chromium launch verified; account connection not tested.'

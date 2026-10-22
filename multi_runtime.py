@@ -27,9 +27,9 @@ def publish_multi(states):
     os.replace(tmp, MULTI_RUNTIME_FILE)
 
 
-def run():
+def run(client=None):
     interval = max(8, min(120, int(os.getenv("MULTI_POLL_SECONDS", "12"))))
     print(f"[Multi/Render] K3, 5D, TRX start (interval={interval}s, read-only)", flush=True)
-    client = MZPlayClient(load_config())
+    client = client if client is not None else MZPlayClient(load_config())
     collector = MultiGameCollector(publish_multi, poll_interval=interval, client=client)
     collector.run()
