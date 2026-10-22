@@ -18,6 +18,9 @@ STAGES = frozenset({
     'provider_access_blocked', 'choice_websocket_not_seen', 'd51_result_not_seen',
     'choice_websocket_stalled', 'playwright_unavailable',
     'authorized_launch_throttled_or_network_error', 'provider_authentication_failed',
+    'choice_game_not_loaded', 'choice_ws_handshake_failed', 'choice_websocket_seen',
+    'choice_ws_handshake_unconfirmed',
+    'choice_ws_endpoint_unrecognized', 'choice_game_ui_unavailable',
     'browser_runtime_failed', 'authorized_launch_failed', 'retry_wait', 'stopped',
 })
 
@@ -43,6 +46,7 @@ class ChoiceRuntime:
         self._records = 0
         self._last_snapshot_at = 0
         self._last_issue = ''
+        self._diagnostics = {}
         self._stage = 'starting'
         self._last_error = ''
         # If a previous worker wrote a snapshot on the same Render instance,
@@ -70,20 +74,49 @@ class ChoiceRuntime:
                 'invalid_authorized_launch_url', 'provider_authentication_failed',
                 'authorized_launch_throttled_or_network_error',
                 'authorized_launch_failed', 'playwright_unavailable',
+                'choice_game_not_loaded', 'choice_ws_handshake_failed',
+                'choice_ws_handshake_unconfirmed',
+                'choice_ws_endpoint_unrecognized', 'choice_game_ui_unavailable',
             }:
                 self._last_error = stage
             if stage == 'd51_snapshot_received':
                 self._last_error = ''
             self._write_status()
 
+    def update_diagnostics(self, values: dict) -> None:
+        # Deliberately fixed allowlist: never publish signed URLs, requests,
+        # page HTML, tokens, headers or WebSocket payloads.
+        permitted = {
+            'gamePageSeen', 'launchPageSeen', 'pageCount', 'frameCount',
+            'providerWebSockets', 'otherWebSockets', 'webSocketHandshakes',
+            'webSocketHandshakeFailures', 'webSocketFrames', 'gameHttpErrors',
+            'requestFailures', 'browserJsErrors', 'gameNavigationSelected',
+            'gameNavigationCandidates', 'workerCount', 'webSocketPorts',
+        }
+        clean = {}
+        for key, value in values.items():
+            if key not in permitted:
+                continue
+            if type(value) is bool:
+                clean[key] = value
+            elif type(value) is int and 0 <= value <= 1_000_000:
+                clean[key] = value
+            elif key == 'webSocketPorts' and isinstance(value, list):
+                clean[key] = sorted(set(v for v in value if type(v) is int
+                                        and v in {5000, 5030, 7101}))
+        with self._lock:
+            self._diagnostics = clean
+            self._write_status()
+
     def _write_status(self):
         _atomic_json(self.status_file, {
-            'release': 'V32', 'mode': 'server_official_choice_client_read_only',
+            'release': 'V33', 'mode': 'server_official_choice_client_read_only',
             'room': 'D51', 'stage': self._stage,
             'updatedAt': int(time.time()), 'snapshotCount': self._snapshot_count,
             'records': self._records, 'lastSnapshotAt': self._last_snapshot_at,
             'lastNewResultAt': self._last_new_at,
             'lastIssue': self._last_issue, 'lastError': self._last_error,
+            'diagnostics': self._diagnostics,
             'note': 'Signed Choice launch may require additional provider permission. Only D051 decoded results are accepted.',
         })
 
@@ -138,7 +171,7 @@ class ChoiceRuntime:
             self._records = len(rows)
             self._last_issue = f'road position {len(rows)} (not official round id)'
             _atomic_json(self.runtime_file, {
-                'release': 'V32', 'room': 'D51', 'source': 'official_choice_client_ws_D051',
+                'release': 'V33', 'room': 'D51', 'source': 'official_choice_client_ws_D051',
                 'rows': rows[::-1], 'signature': digest,
                 'lastSnapshotAt': now, 'lastNewResultAt': self._last_new_at,
                 'snapshotCount': self._snapshot_count,

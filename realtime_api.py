@@ -201,7 +201,7 @@ def connection_status():
         "checkedAt": now,
         "multiGameSources": sources,
         "browserRuntime": public_status(),
-        "release": "V32",
+        "release": "V33",
         "choiceRoom": _choice_status_payload(data),
         "anyNewIssueObservedRecently": any(item["observedRecently"] for item in sources.values()),
         "note": "The API responds; fresh timestamps are not proof of an authorized or continuous external game feed."
@@ -248,12 +248,12 @@ def _choice_status_payload(data=None):
             return {"stage": "invalid_status"}
         return {key: status.get(key) for key in (
             "release", "mode", "room", "stage", "updatedAt", "snapshotCount",
-            "records", "lastSnapshotAt", "lastNewResultAt", "lastError", "note"
+            "records", "lastSnapshotAt", "lastNewResultAt", "lastError", "note", "diagnostics"
         ) if key in status}
     except FileNotFoundError:
-        return {"release": "V32", "room": "D51", "stage": "not_started"}
+        return {"release": "V33", "room": "D51", "stage": "not_started"}
     except (ValueError, OSError):
-        return {"release": "V32", "room": "D51", "stage": "invalid_status"}
+        return {"release": "V33", "room": "D51", "stage": "invalid_status"}
 
 
 @app.get("/api/choice-status")

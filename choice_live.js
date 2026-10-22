@@ -1,4 +1,4 @@
-/* V32 Choice D51: Render-only, signed official launch collector.
+/* V33 Choice D51: Render-only, signed official launch collector.
  * No DevTools / local bridge, login tokens, betting commands or third-party
  * browser scripting. All data is fetched from the user's existing Render API.
  * Source timestamps distinguish historical snapshots from observed new rounds.
@@ -16,7 +16,9 @@
     requesting_authorized_choice_launch:'正在使用已有登录状态取得 Choice 官方入口',
     starting_official_choice_client:'正在打开官方 Choice 游戏客户端',
     choice_client_loaded:'Choice 页面已打开，正在等待 D51 数据',
-    choice_websocket_open:'已观察到 Choice WebSocket，等待 D51 开奖快照',
+    choice_websocket_seen:'检测到 WebSocket，尚未确认握手成功',
+    choice_websocket_open:'已确认 Choice WebSocket 握手，等待 D51 开奖快照',
+    choice_ws_handshake_unconfirmed:'检测到 WebSocket，但握手未被确认',
     d51_snapshot_received:'已取得并验证 D51 开奖快照',
     retry_wait:'连接暂不可用，服务器将按冷却时间重试',
     provider_authentication_failed:'MZPlay 当前授权不允许启动 Choice',
@@ -25,7 +27,11 @@
     authorized_launch_failed:'未能取得官方 Choice 入口',
     invalid_authorized_launch_url:'官方返回的 Choice 入口不符合预期',
     choice_navigation_failed:'无法打开 Choice 官方入口',
-    choice_websocket_not_seen:'打开 Choice 后尚未发现游戏连接',
+    choice_websocket_not_seen:'Choice 页面已加载，但仍未发现游戏连接（查看诊断）',
+    choice_game_not_loaded:'Choice 授权入口已取得，但游戏主界面没有加载成功',
+    choice_ws_handshake_failed:'游戏尝试连接 WebSocket，但握手失败',
+    choice_ws_endpoint_unrecognized:'游戏创建了未识别的 WebSocket，请检查游戏版本',
+    choice_game_ui_unavailable:'游戏界面未提供可识别的 D51 房间导航',
     d51_result_not_seen:'游戏连接存在，但尚未收到 D51 明文开奖数据',
     choice_websocket_stalled:'Choice 连接停止接收消息，正在重连',
     browser_runtime_failed:'Render 浏览器组件运行异常',
@@ -124,7 +130,7 @@
 
     const lastNewAt = Number(collector?.lastNewResultAt || 0) * 1000;
     const lastSnapshotAt = Number(collector?.lastSnapshotAt || 0) * 1000;
-    // V32 is authoritative on whether D51 appended an actual new result.
+    // V33 is authoritative on whether D51 appended an actual new result.
     // The dashboard seeing a replacement snapshot is not sufficient proof.
     const observedNew = lastNewAt > 0 && Date.now() - lastNewAt < FRESH_CHANGE_MS;
     const latestSnapshotFresh = lastSnapshotAt > 0 && Date.now() - lastSnapshotAt < FRESH_CHANGE_MS;
@@ -132,7 +138,9 @@
     const errorStage = String(choiceState?.lastError || stage);
     const reason = STAGES[stage] || 'Choice 状态等待确认';
     const lastError = STAGES[errorStage] || '';
-    txt('choice-room-bridge-detail', 'Render 自动采集：' + reason + (lastError && errorStage !== stage ? ' · 上次错误：' + lastError : ''));
+    const diag = choiceState?.diagnostics;
+    const extra = diag ? ` · 网页:${diag.gamePageSeen ? '游戏已打开' : '未确认'} · WS:${diag.providerWebSockets || 0} · 握手:${diag.webSocketHandshakes || 0} · 帧:${diag.webSocketFrames || 0}` : '';
+    txt('choice-room-bridge-detail', 'Render 自动采集：' + reason + (lastError && errorStage !== stage ? ' · 上次错误：' + lastError : '') + extra);
     txt('choice-room-source', collector?.mode === 'server_official_choice_client_read_only'
       ? 'Render 官方 Choice D51 游戏客户端' : rows.length ? '其他历史来源（未验证实时）' : '等待 Render');
 
@@ -185,7 +193,7 @@
     }
   }
   root.refreshChoiceRoom = refreshChoiceRoom;
-  root.ChoiceD51V32 = api;
+  root.ChoiceD51V33 = api;
   const start = () => {
     if (!el('choice-section')) return;
     paint();
