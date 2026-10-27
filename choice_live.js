@@ -167,6 +167,27 @@
         setStatus(renderError || '等待 D51 的真实开奖记录。', 'offline');
         txt('choice-room-source', '等待数据源');
     }
+    // Read-only verified D51 history for the V36 analysis panel. Do not
+    // expose credential storage or claim historical data is a live feed.
+    root.getChoiceD51History = () => {
+        const active = bridgeLastPingAt > 0 && Date.now() - bridgeLastPingAt < BRIDGE_HEARTBEAT_STALE_MS;
+        const rows = active && bridgeRowsLatest.length ? bridgeRowsLatest :
+            (renderRows.length ? renderRows : bridgeRowsLatest);
+        return {
+            codes: rows.map(x => x.code).reverse(),
+            source: active && bridgeRowsLatest.length ? 'Choice D51 当前本机结果' :
+                renderRows.length ? 'Choice D51 Render 历史（不代表实时）' :
+                'Choice D51 本机缓存（不代表实时）',
+            observedNewResult: Boolean((active && bridgeObservedChangeAt>0 && Date.now()-bridgeObservedChangeAt<=CHANGE_STALE_MS) ||
+                (renderObservedChangeAt>0 && Date.now()-renderObservedChangeAt<=CHANGE_STALE_MS))
+        };
+    };
+    function notifyLab() {
+        try {
+            if (typeof root.CustomEvent === 'function')
+                root.dispatchEvent(new root.CustomEvent('baccarat:history-updated'));
+        } catch (_) {}
+    }
     function displayLastSaved(time) {
         const elSaved = el('choice-room-last-saved');
         if (!elSaved) return;
@@ -214,6 +235,7 @@
         bridgeLastPingAt = Date.now();
         bridgeLastSnapshotAt = Date.now();
         bridgeRowsLatest = rows;
+        notifyLab();
         try {
             const savedAt = Date.now();
             localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify({codes: msg.results, savedAt}));
@@ -263,6 +285,7 @@
                 if (renderLastSignature !== null && sig !== renderLastSignature) renderObservedChangeAt = Date.now();
                 renderLastSignature = sig;
                 renderRows = rows;
+                notifyLab();
                 renderError = '';
             } else renderError = '服务器可访问，但暂未取得 D51 开奖记录；可用本机浏览器桥接。';
         } catch (err) {

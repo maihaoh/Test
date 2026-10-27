@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Lottery + 百家乐 Dashboard</title>
 <script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<link href="style.css?v=35" rel="stylesheet"/>
+<link href="style.css?v=36" rel="stylesheet"/>
 </head>
 <body>
 <div class="container">
@@ -19,7 +19,7 @@
                 🎯 AI GAMING DASHBOARD
             </h1>
 <div class="subtitle">
-                Lottery 与 百家乐分区 · <span id="build-version">UI V35</span>
+                Lottery 与 百家乐分区 · <span id="build-version">UI V36</span>
 </div>
 </div>
 <div class="header-info">
@@ -390,6 +390,13 @@
       <h3>蟑螂路</h3><div class="bc-road-scroll"><div id="bc-road-cockroach" class="bc-road-grid"></div></div>
     </details>
   </section>
+  <section class="section-card bc-lab-panel" data-bc-lab-source="manual" aria-label="百家乐多路法研究实验室">
+    <div class="bc-lab-heading"><h2>🔬 V36 · 45 种百家乐路法客观检验</h2><button type="button" data-bc-lab-refresh>重新分析</button></div>
+    <p class="bc-lab-warning">把路法当成历史假设，不是必中系统。准确率只统计历史中下一局实际已开奖的结果；验证区间选法，再用后25%测试。理论上无法承诺 99% 胜率。本面板是独立研究，暂不覆盖上方现有路型参考，也不自动下注。</p>
+    <div class="bc-lab-note" data-bc-lab-note>等待读取历史…</div>
+    <div data-bc-lab-output></div>
+    <div data-bc-lab-library></div>
+  </section>
   <section class="section-card bc-ledger-panel">
     <div class="bc-focus-head"><h2>开奖 / 预测对照</h2><span>最新在右</span></div>
     <div id="bc-ledger" class="bc-ledger" aria-label="同局开奖与先前预测"></div>
@@ -439,6 +446,13 @@
       <div><h3>珠盘路</h3><div class="choice-road-scroll"><div class="choice-road-grid" id="choice-room-bead-road"></div></div></div>
     </div>
   </section>
+  <section class="section-card bc-lab-panel" data-bc-lab-source="choice" aria-label="百家乐多路法研究实验室">
+    <div class="bc-lab-heading"><h2>🔬 V36 · 45 种百家乐路法客观检验</h2><button type="button" data-bc-lab-refresh>重新分析</button></div>
+    <p class="bc-lab-warning">把路法当成历史假设，不是必中系统。准确率只统计历史中下一局实际已开奖的结果；验证区间选法，再用后25%测试。理论上无法承诺 99% 胜率。本面板是独立研究，暂不覆盖上方现有路型参考，也不自动下注。</p>
+    <div class="bc-lab-note" data-bc-lab-note>等待读取历史…</div>
+    <div data-bc-lab-output></div>
+    <div data-bc-lab-library></div>
+  </section>
 </section>
 <section class="main-section multi-game-section" id="k3-section">
 <div class="section-card multi-shell">
@@ -485,9 +499,12 @@
 <script src="baccarat_analysis.js?v=29"></script>
 <script src="baccarat_engine.js?v=29"></script>
 <script src="baccarat_roads.js?v=29"></script>
+<script src="baccarat_variant_rules.js?v=36"></script>
 <script src="baccarat_predictor.js?v=35"></script>
 <script src="choice_manual.js?v=29"></script>
 <script src="choice_live.js?v=34"></script>
+<script src="baccarat_methods.js?v=36"></script>
+<script src="baccarat_lab_ui.js?v=36"></script>
 <script src="multi_games.js?v=35"></script>
 </body>
 </html>

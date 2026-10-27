@@ -1,3 +1,48 @@
+# V36 Baccarat 多路法研究与测试完整版
+
+- 新增 **45 种可执行看路/统计方法**，自动从手动百家乐或 Choice D51 的已取得历史开展逐局回测。
+- 新增 **13 类玩法规则、21 类边注、6 种路单、14 种金额系统**资料库。
+- 新增 `baccarat_variant_rules.js` 作为标准/EZ/Super6 赔付与部分可支持边注规则的离线研究模块。没有实际牌面时绝不伪造结果。
+- 新增独立可复现的 `test_v36_baccarat_methods.cjs`、`test_v36_browser.py` 和 GitHub Actions JavaScript 测试。
+- **99% 预测软件命中率不曾达到，也不能从路单保证。** 实际只报告测试过的结果；参见 `V36-TEST-REPORT.md`。
+- **重要：Choice D51 的 Render 授权阻挡仍未解决**，此版本不会让被挡住的第三方游戏接口自动通行。
+
+**安装**：直接将此 ZIP 解压并覆盖 GitHub `Test` 原项目文件，Commit；现有 Render Token / Environment 不需要改动。刷新 GitHub Pages，检查 `UI V36`。进入百家乐手动或 Choice 页面向下滚动查看“45 种路法客观检验”。历史少于100局会提示样本不足。若 Choice 没有实际历史，该页不会显示假数据。
+
+**新研究资料**：`BACCARAT-RESEARCH-V36.md` · `V36-TEST-REPORT.md`
+
+---
+
+# V36 Baccarat 多路法研究与测试完整版
+
+- 新增 **45 种可执行看路/统计方法**，自动从手动百家乐或 Choice D51 的已取得历史开展逐局回测。
+- 新增 **13 类玩法规则、21 类边注、6 种路单、14 种金额系统**资料库。
+- 新增 `baccarat_variant_rules.js` 作为标准/EZ/Super6 赔付与部分可支持边注规则的离线研究模块。没有实际牌面时绝不伪造结果。
+- 新增独立可复现的 `test_v36_baccarat_methods.cjs`、`test_v36_browser.py` 和 GitHub Actions JavaScript 测试。
+- **99% 预测软件命中率不曾达到，也不能从路单保证。** 实际只报告测试过的结果；参见 `V36-TEST-REPORT.md`。
+- **重要：Choice D51 的 Render 授权阻挡仍未解决**，此版本不会让被挡住的第三方游戏接口自动通行。
+
+**安装**：直接将此 ZIP 解压并覆盖 GitHub `Test` 原项目文件，Commit；现有 Render Token / Environment 不需要改动。刷新 GitHub Pages，检查 `UI V36`。进入百家乐手动或 Choice 页面向下滚动查看“45 种路法客观检验”。历史少于100局会提示样本不足。若 Choice 没有实际历史，该页不会显示假数据。
+
+**新研究资料**：`BACCARAT-RESEARCH-V36.md` · `V36-TEST-REPORT.md`
+
+---
+
+# V36 Baccarat 多路法研究与测试完整版
+
+- 新增 **45 种可执行看路/统计方法**，自动从手动百家乐或 Choice D51 的已取得历史开展逐局回测。
+- 新增 **13 类玩法规则、21 类边注、6 种路单、14 种金额系统**资料库。
+- 新增 `baccarat_variant_rules.js` 作为标准/EZ/Super6 赔付与部分可支持边注规则的离线研究模块。没有实际牌面时绝不伪造结果。
+- 新增独立可复现的 `test_v36_baccarat_methods.cjs`、`test_v36_browser.py` 和 GitHub Actions JavaScript 测试。
+- **99% 预测软件命中率不曾达到，也不能从路单保证。** 实际只报告测试过的结果；参见 `V36-TEST-REPORT.md`。
+- **重要：Choice D51 的 Render 授权阻挡仍未解决**，此版本不会让被挡住的第三方游戏接口自动通行。
+
+**安装**：直接将此 ZIP 解压并覆盖 GitHub `Test` 原项目文件，Commit；现有 Render Token / Environment 不需要改动。刷新 GitHub Pages，检查 `UI V36`。进入百家乐手动或 Choice 页面向下滚动查看“45 种路法客观检验”。历史少于100局会提示样本不足。若 Choice 没有实际历史，该页不会显示假数据。
+
+**新研究资料**：`BACCARAT-RESEARCH-V36.md` · `V36-TEST-REPORT.md`
+
+---
+
 # V35 完整修复版｜GitHub + Render
 
 **你要的算法修复已加入：** K3 和值／大小／单双、5D 五位、TRX 号码／大小／颜色不再互相矛盾；WinGo 修正号码与大小，并只对开奖前已保存的预测计算真实复盘；百家乐加入长龙、单跳、双跳、断路判断。混合路型会显示「观察」，不硬猜。

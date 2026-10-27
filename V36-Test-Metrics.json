@@ -1,0 +1,25 @@
+{
+  "version": "V36",
+  "assertions": 12012,
+  "status": "passed",
+  "strategies": 45,
+  "formats": 13,
+  "bets": 21,
+  "roads": 6,
+  "staking": 14,
+  "simulatedHands": 1000000,
+  "frequencies": {
+    "B": 0.459274,
+    "P": 0.446376,
+    "T": 0.09435
+  },
+  "bankerDecisiveRate": 0.507120852426434,
+  "simulatedEV": {
+    "bankerStandard": -0.010065699999981659,
+    "bankerSuper6": -0.0141325,
+    "bankerEZ": -0.00991,
+    "dragon7": -0.064872,
+    "panda8": -0.097956
+  },
+  "simulationTimeMs": 655
+}

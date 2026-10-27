@@ -146,6 +146,10 @@
         const roads=window.BaccaratRoads?.build(codes);
         if(roads){grid('bc-road-big',roads.big);grid('bc-road-bead',roads.bead);grid('bc-road-eye',roads.bigEyeBoy);grid('bc-road-small',roads.smallRoad);grid('bc-road-cockroach',roads.cockroachRoad);}
         renderLedger();
+        try {
+            if (typeof window.CustomEvent === 'function')
+                window.dispatchEvent(new window.CustomEvent('baccarat:history-updated'));
+        } catch (_) {}
     }
     window.choiceManualAdd = code => mutate(() => {
         if(damaged || !Object.hasOwn(NAMES,code) || state.records.length>=MAX)return;

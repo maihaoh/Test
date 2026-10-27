@@ -1,0 +1,45 @@
+{
+  "description": "four fixed, simulated 600-hand holdouts; not live data",
+  "records": [
+    {
+      "seed": 123,
+      "selection": "cockroach_consistency",
+      "selectionLabel": "曱甴路形态延续",
+      "validationRate": 0.5923076923076923,
+      "testRate": 0.4,
+      "baselineTestRate": 0.5481481481481482,
+      "testDecisive": 135,
+      "coverage": 1
+    },
+    {
+      "seed": 456,
+      "selection": "follow_last",
+      "selectionLabel": "顺上局",
+      "validationRate": 0.5766423357664233,
+      "testRate": 0.46511627906976744,
+      "baselineTestRate": 0.4883720930232558,
+      "testDecisive": 129,
+      "coverage": 1
+    },
+    {
+      "seed": 789,
+      "selection": "weighted_fade_30",
+      "selectionLabel": "近因反向 30 局",
+      "validationRate": 0.6,
+      "testRate": 0.5384615384615384,
+      "baselineTestRate": 0.46099290780141844,
+      "testDecisive": 130,
+      "coverage": 0.92
+    },
+    {
+      "seed": 20261027,
+      "selection": "reverse_last",
+      "selectionLabel": "反上局",
+      "validationRate": 0.562962962962963,
+      "testRate": 0.5111111111111111,
+      "baselineTestRate": 0.4740740740740741,
+      "testDecisive": 135,
+      "coverage": 1
+    }
+  ]
+}
