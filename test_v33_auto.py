@@ -111,7 +111,7 @@ class V33Tests(unittest.TestCase):
             })
             raw = (Path(d) / 'status.json').read_text()
             status = json.loads(raw)
-            self.assertEqual(status['release'], 'V33')
+            self.assertEqual(status['release'], 'V37')
             self.assertEqual(status['diagnostics']['providerWebSockets'], 3)
             self.assertEqual(status['diagnostics']['webSocketPorts'], [5000, 7101])
             self.assertNotIn('SECRET', raw)

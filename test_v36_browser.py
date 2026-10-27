@@ -41,7 +41,7 @@ with sync_playwright() as p:
         for asset in ASSETS:page.add_script_tag(content=(ROOT/asset).read_text())
         page.wait_for_function('''() => document.querySelectorAll('[data-bc-lab-source=manual] .bc-lab-table tbody tr').length===45''',timeout=15000)
         page.wait_for_function('''() => document.querySelectorAll('[data-bc-lab-source=choice] .bc-lab-table tbody tr').length===45''',timeout=15000)
-        assert page.locator('#build-version').inner_text()=='UI V36'
+        assert page.locator('#build-version').inner_text()=='UI V37'
         assert page.evaluate('window.BaccaratMethods.STRATEGIES.length')==45
         assert page.evaluate('typeof window.BaccaratVariantRules.resolve')=='function'
         assert '样本：最近' in page.locator('[data-bc-lab-source=manual] .bc-lab-summary').inner_text()

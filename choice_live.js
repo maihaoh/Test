@@ -1,4 +1,4 @@
-/* V34 single-room Choice D51 display.
+/* V37 server-first Choice D51 display.
  * Reads either verified Render snapshots or B/P/T-only snapshots from the
  * user's own authorized official Choice tab. No credentials are transmitted.
  * An initial history is NOT proof that new rounds will continue arriving.
@@ -6,6 +6,7 @@
 (function (root) {
     'use strict';
     const ENDPOINT = 'https://test-4bvi.onrender.com/api/data';
+    const STATUS_ENDPOINT = 'https://test-4bvi.onrender.com/api/choice-status';
     const ROOM = 'D51';
     const POLL_MS = 12000;
     const CHANGE_STALE_MS = 15 * 60 * 1000;
@@ -55,6 +56,7 @@
     let renderObservedChangeAt = 0;
     let renderRows = [];
     let renderError = '尚未连接 Render Choice 数据';
+    let serverInfo = null;
     let bridgeLastPingAt = 0;
     let bridgeLastSnapshotAt = 0;
     let bridgeLastSignature = null;
@@ -134,8 +136,24 @@
         const forecast = el('choice-room-forecast');
         if (forecast) forecast.className = next?.pick ? `is-${next.pick}` : '';
     }
+    function serverMessage() {
+        if (!serverInfo) return '尚未取得 Render Choice 状态';
+        const stage = String(serverInfo.stage || 'unknown');
+        const error = String(serverInfo.lastError || '');
+        const retry = Number(serverInfo.retryInSeconds || 0);
+        const recorded = Number(serverInfo.records || 0);
+        const archived = Number(serverInfo.archiveSnapshots || 0);
+        if (error === 'provider_access_blocked') {
+            return `服务器访问被 Choice 提供方拒绝（${stage}）；${retry > 0 ? `预计 ${retry} 秒后再次检查` : '等待安全重试'}。已有记录 ${recorded} 条，本机快照归档 ${archived} 份。`;
+        }
+        if (error === 'provider_authentication_failed') return 'Choice 授权无效，请检查 Render 的授权配置；不要在网页上传 Token。';
+        if (error === 'choice_game_not_loaded' || error === 'choice_websocket_not_seen') return `Choice 客户端尚未进入 D51 实时数据通道（${error}）。`;
+        if (stage === 'd51_snapshot_received' && recorded > 0) return `已取得 D51 有效历史 ${recorded} 条，存档 ${archived} 份；仍需观察连续的新开奖结果。`;
+        return `后台阶段：${stage} · 已读取记录 ${recorded} · 已归档不同快照 ${archived} 份。`;
+    }
     function paint() {
         const now = Date.now();
+        txt('choice-room-server-detail', serverMessage());
         const bridgeActive = bridgeLastPingAt > 0 && now - bridgeLastPingAt < BRIDGE_HEARTBEAT_STALE_MS;
         txt('choice-room-bridge-detail', bridgeActive ?
             `本机游戏连接 ${bridgeConnections} 条 · 收到帧 ${bridgeFrames} · 解析快照 ${bridgeDecoded} 份` :
@@ -164,7 +182,7 @@
             return;
         }
         renderRoom([], 0);
-        setStatus(renderError || '等待 D51 的真实开奖记录。', 'offline');
+        setStatus(renderError || serverMessage() || '等待 D51 的真实开奖记录。', 'offline');
         txt('choice-room-source', '等待数据源');
     }
     // Read-only verified D51 history for the V36 analysis panel. Do not
@@ -274,11 +292,23 @@
         if (inFlight) return;
         inFlight = true;
         const button = el('choice-room-refresh');
+        const checker = el('choice-room-server-check');
         if (button) button.disabled = true;
+        if (checker) checker.disabled = true;
         try {
-            const response = await fetch(ENDPOINT + '?_=' + Date.now(), {method: 'GET', mode: 'cors', cache: 'no-store'});
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
+            // The public status contains categorical diagnostics only. Never
+            // fetch or display provider tickets, headers, cookies or tokens.
+            const [dataResult, statusResult] = await Promise.allSettled([
+                fetch(ENDPOINT + '?_=' + Date.now(), {method: 'GET', mode: 'cors', cache: 'no-store'}),
+                fetch(STATUS_ENDPOINT + '?_=' + Date.now(), {method: 'GET', mode: 'cors', cache: 'no-store'})
+            ]);
+            if (statusResult.status === 'fulfilled' && statusResult.value.ok) {
+                try { serverInfo = await statusResult.value.json(); } catch (_) {}
+            }
+            if (dataResult.status !== 'fulfilled' || !dataResult.value.ok) {
+                throw new Error(dataResult.status === 'fulfilled' ? `HTTP ${dataResult.value.status}` : '无法访问服务器');
+            }
+            const data = await dataResult.value.json();
             const rows = normalizeRoom(data?.baccarat?.rooms?.[ROOM]);
             if (rows.length) {
                 const sig = signature(rows);
@@ -287,12 +317,16 @@
                 renderRows = rows;
                 notifyLab();
                 renderError = '';
-            } else renderError = '服务器可访问，但暂未取得 D51 开奖记录；可用本机浏览器桥接。';
+            } else {
+                renderRows = [];
+                renderError = serverMessage();
+            }
         } catch (err) {
-            renderError = `Choice 服务器检查失败（${err?.message || '网络错误'}）；可以使用本机浏览器桥接。`;
+            renderError = `Render D51 检查失败（${err?.message || '网络错误'}），不会显示虚假开奖。`;
         } finally {
             inFlight = false;
             if (button) button.disabled = false;
+            if (checker) checker.disabled = false;
             paint();
         }
     }

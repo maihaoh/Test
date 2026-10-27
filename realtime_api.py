@@ -201,7 +201,7 @@ def connection_status():
         "checkedAt": now,
         "multiGameSources": sources,
         "browserRuntime": public_status(),
-        "release": "V33",
+        "release": "V37",
         "choiceRoom": _choice_status_payload(data),
         "anyNewIssueObservedRecently": any(item["observedRecently"] for item in sources.values()),
         "note": "The API responds; fresh timestamps are not proof of an authorized or continuous external game feed."
@@ -248,17 +248,29 @@ def _choice_status_payload(data=None):
             return {"stage": "invalid_status"}
         return {key: status.get(key) for key in (
             "release", "mode", "room", "stage", "updatedAt", "snapshotCount",
-            "records", "lastSnapshotAt", "lastNewResultAt", "lastError", "note", "diagnostics"
+            "records", "lastSnapshotAt", "lastNewResultAt", "lastError", "note", "diagnostics",
+            "nextRetryAt", "consecutiveAccessBlocks", "archiveSnapshots", "storageMode", "archiveStatus"
         ) if key in status}
     except FileNotFoundError:
-        return {"release": "V33", "room": "D51", "stage": "not_started"}
+        return {"release": "V37", "room": "D51", "stage": "not_started"}
     except (ValueError, OSError):
-        return {"release": "V33", "room": "D51", "stage": "invalid_status"}
+        return {"release": "V37", "room": "D51", "stage": "invalid_status"}
 
 
 @app.get("/api/choice-status")
 def choice_status():
-    return jsonify(_choice_status_payload())
+    payload = _choice_status_payload()
+    now = int(time.time())
+    retry = int(payload.get('nextRetryAt') or 0)
+    last_data = int(payload.get('lastSnapshotAt') or 0)
+    payload['retryInSeconds'] = max(0, retry - now) if retry else None
+    payload['secondsSinceData'] = max(0, now - last_data) if last_data else None
+    payload['hasVerifiedD51Data'] = bool(payload.get('records', 0) and last_data)
+    payload['providerAccessAvailable'] = (
+        False if payload.get('lastError') == 'provider_access_blocked'
+        else None  # Unknown is NOT equivalent to verified access.
+    )
+    return jsonify(payload)
 
 
 @app.post("/api/ingest")

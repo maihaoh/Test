@@ -367,7 +367,7 @@ def main() -> None:
         from multi_runtime import run as run_multi
         threading.Thread(target=run_multi, args=(shared_client,), name="k3-5d-trx", daemon=True).start()
 
-    # V33: official signed Choice launch, separate from manual baccarat.
+    # V37: official signed Choice launch, separate from manual baccarat.
     # Existing CHOICE_MANUAL_ONLY=1 does not disable the new D51 read-only feed.
     # Explicit CHOICE_AUTO_ENABLED=0 opts out without affecting other games.
     auto_enabled = str(os.getenv("CHOICE_AUTO_ENABLED", "1")).strip().lower() not in {"0", "false", "off", "no"}
@@ -375,12 +375,12 @@ def main() -> None:
         from choice_collector import ChoiceHeadlessCollector
         from choice_runtime import ChoiceRuntime
         runtime = ChoiceRuntime()
-        collector = ChoiceHeadlessCollector(shared_client, runtime.accept_snapshot, runtime.set_stage, runtime.update_diagnostics)
+        collector = ChoiceHeadlessCollector(shared_client, runtime.accept_snapshot, runtime.set_stage, runtime.update_diagnostics, runtime.set_retry)
         print("[Choice/D51] server auto observer enabled; signed official launch; no wagering", flush=True)
         collector.run()
     else:
         STATUS_PATH.write_text(json.dumps({
-            "release": "V33", "stage": "stopped", "room": "D51",
+            "release": "V37", "stage": "stopped", "room": "D51",
             "note": "Auto Choice disabled by CHOICE_AUTO_ENABLED=0; other games continue"
         }, ensure_ascii=False), encoding="utf-8")
         print("[Choice/D51] disabled by CHOICE_AUTO_ENABLED=0; WinGo/K3/5D/TRX continue", flush=True)

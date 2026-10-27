@@ -8,6 +8,8 @@ import threading
 import time
 from pathlib import Path
 
+from choice_archive import ChoiceSnapshotArchive
+
 ROOT = Path(__file__).resolve().parent
 RUNTIME_FILE = ROOT / 'choice_runtime.json'
 STATUS_FILE = ROOT / 'choice_status.json'
@@ -22,6 +24,7 @@ STAGES = frozenset({
     'choice_ws_handshake_unconfirmed',
     'choice_ws_endpoint_unrecognized', 'choice_game_ui_unavailable',
     'browser_runtime_failed', 'authorized_launch_failed', 'retry_wait', 'stopped',
+    'waiting_provider_security_check',
 })
 
 
@@ -49,6 +52,17 @@ class ChoiceRuntime:
         self._diagnostics = {}
         self._stage = 'starting'
         self._last_error = ''
+        self._next_retry_at = 0
+        self._blocked_attempts = 0
+        self._archive = None
+        self._archive_snapshots = 0
+        self._archive_error = ''
+        try:
+            # Local SQLite is a snapshot cache, not a Render Free durable disk.
+            self._archive = ChoiceSnapshotArchive(self.runtime_file.with_name('choice_snapshots.sqlite3'))
+            self._archive_snapshots = self._archive.count()
+        except (OSError, ValueError, TypeError):
+            self._archive_error = 'archive_not_available'
         # If a previous worker wrote a snapshot on the same Render instance,
         # retain its baseline so restart doesn't fabricate a "new" round.
         try:
@@ -62,6 +76,31 @@ class ChoiceRuntime:
             self._last_snapshot_at = int(old.get('lastSnapshotAt') or 0)
         except (OSError, ValueError, TypeError):
             pass
+        # On a same-instance restart, recover a validated snapshot if the
+        # runtime JSON file was removed. Never claim it represents a new hand.
+        if self._last_digest is None and self._archive is not None:
+            try:
+                recovered = self._archive.latest()
+                if recovered and recovered['rows']:
+                    self._last_digest = recovered['digest']
+                    self._last_snapshot_at = recovered['seenAt']
+                    self._records = len(recovered['rows'])
+                    self._previous_values = [row['raw_wininfo'] for row in reversed(recovered['rows'])]
+                    _atomic_json(self.runtime_file, {
+                        'release': 'V37', 'room': 'D51',
+                        'source': 'official_choice_client_ws_D051_local_archive_recovery',
+                        'rows': recovered['rows'], 'signature': recovered['digest'],
+                        'lastSnapshotAt': recovered['seenAt'], 'lastNewResultAt': 0,
+                        'snapshotCount': 0,
+                    })
+            except (OSError, ValueError, TypeError, KeyError):
+                self._archive_error = 'archive_recovery_failed'
+
+    def set_retry(self, seconds: int, blocked_attempts: int = 0) -> None:
+        with self._lock:
+            self._next_retry_at = int(time.time()) + max(0, int(seconds)) if seconds else 0
+            self._blocked_attempts = max(0, int(blocked_attempts))
+            self._write_status()
 
     def set_stage(self, stage: str) -> None:
         if stage not in STAGES:
@@ -81,6 +120,8 @@ class ChoiceRuntime:
                 self._last_error = stage
             if stage == 'd51_snapshot_received':
                 self._last_error = ''
+                self._next_retry_at = 0
+                self._blocked_attempts = 0
             self._write_status()
 
     def update_diagnostics(self, values: dict) -> None:
@@ -110,12 +151,17 @@ class ChoiceRuntime:
 
     def _write_status(self):
         _atomic_json(self.status_file, {
-            'release': 'V33', 'mode': 'server_official_choice_client_read_only',
+            'release': 'V37', 'mode': 'server_official_choice_client_read_only',
             'room': 'D51', 'stage': self._stage,
             'updatedAt': int(time.time()), 'snapshotCount': self._snapshot_count,
             'records': self._records, 'lastSnapshotAt': self._last_snapshot_at,
             'lastNewResultAt': self._last_new_at,
             'lastIssue': self._last_issue, 'lastError': self._last_error,
+            'nextRetryAt': self._next_retry_at,
+            'consecutiveAccessBlocks': self._blocked_attempts,
+            'archiveSnapshots': self._archive_snapshots,
+            'storageMode': 'instance_local_ephemeral',
+            'archiveStatus': self._archive_error or 'ready',
             'diagnostics': self._diagnostics,
             'note': 'Signed Choice launch may require additional provider permission. Only D051 decoded results are accepted.',
         })
@@ -128,8 +174,14 @@ class ChoiceRuntime:
         # rolling windows, without treating arbitrary corrections as new draws.
         if not previous or not current or previous == current:
             return False
-        for overlap in range(min(len(previous), len(current)), 0, -1):
-            if previous[-overlap:] == current[:overlap] and len(current) > overlap:
+        # A one-outcome overlap between two long roadmaps is common by chance.
+        # Require a sufficiently long continuous overlap, or the *entire*
+        # previous very short sequence when still building the first roadmap.
+        min_overlap = len(previous) if len(previous) <= 4 else 8
+        if len(current) <= min_overlap:
+            return False
+        for overlap in range(min(len(previous), len(current) - 1), min_overlap - 1, -1):
+            if previous[-overlap:] == current[:overlap]:
                 return True
         return False
 
@@ -170,8 +222,15 @@ class ChoiceRuntime:
             self._last_snapshot_at = now
             self._records = len(rows)
             self._last_issue = f'road position {len(rows)} (not official round id)'
+            if self._archive is not None:
+                try:
+                    if self._archive.record(digest, now, rows[::-1]):
+                        self._archive_snapshots = self._archive.count()
+                    self._archive_error = ''
+                except (OSError, ValueError, TypeError):
+                    self._archive_error = 'archive_write_failed'
             _atomic_json(self.runtime_file, {
-                'release': 'V33', 'room': 'D51', 'source': 'official_choice_client_ws_D051',
+                'release': 'V37', 'room': 'D51', 'source': 'official_choice_client_ws_D051',
                 'rows': rows[::-1], 'signature': digest,
                 'lastSnapshotAt': now, 'lastNewResultAt': self._last_new_at,
                 'snapshotCount': self._snapshot_count,

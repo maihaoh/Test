@@ -1,4 +1,4 @@
-"""V33: Read-only Choice D51 collector with privacy-preserving browser diagnostics.
+"""V37: Read-only Choice D51 collector with privacy-preserving browser diagnostics.
 
 Uses the provider's issued AG_Video game entry; it does not synthesize game
 login packets, bypass access controls, inject authentication, or place bets.
@@ -52,11 +52,14 @@ class ChoiceHeadlessCollector:
     def __init__(self, mzplay_client, on_snapshot: Callable[[dict], bool],
                  on_stage: Callable[[str], None] | None = None,
                  on_diagnostics: Callable[[dict], None] | None = None,
+                 on_retry: Callable[[int, int], None] | None = None,
                  restart_delay: int = 45, no_frame_timeout: int = 180):
         self.client = mzplay_client
         self.on_snapshot = on_snapshot
         self.on_stage = on_stage or (lambda _stage: None)
         self.on_diagnostics = on_diagnostics or (lambda _state: None)
+        self.on_retry = on_retry or (lambda _seconds, _blocks: None)
+        self._consecutive_access_blocks = 0
         self.restart_delay = max(30, int(restart_delay))
         self.no_frame_timeout = max(90, int(no_frame_timeout))
         self.stop_event = threading.Event()
@@ -191,6 +194,8 @@ class ChoiceHeadlessCollector:
         if not snapshot.get('results'):
             return
         if self.on_snapshot(snapshot):
+            self._consecutive_access_blocks = 0
+            self.status.last_error = ''
             self.status.result_snapshots += 1
             self.status.last_result_at = time.time()
             self._stage('d51_snapshot_received')
@@ -302,6 +307,33 @@ class ChoiceHeadlessCollector:
         session.on('Network.webSocketHandshakeResponseReceived', handshake)
         session.on('Network.webSocketFrameReceived', cdp_frame)
         session.on('Network.webSocketFrameError', failure)
+
+    @staticmethod
+    def _is_transient_check(page) -> bool:
+        """Allow an ordinary provider-side interstitial time to finish on its own.
+
+        This does not solve CAPTCHAs, spoof device identity, inject cookies, or
+        bypass restrictions. Persistent security blocks remain a hard error.
+        """
+        try:
+            title = str(page.title() or '').lower()
+            if 'just a moment' in title:
+                return True
+            body = str(page.locator('body').inner_text(timeout=2000) or '')[:300].lower()
+            return 'checking your browser before accessing' in body
+        except Exception:
+            return False
+
+    def _wait_for_transient_check(self, page) -> None:
+        if not self._is_transient_check(page):
+            return
+        self._stage('waiting_provider_security_check')
+        for _ in range(10):
+            if self.stop_event.is_set():
+                break
+            page.wait_for_timeout(2000)
+            if not self._is_transient_check(page):
+                return
 
     @staticmethod
     def _is_blocked(page) -> bool:
@@ -445,6 +477,9 @@ class ChoiceHeadlessCollector:
                     raise ChoiceConnectionError('choice_navigation_failed') from exc
                 self.status.choice_page_loaded = True
                 self._stage('choice_client_loaded')
+                # A routine provider challenge might resolve unaided. Wait a
+                # bounded period; do not try to bypass persistent blocking.
+                self._wait_for_transient_check(page)
                 if self._is_blocked(page):
                     raise ChoiceConnectionError('provider_access_blocked')
 
@@ -485,6 +520,16 @@ class ChoiceHeadlessCollector:
             return 'browser_runtime_failed'
         return 'authorized_launch_failed'
 
+    def _retry_wait(self, provider_wait: int, category: str) -> int:
+        if category == 'provider_access_blocked':
+            self._consecutive_access_blocks += 1
+            # Back off on provider refusal. No automated access-control bypass.
+            backoff = min(3600, 300 * (2 ** min(4, self._consecutive_access_blocks - 1)))
+            provider_wait = max(provider_wait, backoff)
+        else:
+            self._consecutive_access_blocks = 0
+        return max(self.restart_delay, provider_wait)
+
     def run(self) -> None:
         self.status.running = True
         self._stage('starting')
@@ -502,9 +547,8 @@ class ChoiceHeadlessCollector:
                     retry_after = int(self.client.choice_retry_after())
                 except Exception:
                     retry_after = 0
-                if self.status.last_error == 'provider_access_blocked':
-                    retry_after = max(retry_after, 300)
-                wait = max(self.restart_delay, retry_after)
+                wait = self._retry_wait(retry_after, self.status.last_error)
+                self.on_retry(wait, self._consecutive_access_blocks)
                 self._stage('retry_wait')
                 print(f'[Choice/D51] retry_after_seconds={wait} reason={self.status.last_error}', flush=True)
                 self.stop_event.wait(wait)
